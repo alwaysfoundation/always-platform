@@ -2,11 +2,11 @@ import { serve } from '@hono/node-server';
 import { connect } from '@always/db';
 import { createApp } from './app.js';
 import { logAdapters } from './jobs.js';
-import { sesEmail, httpSms, fetchWebhook } from './adapters.js';
+import { resendEmail, httpSms, fetchWebhook } from './adapters.js';
 
 const sql = connect();
 const adapters = {
-  email: process.env.SES_REGION ? sesEmail() : logAdapters.email,
+  email: process.env.RESEND_API_KEY ? resendEmail() : logAdapters.email,
   sms: process.env.SMS_API_URL ? httpSms() : logAdapters.sms,
   webhook: process.env.NODE_ENV === 'production' ? fetchWebhook : logAdapters.webhook,
 };

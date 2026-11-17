@@ -11,7 +11,7 @@ Always connects the body of Christ in Australia, so everyone who responds to Jes
 | `packages/core` | The rules engine: the consent primitive, minors rules, matching, the two-clock handoff, retention. Pure and fully tested. |
 | `packages/db` | Database helpers. Every request runs under Postgres row-level security. |
 | `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
-| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (SES, Australian SMS, signed webhooks). |
+| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Resend email, Australian SMS, signed webhooks). |
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
@@ -32,7 +32,7 @@ make check                            # types and 58 tests against real Postgres
 - Consent travels with the person and every data movement checks it, failing closed.
 - Minors rules run first and can't be configured away.
 - Personal data stays in Australia, is encrypted before it reaches the database, and never appears in logs, emails or webhooks.
-- One church holds an introduction at a time; the care team steps in so no one waits more than 48 hours.
+- One church or ministry holds an introduction at a time; if none can, the care team helps.
 - Only the person can say they are connected.
 
 ## Licences

@@ -2,23 +2,33 @@ import type { Message } from './jobs.js';
 import { TEMPLATES } from './templates.js';
 
 /**
- * Production adapters. All three keep personal data in Australia or send only what
- * the message needs:
- * - Email: Amazon SES in ap-southeast-2 (Sydney). Staff alerts carry no personal data.
- * - SMS: an Australian SMS provider's HTTP API (e.g. MessageMedia, Mobile Message). Confirmation
- *   texts to the person carry the church name and a link, never faith details.
+ * Production adapters. Each sends only what the message needs:
+ * - Email: Resend (transactional API). Staff alerts carry no personal data, only a link to the inbox.
+ * - SMS: an Australian SMS provider's HTTP API (e.g. MessageMedia, Mobile Message). Texts to the
+ *   person carry the church name and a link, never faith details.
  * - Webhooks: HTTPS POST with HMAC signature and a 10 s timeout.
  */
-export function sesEmail() {
+export function resendEmail() {
   return async (m: Message) => {
-    const { SESv2Client, SendEmailCommand } = await import('@aws-sdk/client-sesv2' as string);
-    const client = new SESv2Client({ region: process.env.SES_REGION });
     const t = TEMPLATES[m.template] ?? { subject: 'Always', body: 'You have an update in Always.' };
-    await client.send(new SendEmailCommand({
-      FromEmailAddress: process.env.EMAIL_FROM,
-      Destination: { ToAddresses: [m.to] },
-      Content: { Simple: { Subject: { Data: t.subject }, Body: { Text: { Data: render(t.body, m.params) } } } },
-    }));
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        // Outbox ids are unique, so a retry never sends twice.
+        'idempotency-key': `always-${m.id ?? ''}`,
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM,
+        to: [m.to],
+        subject: t.subject,
+        text: render(t.body, m.params),
+        tags: [{ name: 'template', value: m.template.replace(/[^a-zA-Z0-9_-]/g, '_') }],
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) throw new Error(`email_http_${res.status}`);
   };
 }
 

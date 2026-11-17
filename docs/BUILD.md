@@ -33,7 +33,7 @@ Lots of tools capture decision cards. Always is different in four ways that work
 
 1/ **Consent that travels with the person (the consent primitive).** Every person carries a consent receipt: what they agreed to, who may receive their details, who agreed (them or a parent), their age band and the exact words they saw. Every system checks it before touching their details and fails closed. Withdrawal is one tap and reaches everyone holding their details. Nothing else in this space makes consent the unit of exchange between ministries.
 
-2/ **A guaranteed next step, with two clocks.** One church at a time holds an introduction for two staffed hours. If they pass or don't answer, the next suitable church is offered. If no one has accepted within a staffed hour, the care team says hello. No one waits more than 48 hours without a real person. It is a promise, not a hope, and it is enforced by the engine.
+2/ **Every response gets a next step.** One church or ministry at a time holds an introduction for a set window (configurable; two staffed hours in pilots). If it passes or doesn't answer, the next suitable one is offered. If none can, the care team helps. We don't publish a timing promise.
 
 3/ **Only the person says "connected".** We count someone as connected only when they confirm it themselves, and we publish our numbers, including the people we missed. That honesty is what churches and supporters can trust.
 
@@ -63,7 +63,7 @@ Chosen for three things: personal data stays in Australia, it costs very little 
 | Web apps | Next.js on Vercel | Church inbox, page builder, care console, person pages, public directory | syd1 |
 | Marketing site | Static, Cloudflare Pages | Free, fast, no personal data | Global CDN |
 | Scheduler | Vercel Cron (every minute) calling idempotent job endpoints; Supabase pg_cron as backup | Timers, outbox, nightly retention | Sydney |
-| Email | Amazon SES | About US$0.10 per 1,000 emails; staff alerts carry no personal data | Sydney (ap-southeast-2) |
+| Email | Resend (transactional and partner broadcasts) | Free to 3,000 emails a month, then from US$20; staff alerts carry no personal data | US (no Australian region; alerts contain no personal data) |
 | SMS | An Australian SMS provider (Mobile Message, MessageMedia or similar) | Data stays onshore; low volume because churches text from their own phones | Australia |
 | Field encryption keys | AWS KMS | One key per environment; the database only sees ciphertext | Sydney |
 | Maps | Suburb centroids from ABS open data; MapLibre with self-hosted tiles | No Google Maps bill; no street addresses for people | Sydney |
@@ -90,7 +90,7 @@ Estimated monthly cost at launch (US dollars, before GST), checked November 2026
 | Supabase staging project | about $10 |
 | Vercel Pro (one seat; extra seats $20 each) | $20 |
 | Cloudflare (DNS, WAF, Pages) | $0 |
-| Amazon SES (a few thousand emails) | under $1 |
+| Resend (free tier to start) | $0–20 |
 | AWS KMS (two keys) | about $2 |
 | SMS (about 1,000 confirmation texts at roughly 5 cents) | about $50 |
 | Domain and email (Google Workspace for Nonprofits or Microsoft 365 nonprofit grant) | $0 to $10 |
@@ -154,8 +154,8 @@ Main branch:
 
 5/ **AWS** (one account, Sydney only, with an organisation policy denying other regions):
 - KMS keys for staging and production
-- SES with alwaysfoundation.org verified, and SPF, DKIM and DMARC records added
-- request production access for SES
+- Resend with send.alwaysfoundation.org verified (SPF, DKIM), and a DMARC record on the root domain
+- separate Resend API keys for staging and production, sending access only
 
 6/ **SMS.** Open an account with an Australian provider, register the "Always" sender ID, and store the API key.
 
