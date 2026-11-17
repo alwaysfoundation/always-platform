@@ -38,7 +38,7 @@ jobs:
           for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f "$f"; done
           psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f db/test/rls_test.sql
       - name: Validate the Handoff standard schema
-        run: npx ajv compile --spec=draft2020 -c ajv-formats -s spec/schemas/handoff-standard.schema.json
+        run: node scripts/validate-schema.mjs
 
   secrets:
     runs-on: ubuntu-latest
@@ -46,9 +46,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Scan for secrets (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect --source /repo --redact --no-banner
 
   dco:
     if: github.event_name == 'pull_request'
