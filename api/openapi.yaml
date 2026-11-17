@@ -116,6 +116,47 @@ webhooks:
   always.offer.created: { post: { summary: An introduction was offered to your organisation, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
   always.handoff.accepted: { post: { summary: A church accepted (sent to the sender if notify.sender was agreed), requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
   always.handoff.withdrawn: { post: { summary: The person withdrew; delete what you hold, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
+  /v1/events:
+    get:
+      tags: [Events]
+      security: []
+      summary: Upcoming Christian events across Australia
+      parameters:
+        - { name: state, in: query, schema: { type: string, enum: [NSW, VIC, QLD, WA, SA, TAS, ACT, NT] } }
+        - { name: kind, in: query, schema: { type: string, enum: [worship, music, outreach, conference, youth, course, prayer, training, other] } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 200 } }
+      responses: { '200': { description: Published, upcoming events } }
+  /v1/org/events:
+    post:
+      tags: [Events]
+      summary: Add your church or ministry's event
+      description: Requires scope `events`. Verified partners publish straight away; others are checked first.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/NewEvent' } } } }
+      responses: { '201': { description: Created }, '422': { description: Validation failed } }
+  /v1/events/suggest:
+    post:
+      tags: [Events]
+      security: []
+      summary: Suggest an event (checked before it shows)
+      description: Needs `humanToken` from the invisible human check (Cloudflare Turnstile).
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/NewEvent' }, { type: object, properties: { humanToken: { type: string } } }] } } } }
+      responses: { '202': { description: Pending review }, '403': { description: Human check failed } }
+  /v1/pages/{slug}:
+    get:
+      tags: [Response pages]
+      security: []
+      summary: A hosted response page (for a video, social post, event or printed card)
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Page }, '404': { description: Not found } }
+  /v1/pages/{slug}/respond:
+    post:
+      tags: [Response pages]
+      security: []
+      summary: Respond on a hosted page
+      description: Needs `humanToken` from the invisible human check. The same consent and minors rules as every response apply.
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/NewResponse' }, { type: object, properties: { humanToken: { type: string } } }] } } } }
+      responses: { '201': { description: Created }, '403': { description: Human check failed }, '422': { description: Validation, minors rule or step not offered } }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
@@ -123,6 +164,19 @@ components:
     HandoffId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     PersonToken: { name: token, in: path, required: true, schema: { type: string } }
   schemas:
+    NewEvent:
+      type: object
+      required: [title, startsAt, state]
+      properties:
+        title: { type: string, minLength: 3, maxLength: 140 }
+        kind: { type: string, enum: [worship, music, outreach, conference, youth, course, prayer, training, other] }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        venue: { type: string }
+        suburb: { type: string }
+        state: { type: string, enum: [NSW, VIC, QLD, WA, SA, TAS, ACT, NT] }
+        postcode: { type: string, pattern: '^\\d{4}$' }
+        url: { type: string, format: uri, pattern: '^https://' }
     State: { enum: [NSW, VIC, QLD, WA, SA, TAS, ACT, NT] }
     AgeBand: { enum: [under13, '13-14', '15-17', '18+'] }
     Step: { enum: [church, explore, talk, youth, group, help, read] }

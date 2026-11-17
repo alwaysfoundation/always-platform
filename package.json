@@ -18,7 +18,8 @@
     "test:db": "vitest run --dir apps",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run typecheck && npm test",
+    "import:events": "tsx scripts/import-events.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

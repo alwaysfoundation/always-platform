@@ -65,6 +65,7 @@ beforeAll(async () => {
   const { encrypt, lookupHash, newToken } = await import('../src/crypto.js');
   app = createApp(sql, {
     now: () => clock,
+    verifyHuman: async (t) => t === 'human-ok',
     adapters: {
       email: async (m) => void sent.push({ channel: 'email', template: m.template }),
       sms: async (m) => void sent.push({ channel: 'sms', template: m.template }),
@@ -85,11 +86,11 @@ beforeAll(async () => {
   ids.b = await mk('Grace Church North Parramatta', 'grace-north-parramatta', -33.801, 151.0, 'verified');
   ids.listed = await mk('Unverified Fellowship', 'unverified', -33.816, 151.004, 'listed');
   ids.care = await mk('Always care team', 'care-team', -33.86, 151.2, 'verified', { care: true });
-  ids.sender = await mk('UEN', 'uen', -34.9, 138.6, 'verified');
+  ids.sender = await mk('City Events', 'city-events', -34.9, 138.6, 'verified');
 
   for (const [key, org, scopes] of [
     ['sender', ids.sender, ['responses:write']],
-    ['a', ids.a, ['inbox', 'profile', 'activity']],
+    ['a', ids.a, ['inbox', 'profile', 'activity', 'events']],
     ['b', ids.b, ['inbox', 'profile', 'activity']],
   ] as const) {
     const t = newToken('alw_test');
@@ -282,5 +283,58 @@ describe('church profile and operations', () => {
     expect(broken).toBeNull();
     const [n] = await sql`select count(*)::int as n from audit_event`;
     expect(n.n).toBeGreaterThan(5);
+  });
+});
+
+describe('events', () => {
+  const ev = { title: 'City worship night', kind: 'worship', startsAt: '2026-11-21T08:30:00Z', suburb: 'Parramatta', state: 'NSW', url: 'https://example.org/worship' };
+  it('publishes a verified church\'s event straight away and lists it publicly', async () => {
+    const r = await call('POST', '/v1/org/events', { token: tokens.a, body: ev });
+    expect(r.status).toBe(201);
+    expect(r.body.status).toBe('published');
+    const list = await call('GET', '/v1/events?state=NSW');
+    expect(list.body.items.map((e: any) => e.title)).toContain('City worship night');
+  });
+  it('holds a suggested event until it is checked, and needs the human check', async () => {
+    const bad = await call('POST', '/v1/events/suggest', { body: { ...ev, title: 'Youth gig' } });
+    expect(bad.status).toBe(403);
+    const ok = await call('POST', '/v1/events/suggest', { body: { ...ev, title: 'Youth gig', humanToken: 'human-ok' } });
+    expect(ok.status).toBe(202);
+    expect(ok.body.status).toBe('pending');
+    const list = await call('GET', '/v1/events');
+    expect(list.body.items.map((e: any) => e.title)).not.toContain('Youth gig');
+  });
+  it('refuses an event link that is not https', async () => {
+    const r = await call('POST', '/v1/org/events', { token: tokens.a, body: { ...ev, url: 'http://example.org' } });
+    expect(r.status).toBe(422);
+  });
+});
+
+describe('hosted response pages', () => {
+  const person = { firstName: 'Ana', contact: { kind: 'mobile', value: '0400 000 111' }, suburb: 'Parramatta', postcode: '2150', state: 'NSW', ageBand: '18+', step: 'church',
+    consent: { purposes: ['connect.church'], recipients: [], allowNextNearby: true, wordingVersion: 'v1', party: 'self' } };
+  beforeAll(async () => {
+    await sql`insert into response_page (org_id, slug, title, channel) values (${ids.sender}, 'testimony-video', 'After the testimony', 'online')`;
+  });
+  it('serves the page publicly', async () => {
+    const r = await call('GET', '/v1/pages/testimony-video');
+    expect(r.status).toBe(200);
+    expect(r.body.channel).toBe('online');
+  });
+  it('refuses a response without the human check', async () => {
+    const r = await call('POST', '/v1/pages/testimony-video/respond', { body: person });
+    expect(r.status).toBe(403);
+  });
+  it('creates a response and starts an introduction when the check passes', async () => {
+    const r = await call('POST', '/v1/pages/testimony-video/respond', { body: { ...person, humanToken: 'human-ok' } });
+    expect(r.status).toBe(201);
+    expect(['offered', 'routing', 'care_team']).toContain(r.body.state);
+    const [row] = await sql`select sender_org_id, placement_id from response where id = ${r.body.responseId}`;
+    expect(row.sender_org_id).toBe(ids.sender);
+    expect(row.placement_id).toBeTruthy();
+  });
+  it('refuses a step the page does not offer', async () => {
+    const r = await call('POST', '/v1/pages/testimony-video/respond', { body: { ...person, step: 'help', humanToken: 'human-ok' } });
+    expect(r.status).toBe(422);
   });
 });

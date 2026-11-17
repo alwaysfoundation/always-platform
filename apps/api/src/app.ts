@@ -76,8 +76,20 @@ function engineError(e: unknown): never {
   throw e;
 }
 
-export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date }) {
+/** Cloudflare Turnstile: an invisible check that a real person is sending the form. */
+async function turnstile(token: string | undefined, ip?: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET;
+  if (!secret) return process.env.ALLOW_UNVERIFIED_HUMANS === '1';
+  if (!token) return false;
+  const form = new URLSearchParams({ secret, response: token, ...(ip ? { remoteip: ip } : {}) });
+  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form, signal: AbortSignal.timeout(5000) });
+  const data = (await res.json()) as { success?: boolean };
+  return data.success === true;
+}
+
+export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean> }) {
   const now = opts.now ?? (() => new Date());
+  const verifyHuman = opts.verifyHuman ?? turnstile;
   const app = new Hono<Env>();
 
   app.use('*', secureHeaders());
@@ -143,9 +155,8 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   });
 
   // ---------------------------------------------------------------- Responses (senders)
-  app.post('/v1/responses', async (c) => {
-    const p = requirePrincipal(c, 'responses:write');
-    const body = parse(NewResponse, await c.req.json());
+  /** Create a consenting response and start its introduction. Shared by senders and hosted response pages. */
+  async function createResponse(senderOrgId: string, body: z.output<typeof NewResponse>) {
     const rules = rulesFor(body.ageBand);
 
     // Minors rules run first (CY rules). Under 13: no child data; a parent gives their own details.
@@ -167,7 +178,7 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       const [r] = await tx`
         insert into response (sender_org_id, campaign_id, placement_id, first_name_ct, contact_ct, suburb, postcode, geo_lat, geo_lng,
                               age_band, step, language, note_ct, created_at, delete_after)
-        values (${p.orgId}, ${body.campaignId ?? null}, ${body.placementId ?? null},
+        values (${senderOrgId}, ${body.campaignId ?? null}, ${body.placementId ?? null},
                 ${body.ageBand === 'under13' ? null : encrypt(body.firstName)}, ${encrypt(JSON.stringify(body.contact))},
                 ${body.suburb}, ${body.postcode}, ${place?.lat ?? null}, ${place?.lng ?? null},
                 ${body.ageBand}, ${body.step}, ${body.language ?? null}, ${encrypt(body.note)}, ${t},
@@ -192,19 +203,100 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
                  values ('sms', 'parent.confirm', ${r.id}, ${encrypt(JSON.stringify({ link: pt.token, to: body.parentContact }))})`;
       }
       const handoff = await engine.start(tx, randomUUID(), r.id, t);
-      await audit(tx, { orgId: p.orgId, action: 'response.create', subject: `response:${r.id}` });
+      await audit(tx, { orgId: senderOrgId, action: 'response.create', subject: `response:${r.id}` });
       return { responseId: r.id, handoffId: handoff.id, state: handoff.state, selfToken: self.token, parentToken };
     });
+    return result;
+  }
+
+  function responseBody(result: Awaited<ReturnType<typeof createResponse>>) {
     const expose = process.env.EXPOSE_LINKS_FOR_TESTS === '1';
-    return c.json(
-      {
+    return {
         responseId: result.responseId,
         handoffId: result.handoffId,
         state: result.state,
         ...(expose ? { selfToken: result.selfToken, parentToken: result.parentToken } : {}),
-      },
-      201,
-    );
+    };
+  }
+
+  app.post('/v1/responses', async (c) => {
+    const p = requirePrincipal(c, 'responses:write');
+    const body = parse(NewResponse, await c.req.json());
+    return c.json(responseBody(await createResponse(p.orgId, body as z.output<typeof NewResponse>)), 201);
+  });
+
+  // ---------------------------------------------------------------- Events (public)
+  const EventKind = z.enum(['worship', 'music', 'outreach', 'conference', 'youth', 'course', 'prayer', 'training', 'other']);
+  const State = z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);
+  const NewEvent = z.object({
+    title: z.string().min(3).max(140),
+    kind: EventKind.default('other'),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }).optional(),
+    venue: z.string().max(140).optional(),
+    suburb: z.string().max(80).optional(),
+    state: State,
+    postcode: z.string().regex(/^\d{4}$/).optional(),
+    url: z.string().url().startsWith('https://').optional(),
+  });
+
+  app.get('/v1/events', async (c) => {
+    const state = c.req.query('state') ?? null;
+    const kind = c.req.query('kind') ?? null;
+    const limit = Math.min(Number(c.req.query('limit') ?? 50), 200);
+    const rows = await sql`
+      select id, title, kind::text, starts_at, ends_at, venue, suburb, state, url, source::text
+      from event
+      where status = 'published' and coalesce(ends_at, starts_at) >= ${now()}
+        and (${state}::text is null or state = ${state}) and (${kind}::text is null or kind::text = ${kind})
+      order by starts_at limit ${limit}`;
+    return c.json({ items: rows });
+  });
+
+  // A church or ministry adds its own event. Verified partners publish straight away; others wait for a check.
+  app.post('/v1/org/events', async (c) => {
+    const p = requirePrincipal(c, 'events');
+    const e = parse(NewEvent, await c.req.json());
+    const row = await asService(sql, async (tx) => {
+      const [o] = await tx`select trust_level from organisation where id = ${p.orgId}`;
+      const status = o && ['verified', 'verified_youth'].includes(o.trust_level) ? 'published' : 'pending';
+      const [ev] = await tx`insert into event (org_id, title, kind, starts_at, ends_at, venue, suburb, state, postcode, url, source, status)
+        values (${p.orgId}, ${e.title}, ${e.kind}, ${e.startsAt}, ${e.endsAt ?? null}, ${e.venue ?? null}, ${e.suburb ?? null}, ${e.state},
+                ${e.postcode ?? null}, ${e.url ?? null}, 'org', ${status}) returning id, status::text`;
+      await audit(tx, { orgId: p.orgId, action: 'event.create', subject: `event:${ev!.id}` });
+      return ev!;
+    });
+    return c.json(row, 201);
+  });
+
+  // Anyone can suggest an event. It shows only after the foundation checks it.
+  app.post('/v1/events/suggest', async (c) => {
+    const raw = await c.req.json();
+    if (!(await verifyHuman(raw?.humanToken, c.req.header('cf-connecting-ip')))) throw new HttpError(403, 'human_check_failed');
+    const e = parse(NewEvent, raw);
+    const [ev] = await asService(sql, (tx) => tx`insert into event (title, kind, starts_at, ends_at, venue, suburb, state, postcode, url, source, status)
+      values (${e.title}, ${e.kind}, ${e.startsAt}, ${e.endsAt ?? null}, ${e.venue ?? null}, ${e.suburb ?? null}, ${e.state},
+              ${e.postcode ?? null}, ${e.url ?? null}, 'suggested', 'pending') returning id, status::text`);
+    return c.json(ev, 202);
+  });
+
+  // ---------------------------------------------------------------- Hosted response pages (online, print, street)
+  app.get('/v1/pages/:slug', async (c) => {
+    const [pg] = await sql`select rp.slug, rp.title, rp.channel, rp.steps::text[] as steps, rp.brand, o.display_name as ministry
+      from response_page rp join organisation o on o.id = rp.org_id where rp.slug = ${c.req.param('slug')} and rp.active`;
+    if (!pg) throw new HttpError(404, 'not_found');
+    return c.json(pg);
+  });
+
+  // The person submits the hosted page: an invisible human check, then the same consent rules as every response.
+  app.post('/v1/pages/:slug/respond', async (c) => {
+    const raw = await c.req.json();
+    if (!(await verifyHuman(raw?.humanToken, c.req.header('cf-connecting-ip')))) throw new HttpError(403, 'human_check_failed');
+    const [pg] = await sql`select id, org_id, steps::text[] as steps from response_page where slug = ${c.req.param('slug')} and active`;
+    if (!pg) throw new HttpError(404, 'not_found');
+    const body = parse(NewResponse, raw);
+    if (!pg.steps.includes(body.step)) throw new HttpError(422, 'step_not_offered');
+    return c.json(responseBody(await createResponse(pg.org_id, { ...body, placementId: pg.id } as z.output<typeof NewResponse>)), 201);
   });
 
   // ---------------------------------------------------------------- Inbox (receiving churches)
