@@ -10,6 +10,8 @@ permissions:
   contents: read
 jobs:
   migrate-and-deploy:
+    # Runs once the hosted environments exist: set the repository variable DEPLOY_ENABLED to true.
+    if: vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'release' && 'production' || 'staging' }}
     env:

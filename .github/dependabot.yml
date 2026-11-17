@@ -5,6 +5,12 @@ updates:
     schedule: { interval: weekly }
     groups:
       minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      # Major upgrades are planned by hand, with their own pull request and tests.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule: { interval: weekly }
+    groups:
+      actions: { patterns: ["*"] }
