@@ -1,0 +1,118 @@
+openapi: 3.1.0
+info:
+  title: Always API
+  version: 0.1.0
+  description: |
+    The Always network API. The web app uses the same API as partners.
+    Australia only. Every data movement passes the consent gate and the minors rules.
+    Always never hosts or stores conversations between churches and people.
+  license: { name: Apache-2.0, identifier: Apache-2.0 }
+servers:
+  - url: https://api.alwaysfoundation.org/v1
+security:
+  - oauth: []
+components:
+  securitySchemes:
+    oauth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.alwaysfoundation.org/oauth/token
+          scopes:
+            org.profile.write: Edit own profile, offers and page
+            org.settings.write: Capacity, area, pause
+            org.handoffs.read: Read handoffs offered to or held by the organisation
+            org.handoffs.write: Accept, pass, log activity, set status
+            sender.responses.write: Submit responses with consent
+            sender.reports.read: Anonymous campaign totals
+        authorizationCode:
+          authorizationUrl: https://auth.alwaysfoundation.org/oauth/authorize
+          tokenUrl: https://auth.alwaysfoundation.org/oauth/token
+          scopes:
+            person: The person's own Always Profile
+  schemas:
+    Organisation: { $ref: '../spec/schemas/handoff-standard.schema.json#/$defs/Organisation' }
+    Response: { $ref: '../spec/schemas/handoff-standard.schema.json#/$defs/Response' }
+    Problem:
+      type: object
+      properties: { type: { type: string }, title: { type: string }, detail: { type: string } }
+paths:
+  /directory/organisations:
+    get:
+      summary: Search the public directory
+      security: []
+      parameters:
+        - { name: near, in: query, schema: { type: string }, description: Suburb or postcode }
+        - { name: radius_km, in: query, schema: { type: number, default: 8, maximum: 50 } }
+        - { name: offer, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: verified, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: Public fields only, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Organisation' } } } } }
+  /organisations/{id}/profile:
+    patch:
+      summary: Update the organisation's customisable page and profile
+      security: [{ oauth: [org.profile.write] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName: { type: string }
+                welcomeLine: { type: string, maxLength: 120 }
+                description: { type: string, maxLength: 1200 }
+                brandColour: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+                pageLayout:
+                  type: object
+                  properties:
+                    style: { enum: [warm, bold, simple] }
+                    sections: { type: array, items: { type: object, properties: { id: { type: string }, visible: { type: boolean }, title: { type: string }, body: { type: string } } } }
+      responses: { '200': { description: Updated }, '422': { description: Colour fails contrast or locked section removed } }
+  /responses:
+    post:
+      summary: Submit a response with its consent record
+      security: [{ oauth: [sender.responses.write] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Response' } } } }
+      responses:
+        '201': { description: Created; handoff started or awaiting parent }
+        '422': { description: Fails consent or minors rules, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+  /handoffs:
+    get:
+      summary: Handoffs offered to or held by the caller's organisation
+      security: [{ oauth: [org.handoffs.read] }]
+      parameters: [{ name: state, in: query, schema: { type: string } }]
+      responses: { '200': { description: List } }
+  /handoffs/{id}/accept:
+    post:
+      summary: Accept within the window (reveals contact details)
+      security: [{ oauth: [org.handoffs.write] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Accepted }, '409': { description: Not held by caller or expired } }
+  /handoffs/{id}/pass:
+    post:
+      summary: Pass with a reason; re-routes immediately
+      security: [{ oauth: [org.handoffs.write] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { enum: [capacity, language, fit, safeguarding, other] } } } } } }
+      responses: { '200': { description: Passed and re-routed } }
+  /handoffs/{id}/activities:
+    post:
+      summary: Log a contact attempt or status (no message content)
+      security: [{ oauth: [org.handoffs.write] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind], properties: { kind: { enum: [call, message, text, met, note, status, reply_received] }, note: { type: string, maxLength: 500 } } } } } }
+      responses: { '201': { description: Logged } }
+  /campaigns/{id}/summary:
+    get:
+      summary: Anonymous campaign totals (groups under 10, or 20 for minors, suppressed)
+      security: [{ oauth: [sender.reports.read] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Totals } }
+  /people/me:
+    get: { summary: The person's own record and access log, security: [{ oauth: [person] }], responses: { '200': { description: Record } } }
+  /people/me/withdraw:
+    post: { summary: Withdraw consent and schedule deletion within 7 days, security: [{ oauth: [person] }], responses: { '202': { description: Withdrawn } } }
+  /people/me/export:
+    get: { summary: Export the person's record in the open standard, security: [{ oauth: [person] }], responses: { '200': { description: Export } } }

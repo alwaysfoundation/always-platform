@@ -1,0 +1,20 @@
+{
+  "name": "always-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The Always network: consented handoff from response to a verified local church, for Australia.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.1"
+  }
+}
