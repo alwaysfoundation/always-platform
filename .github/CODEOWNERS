@@ -1,0 +1,9 @@
+# Two human approvals on every PR. These areas also need a code owner.
+*                         @alwaysfoundation/maintainers
+/packages/core/           @alwaysfoundation/safeguarding @alwaysfoundation/maintainers
+/apps/api/src/auth.ts     @alwaysfoundation/security
+/apps/api/src/crypto.ts   @alwaysfoundation/security
+/apps/api/src/engine.ts   @alwaysfoundation/safeguarding
+/db/                      @alwaysfoundation/security
+/spec/                    @alwaysfoundation/standard
+/docs/policies/           @alwaysfoundation/safeguarding

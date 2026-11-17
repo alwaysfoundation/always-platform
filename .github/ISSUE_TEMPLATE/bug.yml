@@ -1,0 +1,11 @@
+name: Bug report
+description: Something isn't working. Never include anyone's personal details.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: Steps to reproduce with synthetic data only }
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes: { label: What you expected }

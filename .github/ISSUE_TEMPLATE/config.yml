@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue privately
+    url: https://github.com/alwaysfoundation/always-platform/security/advisories/new
+    about: Please do not open public issues for vulnerabilities.
+  - name: Safeguarding concern
+    url: mailto:safeguarding@alwaysfoundation.org
+    about: Concerns about a person's safety go to a trained person, not GitHub.

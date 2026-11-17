@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["syd1"],
+  "crons": [
+    { "path": "/jobs/tick", "schedule": "* * * * *" },
+    { "path": "/jobs/outbox", "schedule": "* * * * *" },
+    { "path": "/jobs/retention", "schedule": "17 16 * * *" }
+  ]
+}

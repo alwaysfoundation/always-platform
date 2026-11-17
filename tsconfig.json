@@ -9,7 +9,28 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["vitest/globals"]
+    "types": [
+      "vitest/globals",
+      "node"
+    ],
+    "paths": {
+      "@always/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@always/db": [
+        "./packages/db/src/index.ts"
+      ],
+      "@always/sdk": [
+        "./packages/sdk/src/index.ts"
+      ]
+    }
   },
-  "include": ["packages/*/src", "packages/*/test", "spec"]
+  "include": [
+    "packages/*/src",
+    "packages/*/test",
+    "apps/*/src",
+    "apps/*/test",
+    "scripts",
+    "spec"
+  ]
 }

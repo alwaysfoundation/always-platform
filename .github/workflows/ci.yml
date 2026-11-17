@@ -1,31 +1,66 @@
 name: CI
-on: [push, pull_request]
-permissions: { contents: read }
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:16
-        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: always }
-        ports: ['5432:5432']
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
+      - name: Types
+        run: npm run typecheck
+      - name: Unit and integration tests (real Postgres, synthetic data)
+        run: npm test
       - name: Row-level security tests
-        env: { PGPASSWORD: postgres }
-        run: psql -h localhost -U postgres -d always -v ON_ERROR_STOP=1 -f db/migrations/0001_core.sql -f db/test/rls_test.sql
-  codeql:
+        run: |
+          psql postgres://postgres:postgres@localhost:5432/postgres -c "create database rls"
+          for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f "$f"; done
+          psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f db/test/rls_test.sql
+      - name: Validate the Handoff standard schema
+        run: npx ajv compile --spec=draft2020 -c ajv-formats -s spec/schemas/handoff-standard.schema.json
+
+  secrets:
     runs-on: ubuntu-latest
-    permissions: { security-events: write, contents: read }
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
-        with: { languages: javascript-typescript }
-      - uses: github/codeql-action/analyze@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off (Developer Certificate of Origin)
+        run: |
+          missing=""
+          for c in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
+            git log -1 --format=%B "$c" | grep -q '^Signed-off-by: ' || missing="$missing $c"
+          done
+          if [ -n "$missing" ]; then echo "Commits without Signed-off-by:"; echo "$missing"; exit 1; fi

@@ -1,0 +1,31 @@
+name: Deploy
+# Staging deploys on every merge to main; production deploys when a release is published
+# and a maintainer approves the "production" environment. All infrastructure is in Sydney.
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  migrate-and-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'release' && 'production' || 'staging' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Database migrations (Supabase Postgres, ap-southeast-2)
+        run: npm run migrate
+      - name: Deploy API and web to Vercel (functions pinned to syd1)
+        run: npx vercel deploy --prebuilt=false ${{ github.event_name == 'release' && '--prod' || '' }} --token "$VERCEL_TOKEN" --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -1,118 +1,188 @@
 openapi: 3.1.0
 info:
   title: Always API
-  version: 0.1.0
-  description: |
-    The Always network API. The web app uses the same API as partners.
-    Australia only. Every data movement passes the consent gate and the minors rules.
-    Always never hosts or stores conversations between churches and people.
+  version: 0.2.0
+  summary: Consent-first handoff from a response to the next best faith step, for Australia.
   license: { name: Apache-2.0, identifier: Apache-2.0 }
+  description: |
+    The Always API lets senders (events, tours, ministries, apps) pass a consenting person to the
+    network, lets receiving churches and ministries accept or pass introductions, and lets anyone read
+    the public directory. All personal data is processed and stored in Australia.
+
+    Authentication:
+    - Sender and integration tokens: `Authorization: Bearer alw_live_...` (scoped, revocable, shown once).
+    - Staff: Supabase Auth JWT plus `X-Always-Org: <organisation id>`.
+    Webhooks are CloudEvents 1.0 signed with `always-signature: v1=<hmac-sha256(timestamp.body)>`.
 servers:
-  - url: https://api.alwaysfoundation.org/v1
+  - url: https://api.alwaysfoundation.org
+  - url: https://api.staging.alwaysfoundation.org
 security:
-  - oauth: []
+  - bearer: []
+tags:
+  - name: Directory
+  - name: Responses
+  - name: Inbox
+  - name: Profile
+  - name: Person
+  - name: Operations
+paths:
+  /v1/directory:
+    get:
+      tags: [Directory]
+      security: []
+      summary: Search churches and ministries
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { $ref: '#/components/schemas/State' } }
+        - { name: kind, in: query, schema: { enum: [church, ministry] } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 100, default: 25 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200': { description: Listings, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/Listing' } } } } } } }
+  /v1/directory/tally:
+    get:
+      tags: [Directory]
+      security: []
+      summary: Counts by state and kind (no personal data)
+      responses: { '200': { description: Tally } }
+  /v1/orgs/{slug}:
+    get:
+      tags: [Directory]
+      security: []
+      summary: A church or ministry's public page
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Page }, '404': { description: Not found } }
+  /v1/orgs/{id}/claims:
+    post:
+      tags: [Directory]
+      security: []
+      summary: Ask to manage a listing
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email, role], properties: { email: { type: string, format: email }, role: { type: string }, evidence: { type: string } } } } } }
+      responses: { '202': { description: Pending review } }
+  /v1/responses:
+    post:
+      tags: [Responses]
+      summary: Pass a consenting person to the network
+      description: Requires scope `responses:write`. Minors rules run first; under-13s need a parent and carry no child data.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/NewResponse' } } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { type: object, properties: { responseId: { type: string }, handoffId: { type: string }, state: { $ref: '#/components/schemas/HandoffState' } } } } } }
+        '422': { description: Validation or minors rule failed }
+  /v1/inbox:
+    get:
+      tags: [Inbox]
+      summary: Introductions offered to or accepted by this organisation
+      description: Contact details appear only after acceptance.
+      responses: { '200': { description: Items } }
+  /v1/handoffs/{id}/accept:
+    post: { tags: [Inbox], summary: Accept an introduction, parameters: [{ $ref: '#/components/parameters/HandoffId' }], responses: { '200': { description: Accepted }, '409': { description: No pending offer for this organisation, or expired } } }
+  /v1/handoffs/{id}/pass:
+    post:
+      tags: [Inbox]
+      summary: Pass, so the next suitable church is offered
+      parameters: [{ $ref: '#/components/parameters/HandoffId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { enum: [capacity, language, fit, safeguarding, other] } } } } } }
+      responses: { '200': { description: Passed } }
+  /v1/handoffs/{id}/contacted:
+    post: { tags: [Inbox], summary: Record first contact, parameters: [{ $ref: '#/components/parameters/HandoffId' }], responses: { '200': { description: Recorded } } }
+  /v1/handoffs/{id}/activity:
+    post:
+      tags: [Inbox]
+      summary: Log a call, text, meeting or note (Always hosts no chat)
+      parameters: [{ $ref: '#/components/parameters/HandoffId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind], properties: { kind: { enum: [call, message, text, met, note, reply_received] }, note: { type: string, maxLength: 1000 } } } } } }
+      responses: { '201': { description: Logged } }
+  /v1/org/profile:
+    get: { tags: [Profile], summary: This organisation's profile, offers and capacity, responses: { '200': { description: Profile } } }
+    put:
+      tags: [Profile]
+      summary: Update the public page, next steps offered and capacity
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProfileUpdate' } } } }
+      responses: { '200': { description: Saved } }
+  /v1/me/{token}:
+    get: { tags: [Person], security: [], summary: The person's status and which church will contact them, parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Status } } }
+  /v1/me/{token}/withdraw:
+    post: { tags: [Person], security: [], summary: Change my mind; details deleted within 7 days, parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Withdrawn } } }
+  /v1/me/{token}/connected:
+    post: { tags: [Person], security: [], summary: I'm connected (the only thing that counts as connected), parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Closed } } }
+  /v1/parent/{token}/confirm:
+    post: { tags: [Person], security: [], summary: A parent or guardian confirms (13 to 14 year olds), parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Routing started } } }
+  /v1/ops/orgs/{id}/verify:
+    post: { tags: [Operations], summary: Verify a church (care team only), parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }], responses: { '200': { description: Verified } } }
+  /v1/ops/tokens:
+    post: { tags: [Operations], summary: Issue a scoped API token (care team only), responses: { '201': { description: Token shown once } } }
+webhooks:
+  always.offer.created: { post: { summary: An introduction was offered to your organisation, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
+  always.handoff.accepted: { post: { summary: A church accepted (sent to the sender if notify.sender was agreed), requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
+  always.handoff.withdrawn: { post: { summary: The person withdrew; delete what you hold, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
 components:
   securitySchemes:
-    oauth:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://auth.alwaysfoundation.org/oauth/token
-          scopes:
-            org.profile.write: Edit own profile, offers and page
-            org.settings.write: Capacity, area, pause
-            org.handoffs.read: Read handoffs offered to or held by the organisation
-            org.handoffs.write: Accept, pass, log activity, set status
-            sender.responses.write: Submit responses with consent
-            sender.reports.read: Anonymous campaign totals
-        authorizationCode:
-          authorizationUrl: https://auth.alwaysfoundation.org/oauth/authorize
-          tokenUrl: https://auth.alwaysfoundation.org/oauth/token
-          scopes:
-            person: The person's own Always Profile
+    bearer: { type: http, scheme: bearer }
+  parameters:
+    HandoffId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    PersonToken: { name: token, in: path, required: true, schema: { type: string } }
   schemas:
-    Organisation: { $ref: '../spec/schemas/handoff-standard.schema.json#/$defs/Organisation' }
-    Response: { $ref: '../spec/schemas/handoff-standard.schema.json#/$defs/Response' }
-    Problem:
+    State: { enum: [NSW, VIC, QLD, WA, SA, TAS, ACT, NT] }
+    AgeBand: { enum: [under13, '13-14', '15-17', '18+'] }
+    Step: { enum: [church, explore, talk, youth, group, help, read] }
+    HandoffState: { enum: [awaiting_parent, routing, offered, accepted, contacted, care_team, closed, withdrawn] }
+    Consent:
       type: object
-      properties: { type: { type: string }, title: { type: string }, detail: { type: string } }
-paths:
-  /directory/organisations:
-    get:
-      summary: Search the public directory
-      security: []
-      parameters:
-        - { name: near, in: query, schema: { type: string }, description: Suburb or postcode }
-        - { name: radius_km, in: query, schema: { type: number, default: 8, maximum: 50 } }
-        - { name: offer, in: query, schema: { type: string } }
-        - { name: state, in: query, schema: { type: string } }
-        - { name: verified, in: query, schema: { type: boolean } }
-      responses:
-        '200': { description: Public fields only, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Organisation' } } } } }
-  /organisations/{id}/profile:
-    patch:
-      summary: Update the organisation's customisable page and profile
-      security: [{ oauth: [org.profile.write] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                displayName: { type: string }
-                welcomeLine: { type: string, maxLength: 120 }
-                description: { type: string, maxLength: 1200 }
-                brandColour: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
-                pageLayout:
-                  type: object
-                  properties:
-                    style: { enum: [warm, bold, simple] }
-                    sections: { type: array, items: { type: object, properties: { id: { type: string }, visible: { type: boolean }, title: { type: string }, body: { type: string } } } }
-      responses: { '200': { description: Updated }, '422': { description: Colour fails contrast or locked section removed } }
-  /responses:
-    post:
-      summary: Submit a response with its consent record
-      security: [{ oauth: [sender.responses.write] }]
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/Response' } } } }
-      responses:
-        '201': { description: Created; handoff started or awaiting parent }
-        '422': { description: Fails consent or minors rules, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
-  /handoffs:
-    get:
-      summary: Handoffs offered to or held by the caller's organisation
-      security: [{ oauth: [org.handoffs.read] }]
-      parameters: [{ name: state, in: query, schema: { type: string } }]
-      responses: { '200': { description: List } }
-  /handoffs/{id}/accept:
-    post:
-      summary: Accept within the window (reveals contact details)
-      security: [{ oauth: [org.handoffs.write] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses: { '200': { description: Accepted }, '409': { description: Not held by caller or expired } }
-  /handoffs/{id}/pass:
-    post:
-      summary: Pass with a reason; re-routes immediately
-      security: [{ oauth: [org.handoffs.write] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [reason], properties: { reason: { enum: [capacity, language, fit, safeguarding, other] } } } } } }
-      responses: { '200': { description: Passed and re-routed } }
-  /handoffs/{id}/activities:
-    post:
-      summary: Log a contact attempt or status (no message content)
-      security: [{ oauth: [org.handoffs.write] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind], properties: { kind: { enum: [call, message, text, met, note, status, reply_received] }, note: { type: string, maxLength: 500 } } } } } }
-      responses: { '201': { description: Logged } }
-  /campaigns/{id}/summary:
-    get:
-      summary: Anonymous campaign totals (groups under 10, or 20 for minors, suppressed)
-      security: [{ oauth: [sender.reports.read] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
-      responses: { '200': { description: Totals } }
-  /people/me:
-    get: { summary: The person's own record and access log, security: [{ oauth: [person] }], responses: { '200': { description: Record } } }
-  /people/me/withdraw:
-    post: { summary: Withdraw consent and schedule deletion within 7 days, security: [{ oauth: [person] }], responses: { '202': { description: Withdrawn } } }
-  /people/me/export:
-    get: { summary: Export the person's record in the open standard, security: [{ oauth: [person] }], responses: { '200': { description: Export } } }
+      required: [purposes, allowNextNearby, wordingVersion, party]
+      properties:
+        purposes: { type: array, items: { enum: [connect.church, notify.sender, resources, stats.anonymous] }, minItems: 1 }
+        recipients: { type: array, items: { type: string, format: uuid } }
+        allowNextNearby: { type: boolean }
+        wordingVersion: { type: string }
+        party: { enum: [self, parent] }
+    NewResponse:
+      type: object
+      required: [contact, suburb, postcode, state, ageBand, step, consent]
+      properties:
+        firstName: { type: string, maxLength: 60 }
+        contact: { type: object, required: [kind, value], properties: { kind: { enum: [mobile, email] }, value: { type: string } } }
+        parentContact: { type: object, properties: { kind: { enum: [mobile, email] }, value: { type: string } } }
+        suburb: { type: string }
+        postcode: { type: string, pattern: '^\d{4}$' }
+        state: { $ref: '#/components/schemas/State' }
+        ageBand: { $ref: '#/components/schemas/AgeBand' }
+        step: { $ref: '#/components/schemas/Step' }
+        language: { type: string }
+        note: { type: string, maxLength: 500, description: Adults only }
+        placementId: { type: string, format: uuid }
+        campaignId: { type: string, format: uuid }
+        consent: { $ref: '#/components/schemas/Consent' }
+    Listing:
+      type: object
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        kind: { enum: [church, ministry, network] }
+        display_name: { type: string }
+        denomination: { type: string }
+        trust_level: { enum: [listed, claimed, verified, verified_youth] }
+        suburb: { type: string }
+        state: { $ref: '#/components/schemas/State' }
+        website: { type: string }
+    ProfileUpdate:
+      type: object
+      properties:
+        displayName: { type: string }
+        welcomeLine: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        website: { type: string, format: uri }
+        brandColour: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        pageLayout: { type: object, properties: { style: { enum: [classic, warm, bold] }, sections: { type: array, items: { type: string } } } }
+        offers: { type: array, items: { $ref: '#/components/schemas/Step' } }
+        capacity: { type: object, properties: { monthlyLimit: { type: integer }, areaRadiusKm: { type: number }, languages: { type: array, items: { type: string } }, pausedUntil: { type: [string, 'null'], format: date-time } } }
+    Event:
+      type: object
+      required: [specversion, id, source, type, time]
+      properties:
+        specversion: { const: '1.0' }
+        id: { type: string }
+        source: { type: string }
+        type: { type: string }
+        time: { type: string, format: date-time }
+        data: { type: object, properties: { responseId: { type: string } }, description: Ids only, never personal data }

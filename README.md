@@ -1,27 +1,40 @@
 # Always platform
 
-Open-source software for the Always network: helping churches and ministries across Australia welcome everyone who turns to the Lord Jesus Christ, and walk with them into a local church. In service of the Great Commission (Matthew 28:19–20).
+**No one who responds to Jesus should walk alone.**
+
+Always connects the body of Christ in Australia, so everyone who responds to Jesus is offered their next best faith step, often a local church, sometimes a course, discipleship or care, with a real person walking with them. It is a gift to the Church: shared, not owned, open source, and every person's story stays theirs.
 
 ## What's here
 
 | Path | What it is |
 | --- | --- |
-| `packages/core` | The rules engine: consent gate, minors rules, matching, the two-clock handoff engine, follow-up rules, retention. Pure TypeScript with tests. |
-| `db/migrations` | Postgres schema with row-level security, encrypted personal fields, and schema-level safeguards (no data about children under 13, one pending offer per handoff). |
-| `db/test` | Cross-tenant and safeguarding tests for the database. |
-| `spec/schemas` | The Always Handoff standard v0.1 (JSON Schema, CC BY 4.0). |
-| `api/openapi.yaml` | Always API v0.1 contract. |
+| `packages/core` | The rules engine: the consent primitive, minors rules, matching, the two-clock handoff, retention. Pure and fully tested. |
+| `packages/db` | Database helpers. Every request runs under Postgres row-level security. |
+| `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
+| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (SES, Australian SMS, signed webhooks). |
+| `db/migrations` | Schema, row-level security and the public directory views. |
+| `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
+| `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
+| `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
-## Run the checks
+## Run it locally
 
-```bash
-npm install
-npm run check          # type-check and unit tests
-psql -d always -v ON_ERROR_STOP=1 -f db/migrations/0001_core.sql -f db/test/rls_test.sql
+```sh
+cp .env.example .env.local            # add keys: openssl rand -base64 32
+make up && make migrate && make seed  # Postgres 16 in Docker, schema, demo data
+npm run import:directory -- path/to/directory.csv   # optional: the Australian directory
+make dev                              # API on http://localhost:8787
+make check                            # types and 58 tests against real Postgres
 ```
 
-## Rules for contributors
+## Principles that are enforced in code
 
-Read `CLAUDE.md` (it applies to people and AI assistants alike), the policies and the specification. No real personal data, ever. Australia only. Consent and minors rules run first.
+- Consent travels with the person and every data movement checks it, failing closed.
+- Minors rules run first and can't be configured away.
+- Personal data stays in Australia, is encrypted before it reaches the database, and never appears in logs, emails or webhooks.
+- One church holds an introduction at a time; the care team steps in so no one waits more than 48 hours.
+- Only the person can say they are connected.
 
-Code: Apache 2.0. Specification text: CC BY 4.0.
+## Licences
+
+Code: Apache 2.0 (`LICENSE`). Docs, the standard and policies: CC BY 4.0 (`CONTENT-LICENSE.md`). The Always name and mark are trademarks (`TRADEMARKS.md`). Contributions use the DCO (`CONTRIBUTING.md`). Report security issues privately (`SECURITY.md`).

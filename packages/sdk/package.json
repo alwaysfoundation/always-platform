@@ -1,0 +1,9 @@
+{
+  "name": "@always/sdk",
+  "version": "0.1.0",
+  "description": "The Always SDK: add consent-first response capture and the Always network to any church or ministry app.",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "Apache-2.0",
+  "sideEffects": ["src/widget.ts"]
+}
