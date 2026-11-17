@@ -24,7 +24,7 @@ cp .env.example .env.local            # add keys: openssl rand -base64 32
 make up && make migrate && make seed  # Postgres 16 in Docker, schema, demo data
 npm run import:directory -- path/to/directory.csv   # optional: the Australian directory
 make dev                              # API on http://localhost:8787
-make check                            # types and 58 tests against real Postgres
+make check                            # types and 65 tests against real Postgres
 ```
 
 ## Principles that are enforced in code
@@ -32,7 +32,7 @@ make check                            # types and 58 tests against real Postgres
 - Consent travels with the person and every data movement checks it, failing closed.
 - Minors rules run first and can't be configured away.
 - Personal data stays in Australia, is encrypted before it reaches the database, and never appears in logs, emails or webhooks.
-- One church or ministry holds an introduction at a time; if none can, the care team helps.
+- Each introduction has one clear owner at a time, so no one is dropped; if no one can help, the care team does.
 - Only the person can say they are connected.
 
 ## Licences
