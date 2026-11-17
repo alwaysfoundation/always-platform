@@ -11,7 +11,7 @@ Five things, all open source.
 1/ **The Always Handoff standard.** An open specification (JSON Schema) for passing a person from one ministry to another with their consent attached. Any church app, events tool or CRM can implement it. It defines the consent receipt, the response, the offer, the handoff states and the events (CloudEvents) that systems exchange.
 
 2/ **The Always Network (the platform).** The hosted service the foundation runs for the Church in Australia:
-- the directory that maps every evangelical and Pentecostal church and ministry (2,869 so far)
+- the directory that maps every evangelical and Pentecostal church and ministry (3,810 so far)
 - verified profiles and customisable church pages
 - the matching and handoff engine, with its timers and care-team fallback
 - the church inbox, and self-service links for the person
