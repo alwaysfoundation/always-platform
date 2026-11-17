@@ -68,6 +68,7 @@ Chosen for three things: personal data stays in Australia, it costs very little 
 | Field encryption keys | AWS KMS | One key per environment; the database only sees ciphertext | Sydney |
 | Maps | Suburb centroids from ABS open data; MapLibre with self-hosted tiles | No Google Maps bill; no street addresses for people | Sydney |
 | Mobile | PWA first; Expo (React Native) when needed | One codebase, install from the browser | n/a |
+| Speech to text (Always app field notes) | NVIDIA Parakeet TDT 0.6B v2 (English), on the phone: Core ML through FluidAudio on iOS, ONNX Runtime (sherpa-onnx) on Android. Whisper as the fallback for languages Parakeet doesn't cover | Offline and private: audio never leaves the phone. Open weights under CC BY 4.0, credited in the app. About 500 MB quantised, downloaded on first use over Wi-Fi | On the phone |
 | Errors and uptime | Sentry with personal data scrubbing; Better Stack uptime | Free tiers to start | n/a |
 | Code, CI and issues | GitHub (public), GitHub Actions, Linear | Free for open source | n/a |
 
@@ -133,7 +134,7 @@ Main branch:
 - **Brand:** "Always", "Always Foundation" and the mark are trademarks, not open licensed, so no look-alike service can misuse people's trust. Anyone may say "built on Always".
 - **Contributions:** Developer Certificate of Origin (signed-off commits), no CLA. Contributors keep their copyright and license it to everyone on the same terms. AI-assisted commits are disclosed with a co-author trailer.
 - **Ownership until incorporation:** Rejoice and UEN steward the code and brand on the foundation's behalf, and will assign them to the foundation once it is incorporated. A short assignment deed with Prolegis Lawyers makes this binding.
-- **Third-party terms:** apps using YouVersion through the SDK follow YouVersion's terms.
+- **Third-party terms:** apps using YouVersion through the SDK follow YouVersion's terms. NVIDIA Parakeet weights are CC BY 4.0: we credit NVIDIA in the app's About screen and in the docs.
 - **Governance:** Technology Steering Committee for the roadmap and standard; the Safeguarding, Privacy and Ethics Committee approves any change to consent, minors, retention, timers or AI; two human approvals on every change.
 
 ## Setting up: what we need, in order
