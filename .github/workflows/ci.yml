@@ -40,6 +40,18 @@ jobs:
       - name: Validate the Handoff standard schema
         run: node scripts/validate-schema.mjs
 
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build Always web (types and pages)
+        run: npm run build -w @always/web
+
   secrets:
     runs-on: ubuntu-latest
     steps:
