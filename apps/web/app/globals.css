@@ -63,3 +63,40 @@ main { padding: 48px clamp(20px, 4vw, 56px); max-width: 1100px; }
   .side .who { margin: 0 0 0 auto; }
   main { padding: 28px 18px; }
 }
+
+/* Reports */
+.report { background: var(--paper); border-radius: 26px; padding: clamp(22px, 4vw, 44px); display: grid; gap: 32px; }
+.report h2 { font-size: clamp(28px, 3.4vw, 40px); }
+.report h3 { font-size: 20px; letter-spacing: -0.02em; margin-bottom: 12px; }
+.journey { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 42%), 1fr)); gap: 14px; }
+.step { background: var(--cream); border-radius: 18px; padding: 18px; display: grid; gap: 6px; }
+.step b { font: 800 34px/1 var(--head); color: var(--green); letter-spacing: -0.03em; }
+.step span { color: var(--muted); font-size: 14px; }
+.step i { display: block; height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.step i em { display: block; height: 100%; background: var(--orange); border-radius: 6px; }
+.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.report table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.report th, .report td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-weight: 500; }
+.report td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.report thead th { font-weight: 700; color: var(--muted); font-size: 13px; }
+.table-wrap { overflow-x: auto; }
+.story { margin: 0 0 14px; font: 400 21px/1.45 'Newsreader', Georgia, serif; color: var(--green); }
+.story footer { font: 600 14px var(--text); color: var(--muted); margin-top: 6px; }
+.report-foot { border-top: 1px solid var(--line); padding-top: 22px; }
+.report-foot dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 24px; margin: 0 0 14px; }
+.report-foot dt { font-weight: 700; font-size: 14px; } .report-foot dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 20px 0; }
+.controls label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+.controls select, .controls input, .field { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); padding: 0 12px; background: var(--paper); font: 15px var(--text); }
+.panel { background: var(--paper); border-radius: 22px; padding: 22px 24px; display: grid; gap: 12px; margin-top: 18px; }
+.panel textarea { min-height: 90px; border-radius: 12px; border: 1px solid var(--line); padding: 10px 12px; font: 15px var(--text); }
+.public { min-height: 100vh; padding: clamp(18px, 4vw, 56px); max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+@media (max-width: 820px) { .report-grid { grid-template-columns: 1fr; } }
+@media print {
+  .side, .controls, .panel, .no-print, .tabs { display: none !important; }
+  .shell { display: block; } main { padding: 0; max-width: none; }
+  body { background: #fff; } .report { border-radius: 0; padding: 0; }
+  .step { break-inside: avoid; } section { break-inside: avoid; }
+}
+
+.step b.few { font-size: 17px; line-height: 1.25; color: var(--muted); font-weight: 600; }

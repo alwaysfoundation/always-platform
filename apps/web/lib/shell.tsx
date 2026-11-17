@@ -20,6 +20,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (!session) return null;
   const nav = [
     { href: '/inbox', label: 'Inbox' },
+    { href: '/reports', label: 'Reports' },
     { href: '/foundation', label: 'Foundation' },
   ];
   return (
@@ -28,7 +29,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Wordmark dark />
         <nav aria-label="Main">
           {nav.map((n) => (
-            <Link key={n.href} href={n.href} aria-current={path.startsWith(n.href) ? 'page' : undefined}>{n.label}</Link>
+            <Link key={n.href} href={n.href} aria-current={path === n.href || (path.startsWith(n.href + '/') && n.href !== '/reports') ? 'page' : undefined}>{n.label}</Link>
           ))}
         </nav>
         <div className="who">

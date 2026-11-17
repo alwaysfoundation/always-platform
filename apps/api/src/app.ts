@@ -10,6 +10,7 @@ import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
+import { buildReport, toCsv } from './reports.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
@@ -536,6 +537,92 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     });
     if (!ev) throw new HttpError(404, 'not_found_or_decided');
     return c.json(ev);
+  });
+
+  // ---------------------------------------------------------------- Reports (de-identified totals for ministries, churches and funders)
+  const ReportQ = z.object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    view: z.enum(['sender', 'receiver']).default('sender'),
+    source: z.string().uuid().optional(),
+  });
+  const readQuery = (c: any) => { const q = parse(ReportQ, Object.fromEntries(new URL(c.req.url).searchParams)); return { ...q, view: q.view ?? 'sender' }; };
+
+  app.get('/v1/org/report', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const q = readQuery(c);
+    const r = await asService(sql, (tx) => buildReport(tx, { orgId: p.orgId, view: q.view, from: q.from, to: q.to, sourceId: q.source }));
+    const [profile] = await asService(sql, (tx) => tx`select title, funder_name, intro from report_profile where org_id = ${p.orgId}`);
+    const [org] = await asService(sql, (tx) => tx`select display_name from organisation where id = ${p.orgId}`);
+    return c.json({ organisation: org?.display_name, profile: profile ?? null, ...r });
+  });
+
+  app.get('/v1/org/report.csv', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const q = readQuery(c);
+    const r = await asService(sql, (tx) => buildReport(tx, { orgId: p.orgId, view: q.view, from: q.from, to: q.to, sourceId: q.source }));
+    return c.body(toCsv(r), 200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="always-report-${q.from}-to-${q.to}.csv"` });
+  });
+
+  app.put('/v1/org/report-profile', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const b = parse(z.object({ title: z.string().max(120).optional(), funderName: z.string().max(120).optional(), intro: z.string().max(1200).optional() }), await c.req.json());
+    await asService(sql, async (tx) => {
+      await tx`insert into report_profile (org_id, title, funder_name, intro, updated_at) values (${p.orgId}, ${b.title ?? null}, ${b.funderName ?? null}, ${b.intro ?? null}, ${now()})
+               on conflict (org_id) do update set title = excluded.title, funder_name = excluded.funder_name, intro = excluded.intro, updated_at = excluded.updated_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'report.profile', subject: `org:${p.orgId}` });
+    });
+    return c.json({ ok: true });
+  });
+
+  /** A private, revocable link a ministry can send to a funder. Shown once. */
+  app.post('/v1/org/report-shares', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const b = parse(z.object({ label: z.string().min(2).max(80), from: ReportQ.shape.from, to: ReportQ.shape.to, source: z.string().uuid().optional(), days: z.number().int().min(1).max(366).default(90) }), await c.req.json());
+    const t = newToken('alr');
+    const [row] = await asService(sql, async (tx) => {
+      const report = await buildReport(tx, { orgId: p.orgId, view: 'sender', from: b.from, to: b.to, sourceId: b.source });
+      const [profile] = await tx`select title, funder_name, intro from report_profile where org_id = ${p.orgId}`;
+      const [org] = await tx`select display_name from organisation where id = ${p.orgId}`;
+      const snapshot = { organisation: org?.display_name, profile: profile ?? null, ...report, sharedAt: now().toISOString() };
+      const r = await tx`insert into report_share (org_id, token_hash, label, from_day, to_day, source_id, snapshot, expires_at)
+                         values (${p.orgId}, ${t.hash}, ${b.label}, ${b.from}, ${b.to}, ${b.source ?? null}, ${tx.json(snapshot as any)},
+                                 ${new Date(now().getTime() + (b.days ?? 90) * 86_400_000)}) returning id, expires_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'report.share', subject: `report_share:${r[0]?.id}` });
+      return r;
+    });
+    return c.json({ id: row?.id, token: t.token, expiresAt: row?.expires_at, note: 'Shown once. Anyone with this link can see these totals until it expires or you switch it off.' }, 201);
+  });
+
+  app.get('/v1/org/report-shares', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const rows = await asService(sql, (tx) => tx`select id, label, from_day, to_day, expires_at, revoked_at, views, last_viewed_at, created_at from report_share where org_id = ${p.orgId} order by created_at desc`);
+    return c.json({ items: rows });
+  });
+
+  app.post('/v1/org/report-shares/:id/revoke', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const r = await asService(sql, (tx) => tx`update report_share set revoked_at = ${now()} where id = ${c.req.param('id')} and org_id = ${p.orgId} and revoked_at is null returning id`);
+    if (!r[0]) throw new HttpError(404, 'not_found');
+    return c.json({ ok: true });
+  });
+
+  app.get('/v1/reports/shared/:token', async (c) => {
+    const out = await asService(sql, async (tx) => {
+      const [s] = await tx`update report_share set views = views + 1, last_viewed_at = ${now()}
+                           where token_hash = ${tokenHash(c.req.param('token'))} and revoked_at is null and expires_at > ${now()}
+                           returning label, snapshot`;
+      if (!s) throw new HttpError(404, 'not_found');
+      return { label: s.label, ...s.snapshot };
+    });
+    return c.json(out);
+  });
+
+  app.get('/v1/ops/report', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const q = readQuery(c);
+    return c.json(await asService(sql, (tx) => buildReport(tx, { view: 'network', from: q.from, to: q.to })));
   });
 
   // ---------------------------------------------------------------- Feedback (public, with the human check)
