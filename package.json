@@ -22,7 +22,7 @@
     "import:events": "tsx scripts/import-events.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^26.6.6",
     "ajv": "^8.17.0",
     "ajv-formats": "^3.0.1",
     "tsx": "^4.19.2",
