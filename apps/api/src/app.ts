@@ -464,6 +464,97 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ ok: true });
   });
 
+  /** The foundation team's queue: what needs a person today. The Always Agent reads this too, and a person decides each item. */
+  app.get('/v1/ops/queue', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const q = await asService(sql, async (tx) => {
+      const [claims] = await tx`select count(*)::int as n from claim_request where status = 'pending'`;
+      const [events] = await tx`select count(*)::int as n from event where status = 'pending'`;
+      const [feedback] = await tx`select count(*)::int as n from feedback where status = 'new'`;
+      const [care] = await tx`select count(*)::int as n from handoff where state = 'care_team'`;
+      const [stale] = await tx`select count(*)::int as n from handoff where state = 'accepted' and first_contact_at is null`;
+      return { claims: claims?.n ?? 0, events: events?.n ?? 0, feedback: feedback?.n ?? 0, careTeam: care?.n ?? 0, acceptedNoContact: stale?.n ?? 0 };
+    });
+    return c.json(q);
+  });
+
+  app.get('/v1/ops/claims', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const rows = await asService(sql, (tx) => tx`
+      select cr.id, cr.requester_role as role, cr.evidence, cr.created_at, cr.requester_email_ct,
+             o.id as org_id, o.display_name, o.suburb, o.state, o.trust_level::text as trust_level
+      from claim_request cr join organisation o on o.id = cr.org_id
+      where cr.status = 'pending' order by cr.created_at limit 100`);
+    return c.json({ items: rows.map(({ requester_email_ct, ...r }: any) => ({ ...r, email: decrypt(requester_email_ct) })) });
+  });
+
+  app.post('/v1/ops/claims/:id/decide', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const b = parse(z.object({ decision: z.enum(['approve', 'reject']), note: z.string().max(500).optional() }), await c.req.json());
+    const out = await asService(sql, async (tx) => {
+      const [cr] = await tx`select id, org_id, requester_email_ct, requester_email_hash, requester_role, status::text as status from claim_request where id = ${c.req.param('id')} for update`;
+      if (!cr) throw new HttpError(404, 'not_found');
+      if (cr.status !== 'pending') throw new HttpError(409, 'already_decided');
+      await tx`update claim_request set status = ${b.decision === 'approve' ? 'approved' : 'rejected'}, decided_by = ${p.userId ?? null},
+               decided_at = ${now()}, decision_note = ${b.note ?? null} where id = ${cr.id}`;
+      if (b.decision === 'approve') {
+        let [u] = await tx`select id from app_user_account where email_hash = ${cr.requester_email_hash}`;
+        if (!u) [u] = await tx`insert into app_user_account (email_ct, email_hash, display_name) values (${cr.requester_email_ct}, ${cr.requester_email_hash}, ${cr.requester_role}) returning id`;
+        if (!u) throw new Error('user_create_failed');
+        await tx`insert into membership (user_id, org_id, role) values (${u.id}, ${cr.org_id}, 'admin') on conflict do nothing`;
+        await tx`update organisation set trust_level = 'claimed' where id = ${cr.org_id} and trust_level = 'listed'`;
+      }
+      await tx`insert into outbox (channel, template, org_id, params_ct)
+               values ('email', ${b.decision === 'approve' ? 'claim.approved' : 'claim.declined'}, ${cr.org_id},
+                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))})`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: `claim.${b.decision}`, subject: `org:${cr.org_id}` });
+      return { status: b.decision === 'approve' ? 'approved' : 'rejected' };
+    });
+    return c.json(out);
+  });
+
+  app.get('/v1/ops/events', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const rows = await asService(sql, (tx) => tx`select id, title, kind::text as kind, starts_at, suburb, state, url, source::text as source
+      from event where status = 'pending' order by starts_at limit 100`);
+    return c.json({ items: rows });
+  });
+
+  app.post('/v1/ops/events/:id/decide', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const b = parse(z.object({ decision: z.enum(['publish', 'hide']) }), await c.req.json());
+    const [ev] = await asService(sql, async (tx) => {
+      const r = await tx`update event set status = ${b.decision === 'publish' ? 'published' : 'hidden'}, reviewed_by = ${p.userId ?? null}, reviewed_at = ${now()}
+                         where id = ${c.req.param('id')} and status = 'pending' returning id, status::text as status`;
+      if (r[0]) await audit(tx, { actor: p.userId, orgId: p.orgId, action: `event.${b.decision}`, subject: `event:${r[0].id}` });
+      return r;
+    });
+    if (!ev) throw new HttpError(404, 'not_found_or_decided');
+    return c.json(ev);
+  });
+
+  // ---------------------------------------------------------------- Feedback (public, with the human check)
+  app.post('/v1/feedback', async (c) => {
+    const raw = await c.req.json().catch(() => ({}));
+    if (!(await verifyHuman(raw?.humanToken, c.req.header('cf-connecting-ip')))) throw new HttpError(403, 'human_check_failed');
+    const b = parse(z.object({ kind: z.enum(['idea', 'bug', 'missing']), area: z.string().min(2).max(80), message: z.string().min(3).max(4000), email: z.string().email().optional().or(z.literal('')) }), raw);
+    await asService(sql, (tx) => tx`insert into feedback (kind, area, message, email_ct) values (${b.kind}, ${b.area}, ${b.message}, ${b.email ? encrypt(b.email) : null})`);
+    return c.json({ status: 'received' }, 202);
+  });
+
+  app.get('/v1/ops/feedback', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const rows = await asService(sql, (tx) => tx`select id, kind::text as kind, area, message, created_at, (email_ct is not null) as wants_reply
+      from feedback where status = 'new' order by created_at desc limit 200`);
+    return c.json({ items: rows });
+  });
+
   app.post('/v1/ops/tokens', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam) throw new HttpError(403, 'care_team_only');

@@ -338,3 +338,41 @@ describe('hosted response pages', () => {
     expect(r.status).toBe(422);
   });
 });
+
+describe('foundation team queue', () => {
+  it('takes a church claim, and lets only the foundation team approve it', async () => {
+    const claim = await call('POST', `/v1/orgs/${ids.listed}/claims`, { body: { email: 'pastor@example.org', role: 'Senior pastor', evidence: 'Listed on the network site' } });
+    expect(claim.status).toBe(202);
+    const no = await call('GET', '/v1/ops/claims', { token: tokens.a });
+    expect(no.status).toBe(403);
+    const list = await call('GET', '/v1/ops/claims', { token: tokens.ops, org: ids.care });
+    const item = list.body.items.find((i: any) => i.org_id === ids.listed);
+    expect(item.email).toBe('pastor@example.org');
+    const q = await call('GET', '/v1/ops/queue', { token: tokens.ops, org: ids.care });
+    expect(q.body.claims).toBeGreaterThanOrEqual(1);
+    const ok = await call('POST', `/v1/ops/claims/${item.id}/decide`, { token: tokens.ops, org: ids.care, body: { decision: 'approve' } });
+    expect(ok.body).toEqual({ status: 'approved' });
+    const again = await call('POST', `/v1/ops/claims/${item.id}/decide`, { token: tokens.ops, org: ids.care, body: { decision: 'reject' } });
+    expect(again.status).toBe(409);
+    const [m] = await sql`select count(*)::int as n from membership m join app_user_account u on u.id = m.user_id where m.org_id = ${ids.listed}`;
+    expect(m.n).toBe(1);
+  });
+
+  it('publishes a suggested event once the foundation team checks it', async () => {
+    const s = await call('POST', '/v1/events/suggest', { body: { title: 'Campus night', kind: 'outreach', startsAt: '2026-12-01T08:00:00Z', state: 'NSW', humanToken: 'human-ok' } });
+    expect(s.status).toBe(202);
+    const list = await call('GET', '/v1/ops/events', { token: tokens.ops, org: ids.care });
+    const ev = list.body.items.find((e: any) => e.title === 'Campus night');
+    const d = await call('POST', `/v1/ops/events/${ev.id}/decide`, { token: tokens.ops, org: ids.care, body: { decision: 'publish' } });
+    expect(d.body.status).toBe('published');
+  });
+
+  it('takes feedback with the human check and shows it to the team', async () => {
+    const bad = await call('POST', '/v1/feedback', { body: { kind: 'idea', area: 'Website', message: 'Add a map' } });
+    expect(bad.status).toBe(403);
+    const ok = await call('POST', '/v1/feedback', { body: { kind: 'idea', area: 'Website', message: 'Add a map', humanToken: 'human-ok' } });
+    expect(ok.status).toBe(202);
+    const list = await call('GET', '/v1/ops/feedback', { token: tokens.ops, org: ids.care });
+    expect(list.body.items.map((f: any) => f.message)).toContain('Add a map');
+  });
+});

@@ -70,11 +70,11 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
   const params = m.params_ct ? JSON.parse(decrypt(m.params_ct) ?? '{}') : {};
   switch (m.channel) {
     case 'email': {
-      const [o] = await sql`select notify_email_ct from organisation where id = ${m.org_id}`;
-      const to = decrypt(o?.notify_email_ct);
+      const [o] = params.to ? [undefined] : await sql`select notify_email_ct from organisation where id = ${m.org_id}`;
+      const to = params.to ?? decrypt(o?.notify_email_ct);
       if (!to) return; // no address yet: nothing to send, mark sent
       // Email says "someone is waiting" and links to the inbox. No names, no faith details (PV-8).
-      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox` } });
+      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '' } });
       return;
     }
     case 'sms': {

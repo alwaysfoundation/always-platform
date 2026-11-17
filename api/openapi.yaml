@@ -157,6 +157,49 @@ webhooks:
       parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/NewResponse' }, { type: object, properties: { humanToken: { type: string } } }] } } } }
       responses: { '201': { description: Created }, '403': { description: Human check failed }, '422': { description: Validation, minors rule or step not offered } }
+  /v1/feedback:
+    post:
+      tags: [Feedback]
+      security: []
+      summary: Share an idea, report a problem or suggest a missing church
+      description: Needs `humanToken` from the invisible human check. Email is optional and encrypted.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind, area, message], properties: { kind: { type: string, enum: [idea, bug, missing] }, area: { type: string }, message: { type: string, maxLength: 4000 }, email: { type: string, format: email }, humanToken: { type: string } } } } } }
+      responses: { '202': { description: Received }, '403': { description: Human check failed } }
+  /v1/ops/queue:
+    get:
+      tags: [Foundation team]
+      summary: What needs a person today (claims, events, feedback, care team, contact not yet logged)
+      responses: { '200': { description: Counts }, '403': { description: Foundation team only } }
+  /v1/ops/claims:
+    get:
+      tags: [Foundation team]
+      summary: Pending church claims
+      responses: { '200': { description: Claims }, '403': { description: Foundation team only } }
+  /v1/ops/claims/{id}/decide:
+    post:
+      tags: [Foundation team]
+      summary: Approve or decline a church claim
+      description: Approving makes the requester an admin of the church's page and marks it claimed. Verification is a separate step.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [decision], properties: { decision: { type: string, enum: [approve, reject] }, note: { type: string, maxLength: 500 } } } } } }
+      responses: { '200': { description: Decided }, '409': { description: Already decided } }
+  /v1/ops/events:
+    get:
+      tags: [Foundation team]
+      summary: Events waiting to be checked
+      responses: { '200': { description: Events } }
+  /v1/ops/events/{id}/decide:
+    post:
+      tags: [Foundation team]
+      summary: Publish or hide a suggested event
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [decision], properties: { decision: { type: string, enum: [publish, hide] } } } } } }
+      responses: { '200': { description: Decided }, '404': { description: Not found or already decided } }
+  /v1/ops/feedback:
+    get:
+      tags: [Foundation team]
+      summary: New ideas, problems and missing churches
+      responses: { '200': { description: Feedback } }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }

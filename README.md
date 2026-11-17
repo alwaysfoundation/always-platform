@@ -4,6 +4,8 @@
 
 Always connects the body of Christ in Australia, so everyone who responds to Jesus is offered their next best faith step, often a local church, sometimes a course, discipleship or care, with a real person walking with them. It is a gift to the Church: shared, not owned, open source, and every person's story stays theirs.
 
+See [ROADMAP.md](ROADMAP.md) for what we're building next.
+
 ## What's here
 
 | Path | What it is |
@@ -24,7 +26,7 @@ cp .env.example .env.local            # add keys: openssl rand -base64 32
 make up && make migrate && make seed  # Postgres 16 in Docker, schema, demo data
 npm run import:directory -- path/to/directory.csv   # optional: the Australian directory
 make dev                              # API on http://localhost:8787
-make check                            # types and 65 tests against real Postgres
+make check                            # types and 68 tests against real Postgres
 ```
 
 ## Principles that are enforced in code
