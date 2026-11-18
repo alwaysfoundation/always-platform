@@ -11,7 +11,7 @@ The site and roadmap described a native "Always app" (Expo) for evangelists, wit
 
 1. For now, every Always product is a web app. There is no native mobile app. The apps run in any browser and can be installed to a phone's home screen.
 2. There are three products, each a client of Always Platform:
-   - **Always for evangelists:** Bible (YouVersion Platform), conversation guides, response points (Response pages and Handoff), church and event finder (Church feed and Events), and a prayer list with notes kept in the browser.
+   - **Always App:** Bible (YouVersion Platform), conversation guides, response points (Response pages and Handoff), church and event finder (Church feed and Events), and a prayer list with notes kept in the browser.
    - **Always for churches:** team inbox for introductions (Handoff), church page (Church feed and Verification), and the leaders' report (Reports).
    - **Always for ministries:** branded response pages, live results, funder reports (Reports) and the compliance tab.
 3. The web apps use only the public API and SDK. There is no private endpoint, so anything we build, a partner can build.
