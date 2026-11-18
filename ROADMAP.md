@@ -15,7 +15,17 @@ Always is built in the open. This is what we're working on, in order. Each item 
 - [ ] Always for churches and ministries (web): sign in, inbox, page, next steps, team
 - [ ] Foundation console: verification queue, events, care team, partners
 
-## Next: the Always app and the network
+## Next: the Always Network platform ([RFC 0001](docs/rfc/0001-network-platform.md))
+
+- [ ] Child assent for under 15s and 12-month consent expiry for minors
+- [ ] Ready to welcome: readiness rules, "welcoming now" badge, readiness in the API
+- [ ] Working With Children Check records and youth access that expires with them
+- [ ] Developer portal with test keys and synthetic data
+- [ ] Always MCP server, version 1: read-only, no personal data
+- [ ] Compliance tab: consent register, breach register, retention evidence, child safe checklist
+- [ ] One consented journey for adults (`share.journey`), Handoff adapters for Elvanto and Planning Center
+
+## Then: the Always app and the network
 
 - [ ] One Always account: Apple, Google and YouVersion sign-in
 - [ ] Always app (Expo): Bible reader, conversation guides, response points, prayer list, field notes transcribed on the phone (NVIDIA Parakeet)

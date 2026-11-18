@@ -1,6 +1,6 @@
 # RFC 0001: The Always Network platform
 
-- Status: Draft for discussion
+- Status: Accepted in principle (decisions below); legal review pending
 - Author: Daniel Dizon, with Claude
 - Date: 2026-11-18
 - Touches: `consent/`, `minors/`, `access/`, `routing/` (CODEOWNER review required)
@@ -25,6 +25,17 @@ The aim is that a ministry can join, prove it is ready, receive people, report t
 4/ Australia only for personal data.
 5/ Open by default for code and standards; private by default for people.
 6/ AI helps people do the work; a person decides every step that affects someone.
+
+## Australian legal basis
+
+These rules shape every part below. Decisions favour the stricter reading where the law is still settling.
+
+1/ **A faith response is sensitive information.** Religious beliefs are sensitive information under the Privacy Act, so collecting a response needs the person's consent (APP 3.3) and higher care in use and disclosure (APP 6).
+2/ **Age of consent for privacy is 15.** The OAIC lets organisations assume a person aged 15 or over can consent unless there's reason to doubt it. The draft Children's Online Privacy Code would fix 15 as the age of consent: under 15, a parent consents, and the child's own assent is also needed for sensitive information. The Code must be registered by 10 December 2026; we design to the draft now.
+3/ **16 is the social media minimum age.** Always has no public profiles, feeds or messaging between users, so it isn't a social media service. We keep it that way for everyone under 16.
+4/ **Child safety records.** The Royal Commission recommended that organisations working with children keep records about child sexual abuse, or claims of it, for at least 45 years. These records belong to the receiving organisation's safeguarding system, not to Always' handoff records.
+5/ **Notifiable Data Breaches scheme**: assess a suspected breach within 30 days and notify people and the OAIC if serious harm is likely.
+6/ **Working With Children Checks** are state and territory schemes; we record the state, expiry and who verified, never the full number.
 
 ## 1. Ready to welcome (shared registry)
 
@@ -123,8 +134,10 @@ One rule table, in `packages/core/src/minors.ts`, applied before anything else. 
 
 | | Under 13 | 13–14 | 15–17 | 18+ |
 | --- | --- | --- | --- | --- |
+| Who consents | Parent or guardian | Parent or guardian | The young person | The person |
+| Child's own assent | Yes, in plain words | Yes | Not needed (they consent) | Not needed |
 | Their own details collected | No (parent only) | Yes, minimal | Yes, minimal | Yes |
-| Parent or guardian confirmation | Required, parent acts | Required before any handoff | Not required; parent may be told if the young person agrees | No |
+| Parent or guardian confirmation | Required, parent acts | Required before any handoff | Not required; the young person can choose to include a parent | No |
 | Who may receive | Verified youth partners | Verified youth partners | Verified youth partners | Any ready organisation |
 | Who at the organisation sees it | Youth access members with a current check | Same | Same | Team members with inbox access |
 | First contact | To the parent | Parent and young person together | Young person, two-adult practice | Person |
@@ -132,7 +145,11 @@ One rule table, in `packages/core/src/minors.ts`, applied before anything else. 
 | AI (incl. MCP) | Never | Never | Never | Only with `ai.assist` |
 | Bulk views and exports | Never | Never | Never | Allowed for the receiving org |
 | Report minimum group | 20 | 20 | 20 | 10 |
-| Retention after closing | Shortest (proposed 6 months) | 6 months | 6 months | 12 months |
+| Consent lasts | 12 months, then asked again | 12 months | 12 months | Until withdrawn or the record is deleted |
+| Retention (from acceptance) | Name and contact removed at 6 months, deleted at 12 | Same | Same | Removed at 12 months, deleted at 24 |
+| Not received | Deleted after 14 days | 14 days | 14 days | 30 days |
+| Destroyed or de-identified | Destroyed | Destroyed | Destroyed | Destroyed (tallies kept, no person in them) |
+| Social features | None | None | None (none under 16) | None |
 | Notes on the record | No free text | Structured only | Structured only | Free text, encrypted |
 
 Team permissions (who can do what inside an organisation):
@@ -149,19 +166,26 @@ Youth access is granted per person by an admin, requires a recorded check, and e
 
 ## Delivery
 
-1/ **Now**: readiness view and badge; WWCC records and youth access expiry; age table tests (fail-closed).
+1/ **Now**: child assent for under 15s and 12-month consent expiry for minors in `packages/core` (tests first); readiness view and badge; Working With Children Check records and youth access expiry; age table tests (fail-closed).
 2/ **Next**: developer portal with test keys; MCP v1 (read-only, no personal data); compliance tab with consent register, breach register and retention evidence.
 3/ **Then**: `share.journey` consent and cross-ministry linking for adults; React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
 
 Each step gets its own issue, tests first for consent, minors and access, and an ADR when a decision is made.
 
-## Open questions for the members
+## Decisions
 
-1/ Readiness: is 80% within the response window the right bar, and should a church see its own rate?
-2/ Should 15–17s be able to opt to tell a parent, or should parents always be told?
-3/ Retention periods for minors and adults: confirm with legal counsel.
-4/ Who at the foundation is the safeguarding lead who signs off ops access to minors' records?
-5/ Which church management systems should the Handoff standard support first?
-6/ Policies referenced in CLAUDE.md (`docs/policies/`, `docs/spec/`) aren't in this repository yet. Add them so this RFC can cite policy numbers.
+Made on 18 November 2026, favouring Australian law and child safety where unsure. Each becomes an ADR when built.
 
-This RFC is not legal advice. Privacy, child safety and charity obligations should be confirmed with counsel before launch.
+1/ **Readiness bar**: accepted or passed within the window for at least 80% of the last 20 offers. Each church sees its own rate privately; nobody else does. Missing the bar pauses routing; it doesn't remove the church.
+2/ **15–17s consent for themselves** (OAIC capacity guidance, draft Children's Code). A parent isn't told automatically; the young person can choose to include one. The youth partner still follows its child safe policy, and mandatory reporting duties always apply.
+3/ **Under 15s**: a parent or guardian consents and the child gives their own assent in plain words, because a faith response is sensitive information. Consent for any minor lasts 12 months before we ask again.
+4/ **Retention** follows `packages/core/src/policy.ts`: minors' name and contact removed at 6 months and the record deleted at 12; adults removed at 12 and deleted at 24; unreceived responses deleted after 14 days (minors) or 30 (adults); withdrawal deletes within 7 days. Minors' records are destroyed, not just de-identified. De-identified tallies stay for reports.
+5/ **Child safety incidents** are recorded by the receiving organisation in its safeguarding system and kept for at least 45 years. Always holds a pointer (organisation, date, reference), never the details, and never in AI or exports.
+6/ **Safeguarding lead**: the board appoints a Safeguarding Lead and a deputy. Until they're appointed, foundation staff can't open any minor's record at all (fail closed).
+7/ **Church management systems first**: Elvanto, then Planning Center, through the Always Handoff standard.
+8/ **No social features for anyone**, so Always stays outside the social media minimum age rules and keeps young people safe.
+9/ **AI and minors**: never, including the MCP server. Adults only with `ai.assist` consent, and a person approves every action.
+
+Still needed: the foundation's policies (`docs/policies/`) and spec (`docs/spec/`) referenced in CLAUDE.md aren't in this repository. When they are, this RFC should cite their clause numbers.
+
+This RFC is not legal advice. Privacy, child safety and charity obligations should be confirmed with counsel before launch, and checked against the final Children's Online Privacy Code when it is registered.
