@@ -67,7 +67,7 @@ Chosen for three things: personal data stays in Australia, it costs very little 
 | SMS | An Australian SMS provider (Mobile Message, MessageMedia or similar) | Data stays onshore; low volume because churches text from their own phones | Australia |
 | Field encryption keys | AWS KMS | One key per environment; the database only sees ciphertext | Sydney |
 | Maps | Suburb centroids from ABS open data; MapLibre with self-hosted tiles | No Google Maps bill; no street addresses for people | Sydney |
-| Mobile | PWA first; Expo (React Native) when needed | One codebase, install from the browser | n/a |
+| Mobile | Web apps only for now (installable PWA); no native app | One codebase, nothing to download, add to home screen | n/a |
 | Speech to text (Always app field notes) | NVIDIA Parakeet TDT 0.6B v2 (English), on the phone: Core ML through FluidAudio on iOS, ONNX Runtime (sherpa-onnx) on Android. Whisper as the fallback for languages Parakeet doesn't cover | Offline and private: audio never leaves the phone. Open weights under CC BY 4.0, credited in the app. About 500 MB quantised, downloaded on first use over Wi-Fi | On the phone |
 | Errors and uptime | Sentry with personal data scrubbing; Better Stack uptime | Free tiers to start | n/a |
 | Code, CI and issues | GitHub (public), GitHub Actions, Linear | Free for open source | n/a |

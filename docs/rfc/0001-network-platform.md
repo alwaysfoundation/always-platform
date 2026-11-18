@@ -21,7 +21,7 @@ The aim is that a ministry can join, prove it is ready, receive people, report t
 
 The Always Foundation is **infrastructure, tools and training for evangelists**, and for the churches and ministries they hand people on to:
 
-- **Evangelists** (event and street evangelists, youth leaders, everyday Christians): the Always app, response points and QR codes, conversation guides, and short free courses.
+- **Evangelists** (event and street evangelists, youth leaders, everyday Christians): Always for evangelists (a web app), response points and QR codes, conversation guides, and short free courses.
 - **Ministries** (tours, camps, outreach, media, apps): response pages, the church feed and finder, the Handoff API, reports for funders.
 - **Churches**: the inbox, their listing, compliance records, and the welcoming course.
 

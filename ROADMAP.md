@@ -27,11 +27,14 @@ Always is built in the open. This is what we're working on, in order. Each item 
 - [ ] Compliance tab: consent register, breach register, retention evidence, child safe checklist
 - [ ] One consented journey for adults (`share.journey`), Handoff adapters for Elvanto and Planning Center
 
-## Then: the Always app and the network
+## Then: the web apps and the network
+
+Every Always product is a web app for now, with no native mobile app. Each runs in any browser and can be added to a phone's home screen. Each one uses only the public API and SDK, so the apps prove the platform.
 
 - [ ] One Always account: Apple, Google and YouVersion sign-in
-- [ ] Always app (Expo): Bible reader, conversation guides, response points, prayer list, field notes transcribed on the phone (NVIDIA Parakeet)
-- [ ] Church team inbox in the app
+- [ ] Always for evangelists (web app): Bible reader (YouVersion Platform), conversation guides, response points (Response pages + Handoff), church and event finder (Church feed + Events), prayer list and notes kept in the browser
+- [ ] Always for churches (web app): team inbox for introductions (Handoff), church page (Church feed + Verification), leaders' report (Reports)
+- [ ] Always for ministries (web app): branded response pages, live results, funder reports, compliance tab
 - [ ] Always Agent in pilot with the foundation team, a person deciding every step
 - [ ] Interoperability: the Always Handoff standard implemented with partner ministries' tools, so a person's next step can move between systems with their consent
 
