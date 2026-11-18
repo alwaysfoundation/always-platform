@@ -90,10 +90,12 @@ beforeAll(async () => {
   ids.listed = await mk('Unverified Fellowship', 'unverified', -33.816, 151.004, 'listed');
   ids.care = await mk('Always care team', 'care-team', -33.86, 151.2, 'verified', { care: true });
   ids.sender = await mk('City Events', 'city-events', -34.9, 138.6, 'verified');
+  await sql`update organisation set connect_trained_at = now() where id in (${ids.a}, ${ids.b})`;
 
   for (const [key, org, scopes] of [
     ['sender', ids.sender, ['responses:write']],
     ['a', ids.a, ['inbox', 'profile', 'activity', 'events']],
+    ['listed', ids.listed, ['profile']],
     ['b', ids.b, ['inbox', 'profile', 'activity']],
   ] as const) {
     const t = newToken('alw_test');
@@ -437,5 +439,107 @@ describe('reports', () => {
     const ok = await call('GET', `/v1/ops/report?from=${from}&to=${to}`, { token: tokens.ops, org: ids.care });
     expect(ok.status).toBe(200);
     expect(ok.body.view).toBe('network');
+  });
+});
+
+describe('church feed', () => {
+  it('lists only churches that opted in, with no personal details', async () => {
+    let r = await call('GET', '/v1/feed/churches?postcode=2150');
+    expect(r.status).toBe(200);
+    expect(r.body.items).toHaveLength(0);
+
+    for (const t of [tokens.a, tokens.b, tokens.listed]) {
+      const o = await call('PUT', '/v1/org/feed', { token: t, body: { optIn: true } });
+      expect(o.status).toBe(200);
+    }
+    r = await call('GET', '/v1/feed/churches?postcode=2150');
+    const names = r.body.items.map((i: any) => i.name);
+    expect(names).toEqual(expect.arrayContaining(['Hope Church Parramatta', 'Grace Church North Parramatta', 'Unverified Fellowship']));
+    const hope = r.body.items.find((i: any) => i.slug === 'hope-parramatta');
+    expect(hope.welcomingNow).toBe(true);
+    expect(hope.youthPartner).toBe(true);
+    expect(hope.distanceKm).toBeLessThan(2);
+    expect(hope.steps).toContain('church');
+    expect(JSON.stringify(r.body)).not.toMatch(/example\.org|notify|email/i);
+    const listed = r.body.items.find((i: any) => i.slug === 'unverified');
+    expect(listed.welcomingNow).toBe(false);
+  });
+
+  it('shows a church its own readiness checks', async () => {
+    const r = await call('GET', '/v1/org/feed', { token: tokens.a });
+    expect(r.body).toMatchObject({ optedIn: true, welcomingNow: true, checks: { verified: true, trained: true } });
+  });
+
+  it('filters to churches welcoming young people now', async () => {
+    const r = await call('GET', '/v1/feed/churches?postcode=2150&welcoming=true&youth=true');
+    expect(r.body.items.map((i: any) => i.slug)).toEqual(['hope-parramatta']);
+  });
+
+  it('stops welcoming when a church pauses, and when it opts out', async () => {
+    await sql`update capacity set paused_until = now() + interval '7 days' where org_id = ${ids.b}`;
+    let r = await call('GET', '/v1/feed/churches?postcode=2150&welcoming=true');
+    expect(r.body.items.map((i: any) => i.slug)).not.toContain('grace-north-parramatta');
+    await sql`update capacity set paused_until = null where org_id = ${ids.b}`;
+    await call('PUT', '/v1/org/feed', { token: tokens.listed, body: { optIn: false } });
+    r = await call('GET', '/v1/feed/churches?postcode=2150');
+    expect(r.body.items.map((i: any) => i.slug)).not.toContain('unverified');
+  });
+
+  it('can be called from any website', async () => {
+    const res = await app.request('/v1/feed/churches?postcode=2150', { headers: { origin: 'https://uen.example' } });
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    const inbox = await app.request('/v1/inbox', { headers: { origin: 'https://uen.example' } });
+    expect(inbox.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('offers the whole feed as a daily download', async () => {
+    const res = await app.request('/v1/feed/churches.jsonl');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/ndjson/);
+    const lines = (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+    expect(lines.map((l: any) => l.slug)).toContain('hope-parramatta');
+  });
+
+  it('answers whether a church is verified', async () => {
+    let r = await call('GET', '/v1/verify/hope-parramatta');
+    expect(r.body).toMatchObject({ slug: 'hope-parramatta', verified: true, youthPartner: true });
+    await sql`insert into organisation (kind, display_name, slug, suburb, state, trust_level) values ('church', 'Listed Only Chapel', 'listed-only', 'Parramatta', 'NSW', 'listed')`;
+    r = await call('GET', '/v1/verify/listed-only');
+    expect(r.body).toMatchObject({ verified: false, youthPartner: false, welcomingNow: false });
+    r = await call('GET', '/v1/verify/no-such-church');
+    expect(r.status).toBe(404);
+  });
+
+  it('issues developer keys and refuses unknown ones', async () => {
+    const k = await call('POST', '/v1/ops/app-keys', { token: tokens.ops, org: ids.care, body: { name: 'UEN website', contactEmail: 'dev@example.org', kind: 'test' } });
+    expect(k.status).toBe(201);
+    expect(k.body.key).toMatch(/^alk_test_/);
+    let r = await call('GET', '/v1/feed/churches?postcode=2150', { headers: { 'x-always-key': k.body.key } });
+    expect(r.status).toBe(200);
+    r = await call('GET', '/v1/feed/churches?postcode=2150', { headers: { 'x-always-key': 'alk_test_nope' } });
+    expect(r.status).toBe(401);
+  });
+});
+
+describe('MCP server (read-only, no personal data)', () => {
+  const rpc = async (method: string, params?: unknown) => {
+    const res = await app.request('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+    return (await res.json()) as any;
+  };
+  it('initialises and lists only read-only tools', async () => {
+    expect((await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 't', version: '1' } })).result.serverInfo.name).toBe('always');
+    const tools = (await rpc('tools/list')).result.tools;
+    expect(tools.map((t: any) => t.name)).toEqual(['find_churches', 'verify_church', 'list_events', 'how_always_works']);
+    expect(tools.every((t: any) => t.annotations.readOnlyHint)).toBe(true);
+  });
+  it('finds churches from the feed', async () => {
+    const r = await rpc('tools/call', { name: 'find_churches', arguments: { postcode: '2150', welcoming: true } });
+    expect(r.result.isError).toBe(false);
+    expect(r.result.content[0].text).toMatch(/Hope Church Parramatta/);
+    expect(JSON.stringify(r.result)).not.toMatch(/example\.org|Sam/);
+  });
+  it('acknowledges notifications without a body', async () => {
+    const res = await app.request('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) });
+    expect(res.status).toBe(202);
   });
 });

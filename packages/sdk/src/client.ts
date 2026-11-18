@@ -31,13 +31,14 @@ export class AlwaysError extends Error {
  * backend endpoint, or a publishable placement key.
  */
 export class AlwaysClient {
-  constructor(private opts: { baseUrl?: string; token?: string; org?: string; fetch?: typeof fetch } = {}) {}
+  constructor(private opts: { baseUrl?: string; token?: string; org?: string; appKey?: string; fetch?: typeof fetch } = {}) {}
 
   private async req<T>(method: string, path: string, body?: unknown): Promise<T> {
     const f = this.opts.fetch ?? fetch;
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (this.opts.token) headers.authorization = `Bearer ${this.opts.token}`;
     if (this.opts.org) headers['x-always-org'] = this.opts.org;
+    if (this.opts.appKey) headers['x-always-key'] = this.opts.appKey;
     const res = await f(`${this.opts.baseUrl ?? 'https://api.alwaysfoundation.org'}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
     const json = (await res.json().catch(() => ({}))) as any;
     if (!res.ok) throw new AlwaysError(res.status, json.error ?? 'request_failed');
@@ -50,6 +51,17 @@ export class AlwaysClient {
     tally: () => this.req<{ total: number; byState: { state: AuState; kind: string; n: number }[] }>('GET', '/v1/directory/tally'),
     get: (slug: string) => this.req<ChurchPage>('GET', `/v1/orgs/${encodeURIComponent(slug)}`),
     claim: (orgId: string, b: { email: string; role: string; evidence?: string }) => this.req<{ status: 'pending' }>('POST', `/v1/orgs/${orgId}/claims`, b),
+  };
+
+  /** The church feed: facts about churches that opted in, never people. Safe to call from a browser. */
+  feed = {
+    churches: (q: FeedQuery = {}) => {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries(q)) if (v !== undefined) p.set(k, String(v));
+      return this.req<{ items: FeedChurch[]; licence: string }>('GET', `/v1/feed/churches?${p}`);
+    },
+    /** Whether a church is verified and welcoming now. */
+    verify: (slug: string) => this.req<Verification>('GET', `/v1/verify/${encodeURIComponent(slug)}`),
   };
 
   responses = {
@@ -111,4 +123,47 @@ export interface InboxItem {
   step: Step;
   contact?: { kind: 'mobile' | 'email'; value: string };
   note?: string | null;
+}
+
+export interface FeedQuery {
+  postcode?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  step?: Step;
+  /** Only churches welcoming people this month. */
+  welcoming?: boolean;
+  /** Only verified youth partners. */
+  youth?: boolean;
+  state?: AuState;
+  limit?: number;
+}
+
+export interface FeedChurch {
+  slug: string;
+  name: string;
+  kind: 'church' | 'ministry' | 'network';
+  denomination: string | null;
+  suburb: string | null;
+  state: AuState | null;
+  postcode: string | null;
+  location: { lat: number; lng: number } | null;
+  steps: Step[];
+  languages: string[];
+  serviceTimes: string | null;
+  welcomingNow: boolean;
+  youthPartner: boolean;
+  verified: boolean;
+  distanceKm?: number;
+  url: string;
+  updatedAt: string | null;
+}
+
+export interface Verification {
+  slug: string;
+  name: string;
+  verified: boolean;
+  youthPartner: boolean;
+  welcomingNow: boolean;
+  verifiedAt: string | null;
 }

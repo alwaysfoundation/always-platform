@@ -26,6 +26,56 @@ tags:
   - name: Person
   - name: Operations
 paths:
+  /v1/feed/churches:
+    get:
+      tags: [Church feed]
+      security: []
+      summary: Churches near a place, from the opt-in church feed (no personal data)
+      parameters:
+        - { name: postcode, in: query, schema: { type: string, pattern: '^\d{4}$' } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: radiusKm, in: query, schema: { type: number, default: 25, maximum: 200 } }
+        - { name: step, in: query, schema: { type: string, enum: [church, explore, talk, youth, group, help, read] } }
+        - { name: welcoming, in: query, schema: { type: boolean } }
+        - { name: youth, in: query, schema: { type: boolean } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 25, maximum: 100 } }
+        - { name: x-always-key, in: header, required: false, schema: { type: string }, description: Optional developer key }
+      responses:
+        '200': { description: Churches, nearest first }
+        '401': { description: The developer key sent is not valid }
+  /v1/feed/churches.jsonl:
+    get:
+      tags: [Church feed]
+      security: []
+      summary: The whole church feed as JSON Lines, refreshed hourly
+      responses:
+        '200': { description: One church per line, content: { application/x-ndjson: {} } }
+  /v1/verify/{slug}:
+    get:
+      tags: [Verification]
+      security: []
+      summary: Whether a church is verified, a verified youth partner, and welcoming now
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Verification status }
+        '404': { description: No such church }
+  /v1/org/feed:
+    put:
+      tags: [Church feed]
+      summary: A church opts in to, or out of, the church feed
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [optIn], properties: { optIn: { type: boolean } } } } } }
+      responses:
+        '200': { description: Current opt-in }
+  /mcp:
+    post:
+      tags: [AI]
+      security: []
+      summary: Always MCP server (Streamable HTTP, read-only, no personal data)
+      responses:
+        '200': { description: JSON-RPC response }
+        '202': { description: Notification accepted }
   /v1/directory:
     get:
       tags: [Directory]
