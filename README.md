@@ -13,7 +13,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `packages/core` | The rules engine: the consent primitive, minors rules, matching, the two-clock handoff, retention. Pure and fully tested. |
 | `packages/db` | Database helpers. Every request runs under Postgres row-level security. |
 | `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
-| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Resend email, Australian SMS, signed webhooks). |
+| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Amazon SES email in Sydney, Australian SMS, signed webhooks). |
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
