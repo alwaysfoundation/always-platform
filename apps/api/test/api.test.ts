@@ -381,7 +381,7 @@ describe('foundation team queue', () => {
 });
 
 describe('reports', () => {
-  const from = '2026-01-01', to = '2027-12-31';
+  const from = `${clock.getUTCFullYear() - 1}-01-01`, to = `${clock.getUTCFullYear() + 1}-12-31`;
   it('counts each step of the journey without storing anyone\'s details', async () => {
     const [cols] = await sql`select string_agg(column_name, ',') as c from information_schema.columns where table_name = 'journey_tally'`;
     expect(cols.c).not.toMatch(/name|contact|suburb|postcode|response_id/);
