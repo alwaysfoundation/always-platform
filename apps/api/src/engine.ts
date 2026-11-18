@@ -53,6 +53,8 @@ function toConsent(c: Row | undefined): ConsentRecord | undefined {
     collectedAt: new Date(c.collected_at),
     withdrawnAt: c.withdrawn_at ? new Date(c.withdrawn_at) : undefined,
     parentConfirmedAt: c.parent_confirmed_at ? new Date(c.parent_confirmed_at) : undefined,
+    childAssentAt: c.child_assent_at ? new Date(c.child_assent_at) : undefined,
+    expiresAt: c.expires_at ? new Date(c.expires_at) : undefined,
   };
 }
 

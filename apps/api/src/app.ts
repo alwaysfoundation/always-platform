@@ -5,7 +5,7 @@ import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { asApp, asService, type Sql } from '@always/db';
-import { rulesFor, POLICY, type PassReason } from '@always/core';
+import { rulesFor, consentExpiresAt, POLICY, type PassReason } from '@always/core';
 import { authenticate, requirePrincipal, HttpError, type Env } from './auth.js';
 import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual } from './crypto.js';
 import * as engine from './engine.js';
@@ -39,6 +39,8 @@ const NewResponse = z.object({
     allowNextNearby: z.boolean(),
     wordingVersion: z.string().min(1).max(40),
     party: z.enum(['self', 'parent']),
+    /** Under 15, when a parent fills the form: the parent confirms the child has agreed too. */
+    childAssent: z.boolean().optional(),
   }),
 });
 
@@ -302,6 +304,11 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     if (rules.requiresParentConfirmation && body.consent.party !== 'parent' && !body.parentContact) {
       throw new HttpError(422, 'parent_contact_required');
     }
+    // Under 15: the child agrees as well as the parent. A child filling the form is agreeing themselves;
+    // a parent filling it must confirm the child agrees.
+    if (rules.requiresChildAssent && body.consent.party === 'parent' && body.consent.childAssent !== true) {
+      throw new HttpError(422, 'child_assent_required');
+    }
     if (!body.consent.purposes.includes('connect.church')) throw new HttpError(422, 'consent_connect_required');
     if (body.note && body.ageBand !== '18+') body.note = undefined; // no free-text notes for minors
 
@@ -320,9 +327,12 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
                 ${new Date(t.getTime() + retentionDays * 86_400_000)})
         returning id`;
       if (!r) throw new Error('insert_failed');
-      await tx`insert into consent (response_id, purposes, recipients, allow_next_nearby, wording_version, party, age_band, collected_at)
+      const childAssentAt = rules.requiresChildAssent ? t : null; // checked above for parents; a child's own yes is their assent
+      await tx`insert into consent (response_id, purposes, recipients, allow_next_nearby, wording_version, party, age_band, collected_at,
+                                    child_assent_at, expires_at)
                values (${r.id}, ${body.consent.purposes}, ${body.consent.recipients}, ${body.consent.allowNextNearby},
-                       ${body.consent.wordingVersion}, ${body.consent.party}, ${body.ageBand}, ${t})`;
+                       ${body.consent.wordingVersion}, ${body.consent.party}, ${body.ageBand}, ${t},
+                       ${childAssentAt}, ${consentExpiresAt({ collectedAt: t })})`;
       const self = newToken('alp');
       await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                values (${self.hash}, ${r.id}, 'self_service', ${new Date(t.getTime() + 90 * 86_400_000)})`;
@@ -558,6 +568,21 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       from handoff h where h.id = ${l.handoff_id}`;
     if (!s) throw new HttpError(404, 'not_found');
     return c.json({ state: s.state, church: s.church ?? null });
+  });
+
+  /** Renew consent for another 12 months. Adults only: a young person's family renews through a new response. */
+  app.post('/v1/me/:token/renew', async (c) => {
+    const l = await linkFor(c.req.param('token'), 'self_service');
+    const t = now();
+    const renewed = await asService(sql, async (tx) => {
+      const [row] = await tx`update consent set expires_at = ${consentExpiresAt({ collectedAt: t })}
+                             where response_id = ${l.response_id} and withdrawn_at is null and age_band = '18+'
+                             returning expires_at`;
+      if (row) await audit(tx, { action: 'consent.renew', subject: `response:${l.response_id}` });
+      return row;
+    });
+    if (!renewed) throw new HttpError(409, 'cannot_renew');
+    return c.json({ expiresAt: renewed.expires_at });
   });
 
   app.post('/v1/me/:token/withdraw', async (c) => {
