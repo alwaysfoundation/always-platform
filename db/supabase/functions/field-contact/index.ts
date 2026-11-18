@@ -11,6 +11,8 @@ const SOURCES = new Set(['sydneyfire']);
 const MOBILE = /^(\+?61|0)4\d{8}$/;
 const BANDS = new Set(['under13', '13-14', '15-17', '18+']);
 const STEPS = new Set(['church', 'youth', 'talk', 'explore']);
+// Receiving partners a person can choose, and the step each serves.
+const PARTNERS: Record<string, string> = { alpha: 'explore' };
 
 function cors(origin: string | null): Record<string, string> {
   const h: Record<string, string> = { 'vary': 'origin' };
@@ -51,6 +53,7 @@ Deno.serve(async (req) => {
   const suburb = str(b.suburb, 60);
   const postcode = str(b.postcode, 4);
   const wording = str(c.wordingVersion, 40);
+  const shareWith = Array.isArray(c.shareWith) ? [...new Set(c.shareWith.filter((x): x is string => typeof x === 'string'))] : [];
 
   // Minors rules run first.
   if (!BANDS.has(ageBand)) return json(422, { error: 'age_band_required' }, h);
@@ -58,6 +61,10 @@ Deno.serve(async (req) => {
   if ((ageBand === 'under13' || ageBand === '13-14') && !childAssent && party === 'parent') return json(422, { error: 'child_assent_required' }, h);
   if (ageBand === '13-14' && !MOBILE.test(parentMobile)) return json(422, { error: 'parent_contact_required' }, h);
   if (ageBand !== '18+' && !['youth', 'talk'].includes(step)) return json(422, { error: 'step_not_for_minors' }, h);
+  // Sharing with a partner: adults only, only for the step that partner serves.
+  for (const p of shareWith) {
+    if (PARTNERS[p] !== step || ageBand !== '18+') return json(422, { error: 'share_not_allowed' }, h);
+  }
   // Consent fails closed.
   if (c.connect !== true) return json(422, { error: 'consent_required' }, h);
   if (!SOURCES.has(source) || !STEPS.has(step) || !wording) return json(422, { error: 'invalid' }, h);
@@ -72,10 +79,10 @@ Deno.serve(async (req) => {
     const assent = ageBand === '13-14' && party === 'self' ? true : childAssent;
     const status = ageBand === '13-14' ? 'parent_pending' : 'new';
     await sql`insert into field_contact (source, age_band, step, first_name, mobile, parent_mobile, suburb, postcode,
-                consent_connect, allow_next_nearby, notify_sender, party, child_assent, wording_version, status)
+                consent_connect, allow_next_nearby, notify_sender, party, child_assent, wording_version, status, share_with)
               values (${source}, ${ageBand}, ${step}, ${ageBand === 'under13' ? null : firstName}, ${mobile},
                 ${ageBand === '13-14' ? parentMobile : null}, ${suburb}, ${postcode}, true, ${c.allowNextNearby === true},
-                ${c.notifySender === true}, ${party}, ${assent}, ${wording}, ${status})`;
+                ${c.notifySender === true}, ${party}, ${assent}, ${wording}, ${status}, ${shareWith})`;
     return json(201, { ok: true }, h);
   } catch (e) {
     console.error('field_contact_save_failed', (e as { code?: string }).code ?? 'unknown'); // code only, never the data
