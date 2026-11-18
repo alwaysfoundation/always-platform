@@ -23,7 +23,10 @@ let admin: Sql;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test queries read rows loosely
 let sql: any;
 let app: ReturnType<typeof import('../src/app.js').createApp>;
-let clock = new Date('2026-11-18T00:00:00Z'); // 11am Sydney, staffed
+// The next Wednesday at 00:00 UTC (11am in Sydney, staffed), always ahead of the database clock.
+const nextWednesday = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() + 1 + ((3 - d.getUTCDay() + 7) % 7 || 7)); return d; };
+const inDays = (n: number, hourUtc: number) => new Date(nextWednesday().getTime() + n * 86_400_000 + hourUtc * 3_600_000).toISOString();
+let clock = nextWednesday();
 const ids: Record<string, string> = {};
 const tokens: Record<string, string> = {};
 
@@ -287,7 +290,7 @@ describe('church profile and operations', () => {
 });
 
 describe('events', () => {
-  const ev = { title: 'City worship night', kind: 'worship', startsAt: '2026-11-21T08:30:00Z', suburb: 'Parramatta', state: 'NSW', url: 'https://example.org/worship' };
+  const ev = { title: 'City worship night', kind: 'worship', startsAt: inDays(3, 8.5), suburb: 'Parramatta', state: 'NSW', url: 'https://example.org/worship' };
   it('publishes a verified church\'s event straight away and lists it publicly', async () => {
     const r = await call('POST', '/v1/org/events', { token: tokens.a, body: ev });
     expect(r.status).toBe(201);
@@ -359,7 +362,7 @@ describe('foundation team queue', () => {
   });
 
   it('publishes a suggested event once the foundation team checks it', async () => {
-    const s = await call('POST', '/v1/events/suggest', { body: { title: 'Campus night', kind: 'outreach', startsAt: '2026-12-01T08:00:00Z', state: 'NSW', humanToken: 'human-ok' } });
+    const s = await call('POST', '/v1/events/suggest', { body: { title: 'Campus night', kind: 'outreach', startsAt: inDays(13, 8), state: 'NSW', humanToken: 'human-ok' } });
     expect(s.status).toBe(202);
     const list = await call('GET', '/v1/ops/events', { token: tokens.ops, org: ids.care });
     const ev = list.body.items.find((e: any) => e.title === 'Campus night');
