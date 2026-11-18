@@ -64,6 +64,19 @@ export class AlwaysClient {
     verify: (slug: string) => this.req<Verification>('GET', `/v1/verify/${encodeURIComponent(slug)}`),
   };
 
+  /** Evangelist API: Scripture with an evangelism layer. Approved content only unless `drafts` is set. */
+  evangelist = {
+    passages: (q: { theme?: string; q?: string; drafts?: boolean } = {}) =>
+      this.req<{ items: EvangelistPassage[]; licence: string }>('GET', `/v1/evangelist/passages?${evQuery(q)}`),
+    passage: (id: string, opts: { drafts?: boolean } = {}) =>
+      this.req<EvangelistPassage & { objections: { id: string; question: string }[] }>('GET', `/v1/evangelist/passages/${encodeURIComponent(id)}?${evQuery(opts)}`),
+    objections: (opts: { drafts?: boolean } = {}) =>
+      this.req<{ items: { id: string; question: string; status: string }[] }>('GET', `/v1/evangelist/objections?${evQuery(opts)}`),
+    objection: (id: string, opts: { drafts?: boolean } = {}) =>
+      this.req<EvangelistObjection>('GET', `/v1/evangelist/objections/${encodeURIComponent(id)}?${evQuery(opts)}`),
+    themes: (opts: { drafts?: boolean } = {}) => this.req<{ themes: { id: string; passages: number }[] }>('GET', `/v1/evangelist/themes?${evQuery(opts)}`),
+  };
+
   responses = {
     create: (r: NewResponse) => this.req<{ responseId: string; handoffId: string; state: string }>('POST', '/v1/responses', r),
   };
@@ -166,4 +179,20 @@ export interface Verification {
   youthPartner: boolean;
   welcomingNow: boolean;
   verifiedAt: string | null;
+}
+
+export interface EvangelistPassage {
+  id: string; ref: string; translation: string; text: string; themes: string[];
+  explain: string; whenToShare: string; status: 'draft' | 'approved';
+}
+export interface EvangelistObjection {
+  id: string; question: string; answer: string; tips: string[]; status: 'draft' | 'approved';
+  passages: EvangelistPassage[];
+}
+function evQuery(q: { theme?: string; q?: string; drafts?: boolean }): string {
+  const p = new URLSearchParams();
+  if (q.theme) p.set('theme', q.theme);
+  if (q.q) p.set('q', q.q);
+  if (q.drafts) p.set('drafts', '1');
+  return p.toString();
 }
