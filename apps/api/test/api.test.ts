@@ -229,6 +229,15 @@ describe('passing, timers and the care team', () => {
   });
 });
 
+describe('hosted pages on foundation subdomains', () => {
+  it('allows a foundation subdomain and refuses other origins', async () => {
+    const ok = await app.request('/v1/pages/anything', { method: 'OPTIONS', headers: { origin: 'https://sydneyfire.alwaysfoundation.org', 'access-control-request-method': 'POST' } });
+    expect(ok.headers.get('access-control-allow-origin')).toBe('https://sydneyfire.alwaysfoundation.org');
+    const bad = await app.request('/v1/pages/anything', { method: 'OPTIONS', headers: { origin: 'https://alwaysfoundation.org.evil.example', 'access-control-request-method': 'POST' } });
+    expect(bad.headers.get('access-control-allow-origin')).toBeNull();
+  });
+});
+
 describe('minors', () => {
   it('refuses child data for under-13s', async () => {
     const r = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...baseResponse, ageBand: 'under13', consent: { ...baseResponse.consent, party: 'parent' } } });
