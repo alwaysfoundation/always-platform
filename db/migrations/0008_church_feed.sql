@@ -8,7 +8,7 @@ alter table organisation
   add column if not exists languages text[] not null default array['English'];
 
 -- Welcoming now: verified, trained, fresh, has room, not paused, and usually answers on time.
-create or replace view org_readiness as
+create or replace view org_readiness with (security_invoker = true) as
 with month_accepts as (
   select o.org_id, count(*)::int as n
   from handoff_offer o
