@@ -17,6 +17,14 @@ Always grows from one handoff service into a shared platform for the Church in A
 
 The aim is that a ministry can join, prove it is ready, receive people, report to funders and show it is compliant without building any of this itself.
 
+## Who it serves
+
+The Always Foundation is **infrastructure, tools and training for evangelists**, and for the churches and ministries they hand people on to:
+
+- **Evangelists** (event and street evangelists, youth leaders, everyday Christians): the Always app, response points and QR codes, conversation guides, and short free courses.
+- **Ministries** (tours, camps, outreach, media, apps): response pages, the church feed and finder, the Handoff API, reports for funders.
+- **Churches**: the inbox, their listing, compliance records, and the welcoming course.
+
 ## Principles
 
 1/ The person owns the journey. Every movement of their data is covered by a consent they can see and withdraw.
@@ -24,7 +32,7 @@ The aim is that a ministry can join, prove it is ready, receive people, report t
 3/ Least data: share what the next step needs, nothing more.
 4/ Australia only for personal data.
 5/ Open by default for code and standards; private by default for people.
-6/ AI helps people do the work; a person decides every step that affects someone.
+6/ **AI-first, within firm limits.** Every tool is built so AI agents can use it (MCP, `llms.txt`, clean APIs) and AI does as much of the routine work as it safely can: drafting, summarising, matching, translating, reporting, checking data quality, and helping the foundation team. Two limits never move: no AI on any young person's information, and a person approves every action that affects someone. Adults' details reach AI only with their `ai.assist` consent, processed in Australia.
 
 ## Australian legal basis
 
@@ -164,11 +172,24 @@ Team permissions (who can do what inside an organisation):
 
 Youth access is granted per person by an admin, requires a recorded check, and expires with it.
 
+## Where AI helps (maximal use, by design)
+
+| Area | AI does | A person does |
+| --- | --- | --- |
+| Directory | Finds and de-duplicates church listings, flags stale details, suggests corrections | The church confirms; the foundation verifies |
+| Feed and MCP | Answers "find a church near me" in any assistant | Nothing: public data only |
+| Church inbox (adults, with `ai.assist`) | Summarises who's waiting, drafts a welcome message | Reads, edits and sends |
+| Evangelists | Field notes from voice on the phone (on-device), conversation coaching, course tutor | Has the conversation |
+| Reports and compliance | Writes the monthly report and the story draft, checks consent records, drafts breach assessments | Approves before anything is shared |
+| Foundation ops | Triages claims, events and feedback, prepares verification checks | Decides |
+| Minors | Nothing | Everything |
+
 ## Delivery
 
-1/ **Now**: child assent for under 15s and 12-month consent expiry for minors in `packages/core` (tests first); readiness view and badge; Working With Children Check records and youth access expiry; age table tests (fail-closed).
-2/ **Next**: developer portal with test keys; MCP v1 (read-only, no personal data); compliance tab with consent register, breach register and retention evidence.
-3/ **Then**: `share.journey` consent and cross-ministry linking for adults; React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
+1/ **Built (PR #18)**: church feed with opt-in, welcoming now, verification, Your listing page, MCP server v1, `llms.txt`, SDK feed methods and the church finder.
+2/ **Now**: child assent for under 15s and 12-month consent expiry for minors in `packages/core` (tests first); readiness view and badge; Working With Children Check records and youth access expiry; age table tests (fail-closed).
+3/ **Next**: developer portal with test keys; MCP v1 (read-only, no personal data); compliance tab with consent register, breach register and retention evidence.
+4/ **Then**: `share.journey` consent and cross-ministry linking for adults; React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
 
 Each step gets its own issue, tests first for consent, minors and access, and an ADR when a decision is made.
 
