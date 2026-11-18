@@ -12,7 +12,7 @@ ADR 0001 chose Supabase Postgres and Vercel functions in Sydney. We now have a h
 2. The web console (`apps/web`) is a second Vercel project, also in `syd1`, and reaches the API through its own `/api` rewrite (ADR 0002).
 3. Scheduled jobs run on Supabase with `pg_cron` and `pg_net` (`db/supabase/jobs.sql`), calling the API's job endpoints with the cron secret. The API address and secret are kept in Supabase Vault. This avoids needing Vercel Pro for minute-level cron.
 4. The Supabase Data API (PostgREST) is turned off. Only the Always API talks to the database.
-5. Secrets (database URL, field and hash keys, cron and auth secrets) are set by a maintainer in Vercel and GitHub environments, never in the repository.
+5. Secrets (database URL, field and hash keys, auth secret) are set by a maintainer in Vercel and GitHub environments, never in the repository. The cron secret is generated inside Supabase Vault and read by the API from there, so no person handles it.
 
 ## Consequences
 
