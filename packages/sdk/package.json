@@ -7,11 +7,13 @@
   "license": "Apache-2.0",
   "sideEffects": [
     "src/widget.ts",
-    "src/finder.ts"
+    "src/finder.ts",
+    "src/compliance-widget.ts"
   ],
   "exports": {
     ".": "./src/index.ts",
     "./widget": "./src/widget.ts",
-    "./finder": "./src/finder.ts"
+    "./finder": "./src/finder.ts",
+    "./compliance-widget": "./src/compliance-widget.ts"
   }
 }

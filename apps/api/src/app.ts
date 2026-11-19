@@ -14,6 +14,8 @@ import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
 import { buildReport, toCsv } from './reports.js';
 import { mountMcp } from './mcp.js';
+import { registerWebhookRoutes } from './webhooks.js';
+import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
@@ -93,7 +95,7 @@ async function turnstile(token: string | undefined, ip?: string): Promise<boolea
   return data.success === true;
 }
 
-export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean> }) {
+export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean>; complianceFetcher?: Fetcher; complianceSummariser?: Summariser }) {
   const now = opts.now ?? (() => new Date());
   const verifyHuman = opts.verifyHuman ?? turnstile;
   const app = new Hono<Env>();
@@ -336,16 +338,16 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       const self = newToken('alp');
       await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                values (${self.hash}, ${r.id}, 'self_service', ${new Date(t.getTime() + 90 * 86_400_000)})`;
-      await tx`insert into outbox (channel, template, response_id, params_ct)
-               values ('sms', 'person.thanks', ${r.id}, ${encrypt(JSON.stringify({ link: self.token }))})`;
+      await tx`insert into outbox (channel, template, response_id, params_ct, not_before)
+               values ('sms', 'person.thanks', ${r.id}, ${encrypt(JSON.stringify({ link: self.token }))}, ${t})`;
       let parentToken: string | undefined;
       if (rules.requiresParentConfirmation && body.consent.party !== 'parent') {
         const pt = newToken('alg');
         parentToken = pt.token;
         await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                  values (${pt.hash}, ${r.id}, 'parent_confirm', ${new Date(t.getTime() + POLICY.retention.parentConfirmationDays * 86_400_000)})`;
-        await tx`insert into outbox (channel, template, response_id, params_ct)
-                 values ('sms', 'parent.confirm', ${r.id}, ${encrypt(JSON.stringify({ link: pt.token, to: body.parentContact }))})`;
+        await tx`insert into outbox (channel, template, response_id, params_ct, not_before)
+                 values ('sms', 'parent.confirm', ${r.id}, ${encrypt(JSON.stringify({ link: pt.token, to: body.parentContact }))}, ${t})`;
       }
       const handoff = await engine.start(tx, randomUUID(), r.id, t);
       await audit(tx, { orgId: senderOrgId, action: 'response.create', subject: `response:${r.id}` });
@@ -667,9 +669,9 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
         await tx`insert into membership (user_id, org_id, role) values (${u.id}, ${cr.org_id}, 'admin') on conflict do nothing`;
         await tx`update organisation set trust_level = 'claimed' where id = ${cr.org_id} and trust_level = 'listed'`;
       }
-      await tx`insert into outbox (channel, template, org_id, params_ct)
+      await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
                values ('email', ${b.decision === 'approve' ? 'claim.approved' : 'claim.declined'}, ${cr.org_id},
-                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))})`;
+                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))}, ${now()})`;
       await audit(tx, { actor: p.userId, orgId: p.orgId, action: `claim.${b.decision}`, subject: `org:${cr.org_id}` });
       return { status: b.decision === 'approve' ? 'approved' : 'rejected' };
     });
@@ -813,6 +815,10 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ token: t.token, note: 'Shown once. Store it in your secret manager.' }, 201);
   });
 
+  // ---------------------------------------------------------------- Always Compliance (RFC 0003)
+  registerComplianceRoutes(app, sql, now);
+  registerWebhookRoutes(app, sql);
+
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
   // On Supabase the cron secret is generated inside the database (Vault) by db/supabase/jobs.sql,
   // so no person ever copies it. Read once and cached; absent outside Supabase.
@@ -832,7 +838,8 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     if (!secret || !given || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
     return c.json(await fn(sql, now(), opts.adapters));
   };
-  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention]] as const) {
+  const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);
+  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
     app.post(path, job(fn));
     app.get(path, job(fn));
   }
