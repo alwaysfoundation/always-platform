@@ -21,6 +21,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const nav = [
     { href: '/inbox', label: 'Inbox' },
     { href: '/reports', label: 'Reports' },
+    { href: '/listing', label: 'Your listing' },
     { href: '/foundation', label: 'Foundation' },
   ];
   return (

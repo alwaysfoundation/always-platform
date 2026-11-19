@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
+import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { asApp, asService, type Sql } from '@always/db';
@@ -11,6 +13,7 @@ import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
 import { buildReport, toCsv } from './reports.js';
+import { mountMcp } from './mcp.js';
 import { registerWebhookRoutes } from './webhooks.js';
 import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
@@ -100,6 +103,8 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     c.set('sql', sql);
     await next();
   });
+  // Open, read-only endpoints may be called from any website (no cookies, no credentials).
+  for (const path of ['/v1/feed/*', '/v1/verify/*', '/v1/directory', '/v1/events', '/mcp']) app.use(path, cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type', 'x-always-key', 'mcp-protocol-version'], maxAge: 86400 }));
   app.use('*', rateLimit({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_PER_MIN ?? 120) }));
   app.use('/v1/*', authenticate());
 
@@ -155,6 +160,135 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
                values (${o.id}, ${encrypt(body.email)}, ${lookupHash(body.email)}, ${body.role}, ${body.evidence ?? null})`;
     });
     return c.json({ status: 'pending' }, 202);
+  });
+
+  // ---------------------------------------------------------------- Church feed and verification (open, RFC 0001)
+  // Organisation facts only, for churches that opted in. Never people, never staff contact details.
+  // A developer key (x-always-key) is optional; if sent, it must be valid.
+  const checkAppKey = async (c: Context<Env>) => {
+    const key = c.req.header('x-always-key');
+    if (!key) return;
+    const [k] = await asService(sql, (tx) => tx`
+      update app_key set last_used_at = now() where key_hash = ${tokenHash(key)} and revoked_at is null returning id`);
+    if (!k) throw new HttpError(401, 'bad_app_key');
+  };
+  const feedRow = (r: any) => ({
+    slug: r.slug, name: r.display_name, kind: r.kind, denomination: r.denomination ?? null,
+    suburb: r.suburb ?? null, state: r.state ?? null, postcode: r.postcode ?? null,
+    location: r.geo_lat == null ? null : { lat: Number(Number(r.geo_lat).toFixed(3)), lng: Number(Number(r.geo_lng).toFixed(3)) },
+    steps: r.steps ?? [], languages: r.languages ?? [], serviceTimes: r.service_times ?? null,
+    welcomingNow: !!r.welcoming_now, youthPartner: !!r.youth_partner,
+    verified: ['verified', 'verified_youth'].includes(r.trust_level),
+    distanceKm: r.distance_km == null ? undefined : Number(Number(r.distance_km).toFixed(1)),
+    url: `https://alwaysfoundation.org/#/church/${r.slug}`,
+    updatedAt: r.last_confirmed_at ?? null,
+  });
+  const FEED_COLUMNS = (tx: any) => tx`
+    o.slug, o.display_name, o.kind::text as kind, o.denomination, o.suburb, o.state, o.postcode, o.geo_lat, o.geo_lng,
+    o.languages, o.service_times, o.trust_level::text as trust_level, o.last_confirmed_at,
+    coalesce((select array_agg(category::text order by category) from offer_category where org_id = o.id and active), '{}') as steps,
+    r.welcoming_now, r.youth_partner`;
+
+  app.get('/v1/feed/churches', async (c) => {
+    await checkAppKey(c);
+    const q = parse(z.object({
+      postcode: z.string().regex(/^\d{4}$/).optional(),
+      lat: z.coerce.number().min(-45).max(-9).optional(), lng: z.coerce.number().min(112).max(155).optional(),
+      radiusKm: z.coerce.number().min(1).max(200).default(25),
+      step: z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']).optional(),
+      welcoming: z.enum(['true', 'false']).optional(), youth: z.enum(['true', 'false']).optional(),
+      state: z.string().max(3).optional(), limit: z.coerce.number().min(1).max(100).default(25),
+    }), c.req.query());
+    const rows = await asService(sql, async (tx) => {
+      let lat = q.lat, lng = q.lng;
+      if (q.postcode && (lat == null || lng == null)) {
+        const [pl] = await tx`select lat, lng from place_centroid where postcode = ${q.postcode} limit 1`;
+        if (pl) { lat = pl.lat; lng = pl.lng; }
+      }
+      const near = lat != null && lng != null;
+      return tx`
+        select ${FEED_COLUMNS(tx)},
+          ${near ? tx`6371 * 2 * asin(sqrt(power(sin(radians(o.geo_lat - ${lat}) / 2), 2) + cos(radians(${lat})) * cos(radians(o.geo_lat)) * power(sin(radians(o.geo_lng - ${lng}) / 2), 2)))` : tx`null::float8`} as distance_km
+        from organisation o join org_readiness r on r.org_id = o.id
+        where o.feed_opt_in_at is not null and not o.is_care_team
+          and (${q.state ?? null}::text is null or o.state = ${q.state ?? null})
+          and (${q.welcoming !== 'true'} or r.welcoming_now)
+          and (${q.youth !== 'true'} or r.youth_partner)
+          and (${q.step ?? null}::text is null or exists (select 1 from offer_category oc where oc.org_id = o.id and oc.active and oc.category::text = ${q.step ?? null}))
+          ${near ? tx`and o.geo_lat is not null and 6371 * 2 * asin(sqrt(power(sin(radians(o.geo_lat - ${lat}) / 2), 2) + cos(radians(${lat})) * cos(radians(o.geo_lat)) * power(sin(radians(o.geo_lng - ${lng}) / 2), 2))) <= ${q.radiusKm}` : tx``}
+        order by ${near ? tx`distance_km` : tx`o.display_name`}
+        limit ${q.limit}`;
+    });
+    c.header('cache-control', 'public, max-age=300');
+    return c.json({ items: rows.map(feedRow), licence: 'Facts provided by each church for the Always church feed. Free to use with attribution to the Always Foundation.' });
+  });
+
+  app.get('/v1/feed/churches.jsonl', async (c) => {
+    await checkAppKey(c);
+    const rows = await asService(sql, (tx) => tx`
+      select ${FEED_COLUMNS(tx)}, null::float8 as distance_km
+      from organisation o join org_readiness r on r.org_id = o.id
+      where o.feed_opt_in_at is not null and not o.is_care_team order by o.state, o.display_name`);
+    c.header('content-type', 'application/x-ndjson; charset=utf-8');
+    c.header('cache-control', 'public, max-age=3600');
+    return c.body(rows.map((r: any) => JSON.stringify(feedRow(r))).join('\n') + '\n');
+  });
+
+  app.get('/v1/verify/:slug', async (c) => {
+    await checkAppKey(c);
+    const [r] = await asService(sql, (tx) => tx`
+      select o.slug, o.display_name, o.trust_level::text as trust_level, o.verified_at, o.youth_verified_at, r.welcoming_now, r.youth_partner
+      from organisation o join org_readiness r on r.org_id = o.id
+      where o.slug = ${c.req.param('slug')} and not o.is_care_team`);
+    if (!r) throw new HttpError(404, 'not_found');
+    c.header('cache-control', 'public, max-age=300');
+    return c.json({
+      slug: r.slug, name: r.display_name,
+      verified: ['verified', 'verified_youth'].includes(r.trust_level), youthPartner: !!r.youth_partner,
+      welcomingNow: !!r.welcoming_now, verifiedAt: r.verified_at ?? null,
+    });
+  });
+
+  app.get('/v1/org/feed', async (c) => {
+    const p = requirePrincipal(c, 'profile');
+    const [o] = await asService(sql, (tx) => tx`
+      select o.feed_opt_in_at, o.slug, r.welcoming_now, r.youth_partner, r.on_time_rate, r.recent_offers,
+             o.trust_level::text as trust_level, o.connect_trained_at, o.last_confirmed_at
+      from organisation o join org_readiness r on r.org_id = o.id where o.id = ${p.orgId}`);
+    if (!o) throw new HttpError(404, 'not_found');
+    // Only this organisation sees its own response rate.
+    return c.json({
+      optedIn: !!o.feed_opt_in_at, at: o.feed_opt_in_at ?? null, slug: o.slug, welcomingNow: !!o.welcoming_now, youthPartner: !!o.youth_partner,
+      checks: {
+        verified: ['verified', 'verified_youth'].includes(o.trust_level), trained: !!o.connect_trained_at,
+        confirmedRecently: !!o.last_confirmed_at && new Date(o.last_confirmed_at).getTime() > Date.now() - 90 * 86_400_000,
+        onTimeRate: o.on_time_rate == null ? null : Number(o.on_time_rate), recentOffers: o.recent_offers,
+      },
+    });
+  });
+
+  app.put('/v1/org/feed', async (c) => {
+    const p = requirePrincipal(c, 'profile');
+    const body = parse(z.object({ optIn: z.boolean() }), await c.req.json());
+    const [o] = await asService(sql, async (tx) => {
+      const rows = await tx`update organisation set feed_opt_in_at = ${body.optIn ? now() : null} where id = ${p.orgId} returning feed_opt_in_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: body.optIn ? 'feed.opt_in' : 'feed.opt_out', subject: `org:${p.orgId}` });
+      return rows;
+    });
+    return c.json({ optedIn: !!o?.feed_opt_in_at, at: o?.feed_opt_in_at ?? null });
+  });
+
+  app.post('/v1/ops/app-keys', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const body = parse(z.object({ name: z.string().min(2).max(80), contactEmail: z.string().email(), kind: z.enum(['test', 'live']).default('test') }), await c.req.json());
+    const t = newToken(`alk_${body.kind}`);
+    const k = await asService(sql, async (tx) => {
+      const [row] = await tx`insert into app_key (name, contact_email_ct, kind, key_hash) values (${body.name}, ${encrypt(body.contactEmail)}, ${body.kind}, ${t.hash}) returning id`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'app_key.create', subject: `app_key:${row!.id}` });
+      return row!;
+    });
+    return c.json({ id: k.id, key: t.token, kind: body.kind, note: 'Shown once. Store it in your server environment.' }, 201);
   });
 
   // ---------------------------------------------------------------- Responses (senders)
@@ -685,5 +819,6 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     app.get(path, job(fn));
   }
 
+  mountMcp(app);
   return app;
 }
