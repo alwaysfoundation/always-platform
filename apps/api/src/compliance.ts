@@ -267,11 +267,11 @@ export type Fetcher = (url: string) => Promise<string>;
 /** Optional agent that drafts a plain-English summary of a change. A person always decides. */
 export type Summariser = (sourceName: string, url: string) => Promise<string>;
 
-/** Strip markup and whitespace so cosmetic page changes don't raise a change. */
+/** Strip markup and whitespace so cosmetic page changes don't raise a change. Hashing only, never sanitising. */
 export function fingerprint(page: string): string {
   const text = page
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

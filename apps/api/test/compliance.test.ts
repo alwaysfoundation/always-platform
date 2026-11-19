@@ -285,3 +285,12 @@ describe('compliance infrastructure', () => {
     expect((await call('GET', '/v1/webhooks', { token: tokens.a, org: ids.a })).body.endpoints).toHaveLength(0);
   });
 });
+
+describe('fingerprint', () => {
+  it('ignores scripts and styles, including end tags with spaces or attributes', async () => {
+    const { fingerprint } = await import('../src/compliance.js');
+    const plain = fingerprint('<p>The Code is registered.</p>');
+    expect(fingerprint('<p>The Code is registered.</p><script>x()</script >')).toBe(plain);
+    expect(fingerprint('<style media="all">p{}</style foo="bar"><p>The Code is registered.</p>')).toBe(plain);
+  });
+});
