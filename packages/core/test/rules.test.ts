@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canProcess, withdrawConsent as withdraw } from '../src/consent.js';
+import { canProcess, consentExpiresAt, withdrawConsent as withdraw } from '../src/consent.js';
 import { rulesFor, lowerBand } from '../src/minors.js';
 import { rankCandidates, exclusionReason } from '../src/matching.js';
 import { retentionPlan, suppress } from '../src/retention.js';
@@ -22,27 +22,67 @@ describe('minors rules', () => {
   });
 });
 
+const NOW = new Date('2026-11-18T09:00:00Z');
+
 describe('consent gate', () => {
   it('fails closed without a record', () => {
-    expect(canProcess(undefined, 'connect.church', 'a')).toEqual({ ok: false, reason: 'no_consent_record' });
+    expect(canProcess(undefined, 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'no_consent_record' });
   });
   it('allows the named church', () => {
-    expect(canProcess(consent(), 'connect.church', 'a').ok).toBe(true);
+    expect(canProcess(consent(), 'connect.church', 'a', { now: NOW }).ok).toBe(true);
   });
   it('refuses a purpose that was not granted', () => {
-    expect(canProcess(consent(), 'notify.sender', null)).toEqual({ ok: false, reason: 'purpose_not_granted' });
+    expect(canProcess(consent(), 'notify.sender', null, { now: NOW })).toEqual({ ok: false, reason: 'purpose_not_granted' });
   });
   it('allows the next nearby church only if the person agreed', () => {
-    expect(canProcess(consent(), 'connect.church', 'b', { isNextNearby: true }).ok).toBe(true);
-    expect(canProcess(consent({ allowNextNearby: false }), 'connect.church', 'b', { isNextNearby: true }).ok).toBe(false);
+    expect(canProcess(consent(), 'connect.church', 'b', { isNextNearby: true, now: NOW }).ok).toBe(true);
+    expect(canProcess(consent({ allowNextNearby: false }), 'connect.church', 'b', { isNextNearby: true, now: NOW }).ok).toBe(false);
   });
   it('refuses after withdrawal', () => {
-    expect(canProcess(withdraw(consent(), new Date()), 'connect.church', 'a')).toEqual({ ok: false, reason: 'withdrawn' });
+    expect(canProcess(withdraw(consent(), new Date()), 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'withdrawn' });
   });
   it('requires parent confirmation for a 13-14 year old', () => {
-    const c = consent({ ageBand: '13-14' });
-    expect(canProcess(c, 'connect.church', 'a')).toEqual({ ok: false, reason: 'parent_confirmation_required' });
-    expect(canProcess({ ...c, parentConfirmedAt: new Date() }, 'connect.church', 'a').ok).toBe(true);
+    const c = consent({ ageBand: '13-14', childAssentAt: NOW });
+    expect(canProcess(c, 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'parent_confirmation_required' });
+    expect(canProcess({ ...c, parentConfirmedAt: new Date() }, 'connect.church', 'a', { now: NOW }).ok).toBe(true);
+  });
+});
+
+describe('child assent (under 15)', () => {
+  it('requires the child to agree as well as the parent', () => {
+    expect(rulesFor('under13').requiresChildAssent).toBe(true);
+    expect(rulesFor('13-14').requiresChildAssent).toBe(true);
+    expect(rulesFor('15-17').requiresChildAssent).toBe(false);
+    expect(rulesFor('18+').requiresChildAssent).toBe(false);
+  });
+  it('refuses a parent-given consent without the child agreeing', () => {
+    const c = consent({ ageBand: 'under13', party: 'parent' });
+    expect(canProcess(c, 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'child_assent_required' });
+    expect(canProcess({ ...c, childAssentAt: NOW }, 'connect.church', 'a', { now: NOW }).ok).toBe(true);
+  });
+  it('still needs the parent when the child has agreed', () => {
+    const c = consent({ ageBand: '13-14', childAssentAt: NOW });
+    expect(canProcess(c, 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'parent_confirmation_required' });
+  });
+  it('does not ask 15-17 year olds for separate assent', () => {
+    expect(canProcess(consent({ ageBand: '15-17' }), 'connect.church', 'a', { now: NOW }).ok).toBe(true);
+  });
+});
+
+describe('12-month consent', () => {
+  it('lapses 12 months after it was given', () => {
+    const c = consent({ collectedAt: new Date('2026-01-31T00:00:00Z') });
+    expect(consentExpiresAt(c).toISOString()).toBe('2027-01-31T00:00:00.000Z');
+    expect(canProcess(c, 'connect.church', 'a', { now: new Date('2027-01-30T23:59:59Z') }).ok).toBe(true);
+    expect(canProcess(c, 'connect.church', 'a', { now: new Date('2027-01-31T00:00:00Z') })).toEqual({ ok: false, reason: 'expired' });
+  });
+  it('honours a renewed expiry date', () => {
+    const c = consent({ collectedAt: new Date('2025-01-01T00:00:00Z'), expiresAt: new Date('2027-06-01T00:00:00Z') });
+    expect(canProcess(c, 'connect.church', 'a', { now: NOW }).ok).toBe(true);
+  });
+  it('checks withdrawal before expiry', () => {
+    const c = withdraw(consent({ collectedAt: new Date('2020-01-01T00:00:00Z') }), NOW);
+    expect(canProcess(c, 'connect.church', 'a', { now: NOW })).toEqual({ ok: false, reason: 'withdrawn' });
   });
 });
 
