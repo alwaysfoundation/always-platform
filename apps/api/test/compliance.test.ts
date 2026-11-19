@@ -12,7 +12,7 @@ import { migrate, type Sql } from '@always/db';
  */
 const ADMIN_URL = process.env.TEST_ADMIN_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
 const DB = `always_compliance_test_${Date.now()}`;
-const sent: { channel: string; template: string }[] = [];
+const sent: { channel: string; template: string; url?: string; body?: string }[] = [];
 const pages: Record<string, string> = {};
 
 process.env.FIELD_KEY = randomBytes(32).toString('base64');
@@ -61,7 +61,7 @@ beforeAll(async () => {
     adapters: {
       email: async (m) => void sent.push({ channel: 'email', template: m.template }),
       sms: async (m) => void sent.push({ channel: 'sms', template: m.template }),
-      webhook: async () => void sent.push({ channel: 'webhook', template: 'webhook' }),
+      webhook: async (url, body) => void sent.push({ channel: 'webhook', template: 'webhook', url, body }),
     },
     complianceFetcher: async (url) => pages[url] ?? '<html><body>unchanged</body></html>',
   });
@@ -216,6 +216,73 @@ describe('watching the law', () => {
     const feed = await call('GET', '/v1/compliance/changes');
     expect(feed.body.versions[0].version).toBe('2027.01.0');
     expect(feed.body.versions[0].changes[0]).toMatchObject({ obligationId: 'childrens-online-privacy-code', change: 'changed' });
+  });
+});
+
+describe('compliance infrastructure', () => {
+  it('serves every published version, immutably, and the latest with an ETag', async () => {
+    const v = await call('GET', '/v1/compliance/register/versions');
+    expect(v.body.versions.map((x: any) => x.version)).toEqual(['2027.01.0', register.version]);
+    const old = await app.request(`/v1/compliance/register/${register.version}`);
+    expect(old.headers.get('cache-control')).toContain('immutable');
+    expect(((await old.json()) as any).version).toBe(register.version);
+    expect((await call('GET', '/v1/compliance/register/1999.01.0')).status).toBe(404);
+    const latest = await app.request('/v1/compliance/register');
+    expect(latest.headers.get('etag')).toBe('"2027.01.0"');
+    expect((await app.request('/v1/compliance/register', { headers: { 'if-none-match': '"2027.01.0"' } })).status).toBe(304);
+  });
+
+  it('lets any site embed the open data and the check-up, without credentials', async () => {
+    const pre = await app.request('/v1/compliance/check', { method: 'OPTIONS', headers: { origin: 'https://loveisourweapon.example', 'access-control-request-method': 'POST' } });
+    expect(pre.headers.get('access-control-allow-origin')).toBe('*');
+    expect(pre.headers.get('access-control-allow-credentials')).toBeNull();
+    const member = await app.request('/v1/compliance/profile', { headers: { origin: 'https://loveisourweapon.example' } });
+    expect(member.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('only accepts public https webhook addresses', async () => {
+    expect((await call('POST', '/v1/webhooks', { body: { url: 'https://hooks.example.org/a', events: ['*'] } })).status).toBe(401);
+    for (const url of ['http://hooks.example.org/a', 'https://localhost/a', 'https://10.0.0.5/a', 'https://[::1]/a', 'https://user:pw@hooks.example.org/a', 'https://intranet/a']) {
+      expect((await call('POST', '/v1/webhooks', { token: tokens.a, org: ids.a, body: { url, events: ['*'] } })).status).toBe(422);
+    }
+  });
+
+  it('shows the signing secret once, and keeps endpoints within their organisation', async () => {
+    const made = await call('POST', '/v1/webhooks', { token: tokens.a, org: ids.a, body: { url: 'https://hooks.example.org/always', events: ['always.compliance.register.published', 'always.compliance.obligations.affected'] } });
+    expect(made.status).toBe(201);
+    expect(made.body.secret).toMatch(/^whsec_/);
+    ids.hook = made.body.id;
+    const listed = await call('GET', '/v1/webhooks', { token: tokens.a, org: ids.a });
+    expect(listed.body.endpoints).toHaveLength(1);
+    expect(JSON.stringify(listed.body)).not.toContain('whsec_');
+    expect((await call('GET', '/v1/webhooks', { token: tokens.b, org: ids.b })).body.endpoints).toHaveLength(0);
+    expect((await call('DELETE', `/v1/webhooks/${ids.hook}`, { token: tokens.b, org: ids.b })).status).toBe(404);
+  });
+
+  it('alerts subscribers and affected members when a published version changes their obligations', async () => {
+    sent.length = 0;
+    await sql`update outbox set status = 'sent' where status = 'pending'`;
+    const next = JSON.parse(JSON.stringify(register));
+    next.version = '2027.02.0';
+    next.obligations.find((o: any) => o.id === 'childrens-online-privacy-code').status = 'in_force';
+    next.obligations.find((o: any) => o.id === 'working-with-children-checks').summary = 'Updated summary for the NSW scheme.';
+    const pub = await call('POST', '/v1/ops/compliance/register', { token: tokens.ops, org: ids.care, body: { register: next, approvedBy: 'Foundation legal reviewer', changeSummary: 'NSW checks wording' } });
+    expect(pub.status).toBe(201);
+    expect(pub.body.alerts).toEqual({ subscribers: 1, affected: 1 }); // only Hope Church has a profile
+    await cron('/jobs/outbox');
+    expect(sent.filter((m) => m.channel === 'email').map((m) => m.template)).toEqual(['compliance.changed']);
+    const hooks = sent.filter((m) => m.channel === 'webhook').map((m) => JSON.parse(m.body!));
+    expect(hooks.map((h) => h.type).sort()).toEqual(['always.compliance.obligations.affected', 'always.compliance.register.published']);
+    const affected = hooks.find((h) => h.type === 'always.compliance.obligations.affected');
+    expect(affected.data).toEqual({ version: '2027.02.0', obligationIds: ['working-with-children-checks'] });
+    const published = hooks.find((h) => h.type === 'always.compliance.register.published');
+    expect(published.data.changes.map((c: any) => c.obligationId)).toEqual(['working-with-children-checks']);
+    expect(JSON.stringify(hooks)).not.toMatch(/@example\.org|responseId/);
+  });
+
+  it('removes an endpoint for its own organisation', async () => {
+    expect((await call('DELETE', `/v1/webhooks/${ids.hook}`, { token: tokens.a, org: ids.a })).status).toBe(200);
+    expect((await call('GET', '/v1/webhooks', { token: tokens.a, org: ids.a })).body.endpoints).toHaveLength(0);
   });
 });
 

@@ -143,3 +143,11 @@ describe('quarters', () => {
     expect(quarterOf(new Date('2026-11-19T01:00:00Z'))).toBe('2026-Q4');
   });
 });
+
+describe('register diff and stored copies', () => {
+  it('ignores key order, which jsonb changes', () => {
+    const reg = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/compliance/register.json', import.meta.url)), 'utf8'));
+    const reordered = JSON.parse(JSON.stringify(reg), (_k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).reverse()) : v));
+    expect(diffRegisters(reg, reordered)).toEqual([]);
+  });
+});

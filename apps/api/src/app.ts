@@ -10,6 +10,7 @@ import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
+import { registerWebhookRoutes } from './webhooks.js';
 import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
@@ -570,6 +571,7 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
 
   // ---------------------------------------------------------------- Always Compliance (RFC 0003)
   registerComplianceRoutes(app, sql, now);
+  registerWebhookRoutes(app, sql);
 
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
   const job = (fn: (sql: Sql, t: Date, a: Adapters) => Promise<unknown>) => async (c: any) => {

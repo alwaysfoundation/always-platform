@@ -2,11 +2,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { asApp, asService, type Sql } from '@always/db';
 import { assess, diffRegisters, quarterOf, validateRegister, JURISDICTIONS, type Answers, type ComplianceProfile, type PlatformSignals, type Register } from '@always/core';
 import { requirePrincipal, HttpError, type Env } from './auth.js';
 import { audit } from './audit.js';
+import { encrypt } from './crypto.js';
 
 /**
  * Always Compliance (RFC 0003). Organisation facts and assessments only: nothing here
@@ -64,9 +66,64 @@ async function loadState(sql: Sql, orgId: string) {
   return { profile: (p?.profile ?? null) as ComplianceProfile | null, answers };
 }
 
+export const COMPLIANCE_EVENTS = ['always.compliance.register.published', 'always.compliance.obligations.affected'] as const;
+
+/** Queue change alerts for a newly published version, inside the publishing transaction. */
+export async function queueChangeAlerts(tx: Sql, reg: Register, summary: string | null, at: Date) {
+  const [prev] = await tx`select content from compliance_register where version <> ${reg.version} order by published_at desc limit 1`;
+  const changes = prev ? diffRegisters(prev.content as Register, reg) : [];
+  const published = { version: reg.version, status: reg.status, summary, changes: changes.map((c) => ({ obligationId: c.obligationId, change: c.change, what: c.what })) };
+  const subscribers = await tx`select distinct org_id from webhook_endpoint
+                               where active and (${COMPLIANCE_EVENTS[0]} = any(events) or '*' = any(events))`;
+  for (const s of subscribers) {
+    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${COMPLIANCE_EVENTS[0]}, ${s.org_id}, ${encrypt(JSON.stringify(published))}, ${at})`;
+  }
+  if (!changes.length) return { subscribers: subscribers.length, affected: 0 };
+  const changed = new Set(changes.map((c) => c.obligationId));
+  const members = await tx`select org_id, profile from compliance_profile`;
+  let affected = 0;
+  for (const m of members) {
+    const applies = assess(reg, m.profile as ComplianceProfile, {}, {}, at);
+    const ids = [...applies.items.map((i) => i.obligationId), ...applies.watching.map((w) => w.obligationId)].filter((id) => changed.has(id));
+    const removed = changes.filter((c) => c.change === 'removed').map((c) => c.obligationId);
+    const all = [...new Set([...ids, ...removed])];
+    if (!all.length) continue;
+    affected++;
+    const data = encrypt(JSON.stringify({ version: reg.version, obligationIds: all }));
+    await tx`insert into outbox (channel, template, org_id, not_before) values ('email', 'compliance.changed', ${m.org_id}, ${at})`;
+    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${COMPLIANCE_EVENTS[1]}, ${m.org_id}, ${data}, ${at})`;
+  }
+  return { subscribers: subscribers.length, affected };
+}
+
 export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Date) {
-  // Public: the open register and the feed of approved changes. No sign-in.
-  app.get('/v1/compliance/register', async (c) => c.json(await currentRegister(sql)));
+  // Public open data: anyone may read and embed it, from any site. No credentials, nothing stored.
+  const open = cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'], maxAge: 86_400 });
+  app.use('/v1/compliance/register', open);
+  app.use('/v1/compliance/register/*', open);
+  app.use('/v1/compliance/changes', open);
+  app.use('/v1/compliance/check', open);
+
+  app.get('/v1/compliance/register', async (c) => {
+    const reg = await currentRegister(sql);
+    const etag = `"${reg.version}"`;
+    c.header('etag', etag);
+    c.header('cache-control', 'public, max-age=300');
+    if (c.req.header('if-none-match') === etag) return c.body(null, 304);
+    return c.json(reg);
+  });
+
+  app.get('/v1/compliance/register/versions', async (c) => {
+    const rows = await sql`select version, status, published_at, change_summary from compliance_register order by published_at desc`;
+    return c.json({ versions: rows.map((r) => ({ version: r.version, status: r.status, publishedAt: r.published_at, summary: r.change_summary })) });
+  });
+
+  app.get('/v1/compliance/register/:version', async (c) => {
+    const [row] = await sql`select content from compliance_register where version = ${c.req.param('version')}`;
+    if (!row) throw new HttpError(404, 'not_found');
+    c.header('cache-control', 'public, max-age=86400, immutable');
+    return c.json(row.content);
+  });
 
   app.get('/v1/compliance/changes', async (c) => {
     const versions = await sql`select version, content, published_at, change_summary from compliance_register order by published_at`;
@@ -192,14 +249,15 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
     const reg = b.data.register as unknown as Register;
     const problems = Array.isArray(reg.obligations) ? validateRegister(reg) : ['no obligations'];
     if (problems.length) return c.json({ error: 'invalid_register', problems }, 422);
-    await asService(sql, async (tx) => {
+    const alerts = await asService(sql, async (tx) => {
       const [exists] = await tx`select 1 from compliance_register where version = ${reg.version}`;
       if (exists) throw new HttpError(409, 'version_exists');
       await tx`insert into compliance_register (version, content, status, approved_by, change_summary)
                values (${reg.version}, ${tx.json(b.data.register as never)}, ${reg.status === 'reviewed' ? 'reviewed' : 'draft'}, ${b.data.approvedBy}, ${b.data.changeSummary ?? null})`;
       await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'compliance.register.publish', subject: `register:${reg.version}` });
+      return queueChangeAlerts(tx as unknown as Sql, reg, b.data.changeSummary ?? null, now());
     });
-    return c.json({ ok: true, version: reg.version }, 201);
+    return c.json({ ok: true, version: reg.version, alerts }, 201);
   });
 }
 

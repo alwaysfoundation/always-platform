@@ -26,13 +26,27 @@ tags:
   - name: Person
   - name: Operations
   - name: Compliance
+  - name: Webhooks
 paths:
   /v1/compliance/register:
     get:
       tags: [Compliance]
       security: []
-      summary: The latest published compliance register (open data, CC BY 4.0)
-      responses: { '200': { description: Register } }
+      summary: The latest published compliance register (open data, CC BY 4.0). CORS open; send If-None-Match with the ETag.
+      responses: { '200': { description: Register }, '304': { description: Not modified } }
+  /v1/compliance/register/versions:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: Every published register version, newest first
+      responses: { '200': { description: Versions } }
+  /v1/compliance/register/{version}:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: One published register version. Immutable.
+      parameters: [{ name: version, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Register }, '404': { description: Not found } }
   /v1/compliance/changes:
     get:
       tags: [Compliance]
@@ -46,6 +60,20 @@ paths:
       summary: A free check-up. Nothing is stored.
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [profile], properties: { profile: { $ref: '#/components/schemas/ComplianceProfile' }, answers: { type: object, additionalProperties: { enum: [yes, no, unsure, not_applicable] } } } } } } }
       responses: { '200': { description: Assessment }, '422': { description: Invalid body } }
+  /v1/webhooks:
+    get: { tags: [Webhooks], summary: Your webhook endpoints (admin or webhooks scope). Secrets are never returned., responses: { '200': { description: Endpoints } } }
+    post:
+      tags: [Webhooks]
+      summary: Add an endpoint. Returns the signing secret once. Public https hosts only, ten at most.
+      description: Deliveries are CloudEvents 1.0, signed with HMAC-SHA256 (always-timestamp, always-signature). Compliance events are always.compliance.register.published and always.compliance.obligations.affected; their data carries register facts, never people.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [url, events], properties: { url: { type: string, format: uri }, events: { type: array, items: { type: string, example: always.compliance.obligations.affected } } } } } } }
+      responses: { '201': { description: Created, with secret }, '409': { description: Too many endpoints }, '422': { description: Invalid body } }
+  /v1/webhooks/{id}:
+    delete:
+      tags: [Webhooks]
+      summary: Remove an endpoint
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Removed }, '404': { description: Not found } }
   /v1/compliance/profile:
     get: { tags: [Compliance], summary: Your organisation's profile and answers (admin or compliance scope), responses: { '200': { description: Profile and answers } } }
     put:

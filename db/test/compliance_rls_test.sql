@@ -52,5 +52,26 @@ do $$ begin
   if (select count(*) from compliance_answer) <> 1 then raise exception 'FAIL: church A cannot see its own answers'; end if;
 end $$;
 
+-- Change alerts: webhook endpoints stay within their organisation.
+reset role;
+insert into webhook_endpoint (org_id, url, secret_ct, events) values
+  ('00000000-0000-0000-0000-0000000000ca', 'https://hooks.example.org/a', '\x00', '{always.compliance.register.published}');
+set local role app_user;
+select set_config('app.org_id', '00000000-0000-0000-0000-0000000000cb', true);
+do $$ begin
+  if (select count(*) from webhook_endpoint) <> 0 then raise exception 'FAIL: church B can see church A webhook endpoints'; end if;
+end $$;
+delete from webhook_endpoint;
+do $$ begin
+  begin
+    insert into webhook_endpoint (org_id, url, secret_ct, events) values ('00000000-0000-0000-0000-0000000000ca', 'https://evil.example.org/x', '\x00', '{*}');
+    raise exception 'FAIL: church B created an endpoint for church A';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+do $$ begin
+  if (select count(*) from webhook_endpoint where org_id = '00000000-0000-0000-0000-0000000000ca') <> 1 then raise exception 'FAIL: church B deleted church A webhook endpoint'; end if;
+end $$;
+
 select 'compliance RLS tests passed' as result;
 rollback;

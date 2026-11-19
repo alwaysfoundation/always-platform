@@ -14,6 +14,7 @@ export const TEMPLATES: Record<string, { subject: string; body: string }> = {
   'person.thanks': { subject: '', body: "Thanks for reaching out. A church nearby will be in touch. See what's happening, or change your mind, here: {link}" },
   'person.church_will_contact': { subject: '', body: '{church} would love to welcome you and will be in touch. See details or change your mind: {link}' },
   'compliance.draft': { subject: 'Your quarterly compliance check is ready to review', body: 'Your Always Compliance assessment for this quarter is ready. Please review it, update anything that has changed, and approve it.\n\n{appUrl}/compliance\n\nThis is a guide to common obligations, not legal advice.' },
+  'compliance.changed': { subject: 'A compliance rule that applies to you has changed', body: 'The Always Compliance register has been updated, and at least one obligation that applies to your ministry has changed. See what changed and update your answers:\n\n{appUrl}/compliance\n\nThis is a guide to common obligations, not legal advice.' },
   'compliance.ready': { subject: 'Your quarterly compliance check is approved', body: 'Your Always Compliance assessment for this quarter has been approved. You can download it for your board from:\n\n{appUrl}/compliance\n\nThis is a guide to common obligations, not legal advice.' },
   'parent.confirm': { subject: '', body: 'Your child asked to be connected with a local church youth group through Always. Please confirm here if you are happy for this: {link}' },
 };
