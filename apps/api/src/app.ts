@@ -661,11 +661,22 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   registerWebhookRoutes(app, sql);
 
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
+  // On Supabase the cron secret is generated inside the database (Vault) by db/supabase/jobs.sql,
+  // so no person ever copies it. Read once and cached; absent outside Supabase.
+  let cronSecret: string | null | undefined;
+  const vaultCronSecret = async () => {
+    if (cronSecret !== undefined) return cronSecret;
+    try {
+      const [r] = await sql`select decrypted_secret as s from vault.decrypted_secrets where name = 'always_cron_secret'`;
+      cronSecret = (r?.s as string | undefined) ?? null;
+    } catch { cronSecret = null; }
+    return cronSecret;
+  };
   const job = (fn: (sql: Sql, t: Date, a: Adapters) => Promise<unknown>) => async (c: any) => {
-    const secret = process.env.CRON_SECRET;
     // Vercel Cron sends GET with "Authorization: Bearer <CRON_SECRET>"; other schedulers use x-cron-secret.
     const given = c.req.header('x-cron-secret') ?? c.req.header('authorization')?.replace(/^Bearer /, '') ?? '';
-    if (!secret || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
+    const secret = process.env.CRON_SECRET || (await vaultCronSecret());
+    if (!secret || !given || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
     return c.json(await fn(sql, now(), opts.adapters));
   };
   const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);

@@ -1,5 +1,6 @@
 import type { Message } from './jobs.js';
 import { TEMPLATES } from './templates.js';
+import { logAdapters } from './jobs.js';
 
 /**
  * Production adapters. Each sends only what the message needs:
@@ -53,4 +54,13 @@ export async function fetchWebhook(url: string, body: string, headers: Record<st
 
 export function render(text: string, params: Record<string, unknown> = {}): string {
   return text.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ''));
+}
+
+/** The adapters a deployed API uses: real providers when configured, otherwise log the template id only. */
+export function defaultAdapters() {
+  return {
+    email: process.env.RESEND_API_KEY ? resendEmail() : logAdapters.email,
+    sms: process.env.SMS_API_URL ? httpSms() : logAdapters.sms,
+    webhook: process.env.NODE_ENV === 'production' ? fetchWebhook : logAdapters.webhook,
+  };
 }
