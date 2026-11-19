@@ -8,3 +8,10 @@ dist/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+
+# TypeScript build output beside sources (tsc -b). Never commit.
+apps/*/src/**/*.js
+apps/*/test/**/*.js
+packages/*/src/**/*.js
+packages/*/test/**/*.js
+scripts/*.js
