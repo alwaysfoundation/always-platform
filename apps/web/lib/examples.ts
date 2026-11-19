@@ -3,7 +3,7 @@ import type { Report } from './report';
 
 const defs = {
   responded: 'People who responded and agreed to be introduced to a next step.',
-  introduced: 'People introduced to a verified church or ministry near them.',
+  introduced: 'People introduced to a partner church or ministry near them.',
   accepted: 'Introductions a church or ministry accepted, so they could reach out.',
   contacted: 'People a church or ministry logged getting in touch with.',
   connected: 'People who told us themselves that they are connected.',
@@ -32,7 +32,7 @@ export const EXAMPLES: { slug: string; name: string; who: string; report: Report
     slug: 'youth-camp', name: 'A youth camp', who: 'A summer camp for high schoolers, with parents confirming for under 15s.',
     report: {
       example: true, organisation: 'Example Youth Camp', view: 'sender',
-      profile: { title: 'Summer camp: next steps', funder_name: 'Prepared for our board and church partners', intro: 'Young people who said yes at camp were introduced to verified youth groups near home. Under 15s were introduced only after a parent confirmed.' },
+      profile: { title: 'Summer camp: next steps', funder_name: 'Prepared for our board and church partners', intro: 'Young people who said yes at camp were introduced to youth partners near home. Under 15s were introduced only after a parent confirmed.' },
       period: { from: '2027-01-01', to: '2027-01-31' },
       totals: { responded: 186, introduced: 171, accepted: 158, contacted: 149, connected: 92, care_team: null },
       byMonth: months([['2027-01', 186, 171, 158, 149, 92, 0]]),

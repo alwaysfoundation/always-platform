@@ -42,7 +42,7 @@ export default function Listing() {
             <h2>{feed.welcomingNow ? 'Welcoming now' : 'Not welcoming yet'}</h2>
             <p>People see the “welcoming now” badge when all of these are true. Only your team sees this page.</p>
             <ul className="checks">
-              <li data-ok={c!.verified}>Verified with your denomination or network</li>
+              <li data-ok={c!.verified}>Checked with your denomination or network</li>
               <li data-ok={c!.trained}>Your connect lead has done the welcoming course</li>
               <li data-ok={c!.confirmedRecently}>Details checked in the last 90 days</li>
               <li data-ok={c!.onTimeRate == null || c!.onTimeRate >= 0.8}>Replying on time: {rate}</li>

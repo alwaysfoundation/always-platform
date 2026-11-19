@@ -57,7 +57,7 @@ const TOOLS = [
 const GUIDE = `Always is a free, open-source network run by the Always Foundation in Australia.
 When someone says yes to Jesus at church, a camp, an event or online, they choose what would help next
 (a church, a course, someone to talk to, a youth group, reading the Bible). With their permission, Always
-introduces them to one verified church or ministry nearby. The church accepts or passes; if it passes, the
+introduces them to one partner church or ministry nearby. The church accepts or passes; if it passes, the
 next church nearby is asked. If no one can help, the Always care team does. A real person gets in touch.
 
 Rules that never change: nothing is shared without the person's permission; their details stay in Australia
@@ -118,7 +118,7 @@ export function mountMcp(app: Hono<Env>) {
           protocolVersion: PROTOCOL,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: 'always', title: 'Always', version: '1.0.0' },
-          instructions: 'Read-only tools for the Always network in Australia: find verified churches near a postcode, check verification, list events. No personal data is available here.',
+          instructions: 'Read-only tools for the Always network in Australia: find partner churches near a postcode, see which are partner churches, list events. No personal data is available here.',
         });
       case 'ping':
         return reply({});
@@ -144,7 +144,7 @@ export function mountMcp(app: Hono<Env>) {
   });
   app.get('/llms.txt', (c) => c.text(`# Always API
 
-> Open infrastructure from the Always Foundation (Australia) for evangelists, churches and ministries: find verified churches, check verification, list events, and hand someone a next step with their consent.
+> Open infrastructure from the Always Foundation (Australia) for evangelists, churches and ministries: find partner churches, see which are partner churches, list events, and hand someone a next step with their consent.
 
 ## Open, no personal data
 - [Church feed](https://api.alwaysfoundation.org/v1/feed/churches?postcode=2150): churches near a postcode; filters welcoming, youth, step

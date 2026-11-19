@@ -14,7 +14,7 @@ export interface ReportQuery { orgId?: string; view: 'sender' | 'receiver' | 'ne
 
 export const DEFINITIONS: Record<Milestone, string> = {
   responded: 'People who responded and agreed to be introduced to a next step.',
-  introduced: 'People introduced to a verified church or ministry near them.',
+  introduced: 'People introduced to a partner church or ministry near them.',
   accepted: 'Introductions a church or ministry accepted, so they could reach out.',
   contacted: 'People a church or ministry logged getting in touch with.',
   connected: 'People who told us themselves that they are connected.',

@@ -3,7 +3,7 @@
  * data beyond what the message needs. SMS to minors only 8am to 8pm (enforced by the sender).
  */
 export const TEMPLATES: Record<string, { subject: string; body: string }> = {
-  'offer.new': { subject: 'Someone near you is looking for a next step', body: 'Someone near you has asked for a next step, and your church has been offered the chance to welcome them. Open your inbox to accept or pass.\n\n{inboxUrl}\n\nYou receive this because your church is a verified partner on Always.' },
+  'offer.new': { subject: 'Someone near you is looking for a next step', body: 'Someone near you has asked for a next step, and your church has been offered the chance to welcome them. Open your inbox to accept or pass.\n\n{inboxUrl}\n\nYou receive this because your church is a partner church on Always.' },
   'offer.reminder': { subject: 'Someone is still waiting to hear from you', body: 'An introduction is waiting in your inbox. Please accept or pass, so it can move on to another church if you can\'t take it.\n\n{inboxUrl}' },
   'offer.expired': { subject: 'An introduction has moved on', body: 'An introduction offered to your church has moved on to another church or ministry nearby. No action needed.' },
   'offer.returned': { subject: 'An introduction has been returned', body: 'We didn\'t see first contact logged for an introduction you accepted, so it has been returned to the network. If you did get in touch, let us know at hello@alwaysfoundation.org.' },
