@@ -7,7 +7,7 @@ import { SignJWT } from 'jose';
 import { migrate, type Sql } from '@always/db';
 
 /**
- * Always Compliance, end to end against a real Postgres 16. Synthetic organisations only.
+ * Always Safety (compliance module), end to end against a real Postgres 16. Synthetic organisations only.
  * Organisation facts and assessments only: no people's details are involved.
  */
 const ADMIN_URL = process.env.TEST_ADMIN_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';

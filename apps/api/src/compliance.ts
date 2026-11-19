@@ -11,7 +11,7 @@ import { audit } from './audit.js';
 import { encrypt } from './crypto.js';
 
 /**
- * Always Compliance (RFC 0003). Organisation facts and assessments only: nothing here
+ * Always Safety (RFC 0003). Organisation facts and assessments only: nothing here
  * touches people's details. Every register change is approved by a person before members
  * see it; every quarterly assessment is approved by a person at the ministry.
  */

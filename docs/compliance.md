@@ -1,6 +1,6 @@
-# Always Compliance: developer guide
+# Always Safety: developer guide
 
-Always Compliance helps Australian churches and ministries stay on top of privacy, child safety, charity and messaging rules. This guide is for developers and for the foundation team. The design is in [RFC 0003](rfc/0003-always-compliance.md), [RFC 0004](rfc/0004-compliance-infrastructure.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
+Always Safety helps Australian churches and ministries stay on top of privacy, child safety, charity and messaging rules. This guide is for developers and for the foundation team. The design is in [RFC 0003](rfc/0003-always-compliance.md), [RFC 0004](rfc/0004-compliance-infrastructure.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
 
 It is a guide to common obligations. It is not legal advice.
 

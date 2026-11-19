@@ -1,5 +1,5 @@
 /**
- * Always Compliance: the assessment engine.
+ * Always Safety: the assessment engine.
  *
  * Pure functions, no I/O. Given the open obligations register, a ministry's profile,
  * its answers and what Always Platform already guarantees, produce an assessment:
