@@ -156,26 +156,27 @@ async function careTeamId(tx: Tx): Promise<string | null> {
 }
 
 /** Turn engine actions into outbox rows. Payloads carry ids only, never personal data. */
-export async function enqueue(tx: Tx, h: Handoff, actions: EngineAction[]): Promise<void> {
+/** Outbox rows use the engine's clock, so timers and tests agree on when a message is due. */
+export async function enqueue(tx: Tx, h: Handoff, actions: EngineAction[], now: Date): Promise<void> {
   for (const a of actions) {
     switch (a.kind) {
       case 'offer':
-        await tx`insert into outbox (channel, template, org_id, response_id) values ('email', 'offer.new', ${a.orgId}, ${h.responseId})`;
-        await tx`insert into outbox (channel, template, org_id, response_id) values ('webhook', 'always.offer.created', ${a.orgId}, ${h.responseId})`;
+        await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('email', 'offer.new', ${a.orgId}, ${h.responseId}, ${now})`;
+        await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('webhook', 'always.offer.created', ${a.orgId}, ${h.responseId}, ${now})`;
         break;
       case 'remind':
-        await tx`insert into outbox (channel, template, org_id, response_id) values ('email', 'offer.reminder', ${a.orgId}, ${h.responseId})`;
+        await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('email', 'offer.reminder', ${a.orgId}, ${h.responseId}, ${now})`;
         break;
       case 'expire':
-        await tx`insert into outbox (channel, template, org_id, response_id) values ('email', 'offer.expired', ${a.orgId}, ${h.responseId})`;
+        await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('email', 'offer.expired', ${a.orgId}, ${h.responseId}, ${now})`;
         break;
       case 'first_contact.overdue':
-        await tx`insert into outbox (channel, template, org_id, response_id) values ('email', 'offer.returned', ${a.orgId}, ${h.responseId})`;
+        await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('email', 'offer.returned', ${a.orgId}, ${h.responseId}, ${now})`;
         break;
       case 'care.hello':
       case 'care.assign': {
         const care = await careTeamId(tx);
-        if (care) await tx`insert into outbox (channel, template, org_id, response_id) values ('email', ${a.kind}, ${care}, ${h.responseId})`;
+        if (care) await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('email', ${a.kind}, ${care}, ${h.responseId}, ${now})`;
         break;
       }
       case 'parent.expired':
@@ -186,9 +187,9 @@ export async function enqueue(tx: Tx, h: Handoff, actions: EngineAction[]): Prom
 
 async function commit(tx: Tx, before: Handoff | null, step: { handoff: Handoff; actions: EngineAction[] }, now: Date) {
   await saveHandoff(tx, step.handoff, now);
-  await enqueue(tx, step.handoff, step.actions);
+  await enqueue(tx, step.handoff, step.actions, now);
   if (!before || before.state !== step.handoff.state) {
-    await tx`insert into outbox (channel, template, response_id) values ('webhook', ${'always.handoff.' + step.handoff.state}, ${step.handoff.responseId})`;
+    await tx`insert into outbox (channel, template, response_id, not_before) values ('webhook', ${'always.handoff.' + step.handoff.state}, ${step.handoff.responseId}, ${now})`;
   }
   return step.handoff;
 }
@@ -205,7 +206,7 @@ export async function accept(tx: Tx, handoffId: string, orgId: string, actor: st
   const out = await commit(tx, h, step, now);
   // Active retention once a church has the person.
   await tx`update response set delete_after = ${new Date(now.getTime() + 365 * 86_400_000)} where id = ${h.responseId}`;
-  await tx`insert into outbox (channel, template, org_id, response_id) values ('sms', 'person.church_will_contact', ${orgId}, ${h.responseId})`;
+  await tx`insert into outbox (channel, template, org_id, response_id, not_before) values ('sms', 'person.church_will_contact', ${orgId}, ${h.responseId}, ${now})`;
   await audit(tx, { actor, orgId, action: 'handoff.accept', subject: `handoff:${handoffId}` });
   return out;
 }
