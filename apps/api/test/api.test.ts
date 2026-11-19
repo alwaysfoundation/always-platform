@@ -379,3 +379,63 @@ describe('foundation team queue', () => {
     expect(list.body.items.map((f: any) => f.message)).toContain('Add a map');
   });
 });
+
+describe('reports', () => {
+  const from = `${clock.getUTCFullYear() - 1}-01-01`, to = `${clock.getUTCFullYear() + 1}-12-31`;
+  it('counts each step of the journey without storing anyone\'s details', async () => {
+    const [cols] = await sql`select string_agg(column_name, ',') as c from information_schema.columns where table_name = 'journey_tally'`;
+    expect(cols.c).not.toMatch(/name|contact|suburb|postcode|response_id/);
+    const [t] = await sql`select sum(n)::int as n from journey_tally where milestone = 'responded'`;
+    expect(t.n).toBeGreaterThan(0);
+  });
+
+  it('withholds figures for small groups', async () => {
+    const r = await call('GET', `/v1/org/report?from=${from}&to=${to}`, { token: tokens.ops, org: ids.sender });
+    // ops is not a member of the sender: refused
+    expect(r.status).toBe(403);
+    const { safe } = await import('../src/reports.js');
+    expect(safe(0, 0)).toBe(0);
+    expect(safe(9, 0)).toBeNull();
+    expect(safe(10, 0)).toBe(10);
+    expect(safe(15, 1)).toBeNull();
+    expect(safe(20, 1)).toBe(20);
+  });
+
+  it('gives a ministry its totals, a spreadsheet, and a link it can switch off', async () => {
+    const { newToken } = await import('../src/crypto.js');
+    const t = newToken('alw_test');
+    await sql`insert into api_token (org_id, name, token_hash, scopes) values (${ids.sender}, 'reports', ${t.hash}, ${['reports']})`;
+    // Enough synthetic responses that the totals can be shown (earlier tests include young people, so 20 is the minimum).
+    for (let i = 0; i < 20; i++) {
+      const r = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...baseResponse, firstName: `Test${i}` } });
+      expect(r.status).toBe(201);
+    }
+    const rep = await call('GET', `/v1/org/report?from=${from}&to=${to}`, { token: t.token });
+    expect(rep.status).toBe(200);
+    expect(rep.body.totals.responded).toBeGreaterThanOrEqual(10);
+    expect(rep.body.byStep.find((s: any) => s.step === 'church').count).toBeGreaterThanOrEqual(10);
+    expect(rep.body.definitions.connected).toMatch(/told us themselves/);
+    expect(JSON.stringify(rep.body)).not.toMatch(/Test\d|0400000000|Parramatta/);
+
+    const csv = await app.request(`/v1/org/report.csv?from=${from}&to=${to}`, { headers: { authorization: `Bearer ${t.token}` } });
+    expect(csv.headers.get('content-type')).toMatch(/text\/csv/);
+    expect(await csv.text()).toMatch(/^Always report,/);
+
+    const share = await call('POST', '/v1/org/report-shares', { token: t.token, body: { label: 'Board, November', from, to } });
+    expect(share.status).toBe(201);
+    const seen = await call('GET', `/v1/reports/shared/${share.body.token}`);
+    expect(seen.body.totals.responded).toBe(rep.body.totals.responded);
+    const off = await call('POST', `/v1/org/report-shares/${share.body.id}/revoke`, { token: t.token, body: {} });
+    expect(off.status).toBe(200);
+    const gone = await call('GET', `/v1/reports/shared/${share.body.token}`);
+    expect(gone.status).toBe(404);
+  });
+
+  it('gives the foundation a network view, and nobody else', async () => {
+    const no = await call('GET', `/v1/ops/report?from=${from}&to=${to}`, { token: tokens.a });
+    expect(no.status).toBe(403);
+    const ok = await call('GET', `/v1/ops/report?from=${from}&to=${to}`, { token: tokens.ops, org: ids.care });
+    expect(ok.status).toBe(200);
+    expect(ok.body.view).toBe('network');
+  });
+});
