@@ -71,7 +71,8 @@ jobs:
       - name: Every commit is signed off (Developer Certificate of Origin)
         run: |
           missing=""
-          for c in $(git rev-list --no-merges origin/${{ github.base_ref }}..HEAD); do
+          # The PR's own commits, not the merge commit GitHub builds to test it.
+          for c in $(git rev-list --no-merges origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}); do
             git log -1 --format=%B "$c" | grep -q '^Signed-off-by: ' || missing="$missing $c"
           done
           if [ -n "$missing" ]; then echo "Commits without Signed-off-by:"; echo "$missing"; exit 1; fi

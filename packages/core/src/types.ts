@@ -33,6 +33,10 @@ export interface ConsentRecord {
   withdrawnAt?: Date;
   /** For under-15s: when a parent or guardian confirmed. */
   parentConfirmedAt?: Date;
+  /** For under-15s: when the child agreed too (CY rules). A parent's yes alone is not enough. */
+  childAssentAt?: Date;
+  /** Consent lapses 12 months after it was given unless renewed. Defaults to collectedAt + 12 months. */
+  expiresAt?: Date;
 }
 
 export type TrustLevel = 'listed' | 'claimed' | 'verified' | 'verified_youth';
