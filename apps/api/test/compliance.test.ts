@@ -294,3 +294,58 @@ describe('fingerprint', () => {
     expect(fingerprint('<style media="all">p{}</style foo="bar"><p>The Code is registered.</p>')).toBe(plain);
   });
 });
+
+describe('first sign-in for a new ministry', () => {
+  const newcomer = '6f1d2c3b-0000-4000-8000-000000000001';
+  const stranger = '6f1d2c3b-0000-4000-8000-000000000002';
+  const jwtWithEmail = (sub: string, email?: string) =>
+    new SignJWT({ role: 'authenticated', ...(email ? { email } : {}) }).setProtectedHeader({ alg: 'HS256' }).setSubject(sub).setAudience('authenticated')
+      .setExpirationTime('1h').sign(new TextEncoder().encode(process.env.AUTH_JWT_SECRET));
+
+  it('needs a session', async () => {
+    expect((await call('GET', '/v1/account/orgs')).status).toBe(401);
+  });
+
+  it('starts with no organisations', async () => {
+    const r = await call('GET', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'admin@newchurch.example') });
+    expect(r.body.orgs).toEqual([]);
+  });
+
+  it('creates a church on the map, with the person as admin', async () => {
+    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'Admin@NewChurch.example'), body: { kind: 'church', displayName: 'New Test Church', state: 'VIC', postcode: '3000' } });
+    expect(r.status).toBe(201);
+    expect(r.body).toMatchObject({ name: 'New Test Church', partner: false, role: 'admin' });
+    ids.newcomer = r.body.id;
+    const [o] = await sql`select trust_level, notify_email_hash is not null as has_notify from organisation where id = ${ids.newcomer}`;
+    expect(o).toMatchObject({ trust_level: 'listed', has_notify: true });
+  });
+
+  it('lets the new admin save a compliance profile straight away', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    expect((await call('PUT', '/v1/compliance/profile', { token: t, org: ids.newcomer, body: profile })).status).toBe(200);
+    expect((await call('GET', '/v1/compliance/assessment', { token: t, org: ids.newcomer })).status).toBe(200);
+  });
+
+  it('keeps another person out of that organisation', async () => {
+    const t = await jwtWithEmail(stranger, 'someone@else.example');
+    expect((await call('GET', '/v1/compliance/profile', { token: t, org: ids.newcomer })).status).toBe(403);
+    expect((await call('GET', '/v1/account/orgs', { token: t })).body.orgs).toEqual([]);
+  });
+
+  it('refuses an email already linked to a different account', async () => {
+    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 'admin@newchurch.example'), body: { kind: 'ministry', displayName: 'Other', state: 'NSW' } });
+    expect(r.status).toBe(409);
+  });
+
+  it('needs an email on the session and a valid body', async () => {
+    expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger), body: { kind: 'church', displayName: 'X Church', state: 'NSW' } })).status).toBe(422);
+    expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 's@else.example'), body: { kind: 'network', displayName: 'X', state: 'NSW' } })).status).toBe(422);
+  });
+
+  it('caps how many organisations one person can create', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    for (let i = 0; i < 4; i++) expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: `Test Ministry ${i}`, state: 'NSW' } })).status).toBe(201);
+    expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: 'One too many', state: 'NSW' } })).status).toBe(429);
+  });
+
+});

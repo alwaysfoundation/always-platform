@@ -20,7 +20,13 @@ export interface Principal {
   careTeam: boolean;
 }
 
-export type Env = { Variables: { principal?: Principal; sql: Sql } };
+/** A signed-in person before they belong to an organisation (first sign-in). */
+export interface Identity {
+  sub: string;
+  email?: string;
+}
+
+export type Env = { Variables: { principal?: Principal; identity?: Identity; sql: Sql } };
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -55,8 +61,13 @@ export function authenticate(): MiddlewareHandler<Env> {
     } catch {
       return c.json({ error: 'invalid_token' }, 401);
     }
+    if (!payload.sub) return c.json({ error: 'invalid_token' }, 401);
+    if (c.req.path.startsWith('/v1/account/')) {
+      c.set('identity', { sub: payload.sub, email: typeof payload.email === 'string' ? payload.email : undefined });
+      return next();
+    }
     const orgId = c.req.header('x-always-org');
-    if (!orgId || !payload.sub) return c.json({ error: 'org_required' }, 400);
+    if (!orgId) return c.json({ error: 'org_required' }, 400);
     const rows = await sql`
       select m.role, m.youth_access, o.is_care_team from membership m join organisation o on o.id = m.org_id
       where m.user_id = ${payload.sub} and m.org_id = ${orgId}`;
@@ -66,7 +77,7 @@ export function authenticate(): MiddlewareHandler<Env> {
       userId: payload.sub,
       orgId,
       roles: rows.map((r) => r.role),
-      scopes: ['inbox', 'profile', 'activity', 'events', 'reports'],
+      scopes: ['inbox', 'profile', 'activity', 'events', 'reports', 'compliance'],
       youthAccess: rows.some((r) => r.youth_access),
       careTeam: rows.some((r) => r.is_care_team),
     });

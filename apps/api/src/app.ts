@@ -16,6 +16,7 @@ import { buildReport, toCsv } from './reports.js';
 import { mountEvangelist } from './evangelist.js';
 import { mountMcp } from './mcp.js';
 import { registerWebhookRoutes } from './webhooks.js';
+import { registerAccountRoutes } from './account.js';
 import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
@@ -821,6 +822,7 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   });
 
   // ---------------------------------------------------------------- Always Compliance (RFC 0003)
+  registerAccountRoutes(app, sql);
   registerComplianceRoutes(app, sql, now);
   registerWebhookRoutes(app, sql);
 
