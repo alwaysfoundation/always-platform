@@ -218,3 +218,12 @@ describe('watching the law', () => {
     expect(feed.body.versions[0].changes[0]).toMatchObject({ obligationId: 'childrens-online-privacy-code', change: 'changed' });
   });
 });
+
+describe('fingerprint', () => {
+  it('ignores scripts and styles, including end tags with spaces or attributes', async () => {
+    const { fingerprint } = await import('../src/compliance.js');
+    const plain = fingerprint('<p>The Code is registered.</p>');
+    expect(fingerprint('<p>The Code is registered.</p><script>x()</script >')).toBe(plain);
+    expect(fingerprint('<style media="all">p{}</style foo="bar"><p>The Code is registered.</p>')).toBe(plain);
+  });
+});
