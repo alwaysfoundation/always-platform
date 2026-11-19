@@ -1,7 +1,7 @@
 {
   "name": "always-platform",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Always network: consented handoff from response to a verified local church, for Australia.",
   "license": "Apache-2.0",
   "type": "module",
