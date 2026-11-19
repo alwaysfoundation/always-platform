@@ -17,6 +17,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
+| `spec/compliance/` | The Always Compliance register: open, reviewed obligations for Australian ministries (CC BY 4.0). See `docs/compliance.md`. |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
 ## Run it locally
