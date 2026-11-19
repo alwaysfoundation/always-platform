@@ -12,5 +12,6 @@ test:      ## unit + integration tests (needs Postgres)
 rls:       ## row-level security tests
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/test/rls_test.sql
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/test/compliance_rls_test.sql
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/test/journeys_rls_test.sql
 check:     ## everything CI runs
 	npm run typecheck && npm test
