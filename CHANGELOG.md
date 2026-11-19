@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/alwaysfoundation/always-platform/compare/v1.0.0...v1.1.0) (2026-11-19)
+
+
+### Features
+
+* call the compliance product Always Safety ([#34](https://github.com/alwaysfoundation/always-platform/issues/34)) ([4a34ab4](https://github.com/alwaysfoundation/always-platform/commit/4a34ab4243b49ea735915b0e90bee8b9e622cde2))
+* journeys across ministries, with consent ([#36](https://github.com/alwaysfoundation/always-platform/issues/36)) ([5a8247c](https://github.com/alwaysfoundation/always-platform/commit/5a8247cd9941a2cc00350b62f05dc61389961379))
+
+
+### Bug Fixes
+
+* **ci:** add the integrations workspace to the lock file ([#38](https://github.com/alwaysfoundation/always-platform/issues/38)) ([33d6466](https://github.com/alwaysfoundation/always-platform/commit/33d646659df8e293709e62abdb8210c08b18030f))
+
 ## 1.0.0 (2026-11-19)
 
 
