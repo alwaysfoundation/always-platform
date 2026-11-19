@@ -1,0 +1,354 @@
+{
+  "version": "0.1.0",
+  "licence": "CC BY 4.0 (notes and answers); Bible text: King James Version, public domain in Australia",
+  "passages": [
+    {
+      "id": "john-3-16",
+      "ref": "John 3:16",
+      "translation": "KJV",
+      "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.",
+      "themes": [
+        "love",
+        "salvation"
+      ],
+      "explain": "God's love is the starting point. He gave His Son so that anyone who trusts Him can have life that lasts forever.",
+      "whenToShare": "Open with this when someone wonders whether God cares about them.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-3-23",
+      "ref": "Romans 3:23",
+      "translation": "KJV",
+      "text": "For all have sinned, and come short of the glory of God;",
+      "themes": [
+        "sin"
+      ],
+      "explain": "Everyone has fallen short of God's goodness, not just 'bad people'. It puts us all on the same level.",
+      "whenToShare": "Use gently when someone feels they're either too good or too bad for God.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-6-23",
+      "ref": "Romans 6:23",
+      "translation": "KJV",
+      "text": "For the wages of sin is death; but the gift of God is eternal life through Jesus Christ our Lord.",
+      "themes": [
+        "sin",
+        "salvation",
+        "grace"
+      ],
+      "explain": "Sin earns death, but God offers eternal life as a free gift through Jesus.",
+      "whenToShare": "Show the contrast between what we earn and what God gives.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-5-8",
+      "ref": "Romans 5:8",
+      "translation": "KJV",
+      "text": "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us.",
+      "themes": [
+        "love",
+        "cross"
+      ],
+      "explain": "Jesus didn't wait for us to clean up. He died for us while we were still far from God.",
+      "whenToShare": "Share when someone feels they need to sort their life out first.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-10-9",
+      "ref": "Romans 10:9",
+      "translation": "KJV",
+      "text": "That if thou shalt confess with thy mouth the Lord Jesus, and shalt believe in thine heart that God hath raised him from the dead, thou shalt be saved.",
+      "themes": [
+        "response",
+        "resurrection"
+      ],
+      "explain": "Responding to Jesus is simple: trust that He is Lord and that God raised Him from the dead.",
+      "whenToShare": "Use when someone is ready to respond and asks what to do.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "ephesians-2-8-9",
+      "ref": "Ephesians 2:8-9",
+      "translation": "KJV",
+      "text": "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: Not of works, lest any man should boast.",
+      "themes": [
+        "grace",
+        "good-works"
+      ],
+      "explain": "Salvation is a gift received by faith, not a reward for being good enough.",
+      "whenToShare": "Share with someone who thinks they must earn God's approval.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "john-14-6",
+      "ref": "John 14:6",
+      "translation": "KJV",
+      "text": "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me.",
+      "themes": [
+        "jesus",
+        "other-faiths"
+      ],
+      "explain": "Jesus doesn't claim to be one way among many. He says He is the way to the Father.",
+      "whenToShare": "Use with care and kindness when talking about other beliefs.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "1-john-1-9",
+      "ref": "1 John 1:9",
+      "translation": "KJV",
+      "text": "If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.",
+      "themes": [
+        "forgiveness"
+      ],
+      "explain": "When we're honest with God about our sin, He forgives and makes us clean.",
+      "whenToShare": "Share with someone carrying guilt or shame.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "2-corinthians-5-17",
+      "ref": "2 Corinthians 5:17",
+      "translation": "KJV",
+      "text": "Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new.",
+      "themes": [
+        "new-life"
+      ],
+      "explain": "In Jesus, a person gets a fresh start. The old life doesn't define them any more.",
+      "whenToShare": "Great to share right after someone says yes to Jesus.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "revelation-3-20",
+      "ref": "Revelation 3:20",
+      "translation": "KJV",
+      "text": "Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.",
+      "themes": [
+        "response",
+        "relationship"
+      ],
+      "explain": "Jesus invites us into friendship with Him. He knocks; we open the door.",
+      "whenToShare": "Use when inviting someone to respond personally.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "1-corinthians-15-3-4",
+      "ref": "1 Corinthians 15:3-4",
+      "translation": "KJV",
+      "text": "For I delivered unto you first of all that which I also received, how that Christ died for our sins according to the scriptures; And that he was buried, and that he rose again the third day according to the scriptures:",
+      "themes": [
+        "gospel",
+        "resurrection",
+        "cross"
+      ],
+      "explain": "The Gospel in one breath: Jesus died for our sins, was buried and rose again.",
+      "whenToShare": "A clear summary of the Gospel to share in any conversation.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "1-corinthians-15-6",
+      "ref": "1 Corinthians 15:6",
+      "translation": "KJV",
+      "text": "After that, he was seen of above five hundred brethren at once; of whom the greater part remain unto this present, but some are fallen asleep.",
+      "themes": [
+        "resurrection",
+        "evidence"
+      ],
+      "explain": "Paul points to hundreds of living witnesses who saw the risen Jesus.",
+      "whenToShare": "Use when someone asks whether the resurrection really happened.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "matthew-11-28",
+      "ref": "Matthew 11:28",
+      "translation": "KJV",
+      "text": "Come unto me, all ye that labour and are heavy laden, and I will give you rest.",
+      "themes": [
+        "invitation",
+        "rest"
+      ],
+      "explain": "Jesus invites the tired and burdened to come to Him for rest.",
+      "whenToShare": "Share with someone who is worn out or struggling.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "luke-19-10",
+      "ref": "Luke 19:10",
+      "translation": "KJV",
+      "text": "For the Son of man is come to seek and to save that which was lost.",
+      "themes": [
+        "jesus",
+        "salvation"
+      ],
+      "explain": "Jesus came looking for people who are lost, not people who have it together.",
+      "whenToShare": "Use when someone feels too far gone.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-8-28",
+      "ref": "Romans 8:28",
+      "translation": "KJV",
+      "text": "And we know that all things work together for good to them that love God, to them who are the called according to his purpose.",
+      "themes": [
+        "suffering",
+        "hope"
+      ],
+      "explain": "God can work even painful things for good in the lives of those who love Him.",
+      "whenToShare": "Share carefully with someone who is hurting, after listening first.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "revelation-21-4",
+      "ref": "Revelation 21:4",
+      "translation": "KJV",
+      "text": "And God shall wipe away all tears from their eyes; and there shall be no more death, neither sorrow, nor crying, neither shall there be any more pain: for the former things are passed away.",
+      "themes": [
+        "suffering",
+        "hope"
+      ],
+      "explain": "God promises a future with no more death, grief or pain.",
+      "whenToShare": "Offer hope to someone grieving or angry about suffering.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "hebrews-4-15",
+      "ref": "Hebrews 4:15",
+      "translation": "KJV",
+      "text": "For we have not an high priest which cannot be touched with the feeling of our infirmities; but was in all points tempted like as we are, yet without sin.",
+      "themes": [
+        "suffering",
+        "jesus"
+      ],
+      "explain": "Jesus knows what it's like to be human. He understands our struggles from the inside.",
+      "whenToShare": "Share when someone feels God is distant from their pain.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "isaiah-53-5",
+      "ref": "Isaiah 53:5",
+      "translation": "KJV",
+      "text": "But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed.",
+      "themes": [
+        "cross",
+        "prophecy"
+      ],
+      "explain": "Written centuries before Jesus, this describes Him suffering in our place.",
+      "whenToShare": "Use when explaining why Jesus had to die.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "mark-2-17",
+      "ref": "Mark 2:17",
+      "translation": "KJV",
+      "text": "When Jesus heard it, he saith unto them, They that are whole have no need of the physician, but they that are sick: I came not to call the righteous, but sinners to repentance.",
+      "themes": [
+        "hypocrisy",
+        "grace"
+      ],
+      "explain": "Jesus came for people who know they need help. The church is meant to be a hospital, not a museum.",
+      "whenToShare": "Share when someone says the church is full of hypocrites.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "titus-3-5",
+      "ref": "Titus 3:5",
+      "translation": "KJV",
+      "text": "Not by works of righteousness which we have done, but according to his mercy he saved us, by the washing of regeneration, and renewing of the Holy Ghost;",
+      "themes": [
+        "grace",
+        "good-works"
+      ],
+      "explain": "God saves us because of His mercy, not our good deeds.",
+      "whenToShare": "Share with someone who believes being a good person is enough.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "romans-1-20",
+      "ref": "Romans 1:20",
+      "translation": "KJV",
+      "text": "For the invisible things of him from the creation of the world are clearly seen, being understood by the things that are made, even his eternal power and Godhead; so that they are without excuse:",
+      "themes": [
+        "creation",
+        "science"
+      ],
+      "explain": "Creation itself points to a Creator's power and nature.",
+      "whenToShare": "Use in conversations about science and whether God exists.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "psalm-19-1",
+      "ref": "Psalm 19:1",
+      "translation": "KJV",
+      "text": "The heavens declare the glory of God; and the firmament sheweth his handywork.",
+      "themes": [
+        "creation",
+        "science"
+      ],
+      "explain": "The universe displays God's glory and craftsmanship.",
+      "whenToShare": "Share with someone curious about science and wonder.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "john-1-12",
+      "ref": "John 1:12",
+      "translation": "KJV",
+      "text": "But as many as received him, to them gave he power to become the sons of God, even to them that believe on his name:",
+      "themes": [
+        "response",
+        "new-life"
+      ],
+      "explain": "Everyone who receives Jesus becomes part of God's family.",
+      "whenToShare": "Share right after someone says yes to Jesus.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "1-peter-3-15",
+      "ref": "1 Peter 3:15",
+      "translation": "KJV",
+      "text": "But sanctify the Lord God in your hearts: and be ready always to give an answer to every man that asketh you a reason of the hope that is in you with meekness and fear:",
+      "themes": [
+        "for-evangelists"
+      ],
+      "explain": "Be ready to explain your hope, and do it gently and respectfully.",
+      "whenToShare": "A reminder for evangelists before every conversation.",
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "acts-1-8",
+      "ref": "Acts 1:8",
+      "translation": "KJV",
+      "text": "But ye shall receive power, after that the Holy Ghost is come upon you: and ye shall be witnesses unto me both in Jerusalem, and in all Judaea, and in Samaria, and unto the uttermost part of the earth.",
+      "themes": [
+        "for-evangelists",
+        "great-commission"
+      ],
+      "explain": "The Holy Spirit gives us power to be Jesus' witnesses everywhere.",
+      "whenToShare": "Encouragement for evangelists heading out.",
+      "status": "draft",
+      "source": "ai-draft"
+    }
+  ]
+}

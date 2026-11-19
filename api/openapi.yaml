@@ -241,6 +241,16 @@ paths:
     post: { tags: [Operations], summary: Verify a church (care team only), parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }], responses: { '200': { description: Verified } } }
   /v1/ops/tokens:
     post: { tags: [Operations], summary: Issue a scoped API token (care team only), responses: { '201': { description: Token shown once } } }
+  /v1/evangelist/themes:
+    get: { tags: [Evangelist], security: [], summary: Themes with passage counts, parameters: [{ name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Themes } } }
+  /v1/evangelist/passages:
+    get: { tags: [Evangelist], security: [], summary: Key passages with notes (approved only unless drafts=1), parameters: [{ name: theme, in: query, schema: { type: string } }, { name: q, in: query, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Passages } } }
+  /v1/evangelist/passages/{id}:
+    get: { tags: [Evangelist], security: [], summary: One passage and the objections it helps answer, parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Passage }, '404': { description: Not found or not approved } } }
+  /v1/evangelist/objections:
+    get: { tags: [Evangelist], security: [], summary: Common objections, parameters: [{ name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Objections } } }
+  /v1/evangelist/objections/{id}:
+    get: { tags: [Evangelist], security: [], summary: One objection with its answer, tips and passages, parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Objection }, '404': { description: Not found or not approved } } }
 webhooks:
   always.offer.created: { post: { summary: An introduction was offered to your organisation, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
   always.handoff.accepted: { post: { summary: A church accepted (sent to the sender if notify.sender was agreed), requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }

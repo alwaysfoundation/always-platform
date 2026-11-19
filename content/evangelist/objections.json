@@ -1,0 +1,137 @@
+{
+  "version": "0.1.0",
+  "licence": "CC BY 4.0",
+  "objections": [
+    {
+      "id": "suffering",
+      "question": "If God is good, why is there so much suffering?",
+      "answer": "It's one of the hardest questions, and it's OK not to have a neat answer. The Bible doesn't hide from pain. God isn't distant from it: in Jesus He entered our suffering and promises a day when every tear is wiped away.",
+      "passages": [
+        "hebrews-4-15",
+        "revelation-21-4",
+        "romans-8-28"
+      ],
+      "tips": [
+        "Listen first. Ask if something has happened to them.",
+        "Don't rush to answers; acknowledge the pain is real.",
+        "Point to Jesus, who suffered too."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "all-religions",
+      "question": "Don't all religions lead to God?",
+      "answer": "Many faiths share good values, but they make very different claims about God and how to know Him. Jesus said He is the way to the Father, and offered Himself as a gift rather than a path we climb.",
+      "passages": [
+        "john-14-6",
+        "ephesians-2-8-9"
+      ],
+      "tips": [
+        "Be respectful of their background and ask what they believe.",
+        "Focus on who Jesus is, not winning an argument.",
+        "Share why Jesus matters to you personally."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "good-person",
+      "question": "I'm a good person. Isn't that enough?",
+      "answer": "Being kind matters, but the Bible says we've all fallen short of God's goodness. The good news is that God doesn't ask us to earn our way: He offers forgiveness and new life as a free gift through Jesus.",
+      "passages": [
+        "romans-3-23",
+        "titus-3-5",
+        "romans-6-23"
+      ],
+      "tips": [
+        "Agree that goodness matters.",
+        "Ask what 'good enough' would look like.",
+        "Explain grace: a gift, not a wage."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "science",
+      "question": "Hasn't science disproved God?",
+      "answer": "Science explains how the universe works; it doesn't rule out who made it. Many leading scientists have followed Jesus. The order and beauty of creation point many people to a Creator.",
+      "passages": [
+        "romans-1-20",
+        "psalm-19-1"
+      ],
+      "tips": [
+        "Show genuine interest in science.",
+        "Avoid overstating claims; keep it humble.",
+        "Invite them to look at the evidence for Jesus' life and resurrection."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "hypocrites",
+      "question": "The church is full of hypocrites.",
+      "answer": "Sadly, Christians do get it wrong, and that's worth owning. Jesus said He came for people who know they need help. The church is a group of forgiven people still learning to follow Him, and Jesus Himself never let anyone down.",
+      "passages": [
+        "mark-2-17",
+        "luke-19-10"
+      ],
+      "tips": [
+        "Don't get defensive. Apologise where the church has hurt them.",
+        "Separate Jesus from the failures of His followers.",
+        "Invite them to look at Jesus Himself."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "resurrection",
+      "question": "How do we know Jesus really rose from the dead?",
+      "answer": "The first Christians said they saw Jesus alive, hundreds of them, and many were willing to die rather than deny it. The empty tomb and the rapid growth of the early church are hard to explain any other way.",
+      "passages": [
+        "1-corinthians-15-3-4",
+        "1-corinthians-15-6"
+      ],
+      "tips": [
+        "Keep it conversational, not a lecture.",
+        "Suggest reading one of the Gospels, like Mark or John.",
+        "Explain why the resurrection matters: it's the heart of the Gospel."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "too-far-gone",
+      "question": "I've done too much to be forgiven.",
+      "answer": "No one is beyond God's reach. Jesus came to seek and save the lost, and He died for us while we were still sinners. When we come to Him honestly, He forgives completely.",
+      "passages": [
+        "luke-19-10",
+        "romans-5-8",
+        "1-john-1-9"
+      ],
+      "tips": [
+        "Be gentle; this person may be carrying deep shame.",
+        "Never ask for details of what they've done.",
+        "If they mention harm to themselves or others, help them find proper support straight away."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    },
+    {
+      "id": "not-now",
+      "question": "I'll think about it later.",
+      "answer": "That's fair, and no one should be pressured. But Jesus' invitation is open now, and it's worth exploring while it's on your mind. A next step like a course or a coffee with a Christian can help.",
+      "passages": [
+        "matthew-11-28",
+        "revelation-3-20"
+      ],
+      "tips": [
+        "Respect their pace.",
+        "Offer a low-pressure next step, like Alpha or a conversation.",
+        "Pray for them, and ask if you can stay in touch."
+      ],
+      "status": "draft",
+      "source": "ai-draft"
+    }
+  ]
+}

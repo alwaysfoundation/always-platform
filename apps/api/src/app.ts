@@ -13,6 +13,7 @@ import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
 import { buildReport, toCsv } from './reports.js';
+import { mountEvangelist } from './evangelist.js';
 import { mountMcp } from './mcp.js';
 import { registerWebhookRoutes } from './webhooks.js';
 import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
@@ -849,5 +850,6 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   }
 
   mountMcp(app);
+  mountEvangelist(app);
   return app;
 }
