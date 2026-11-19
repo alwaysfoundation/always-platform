@@ -1,5 +1,5 @@
 /**
- * <always-compliance-check> — the free Always Compliance check-up, embeddable in any site or app.
+ * <always-compliance-check> — the free Always Safety check-up, embeddable in any site or app.
  *
  *   <script type="module" src="https://cdn.alwaysfoundation.org/sdk/v0/compliance-widget.js"></script>
  *   <always-compliance-check accent="#5B67D8"></always-compliance-check>
@@ -61,7 +61,7 @@ export class AlwaysComplianceCheck extends HTMLElement {
         ? STATES.map((s) => `<label><input type="checkbox" name="${esc(q.id)}" value="${s}"> ${s}</label>`).join('')
         : `<label><input type="radio" name="${esc(q.id)}" value="yes" required> Yes</label><label><input type="radio" name="${esc(q.id)}" value="no"> No</label>`
     }</div></fieldset>`;
-    this.card().innerHTML = `<h2>Free compliance check-up</h2><p class="help">About five minutes. Nothing is saved.</p><form>${questions.map(field).join('')}<button type="submit">See what applies to us</button></form>`;
+    this.card().innerHTML = `<h2>Free safety check-up</h2><p class="help">About five minutes. Nothing is saved.</p><form>${questions.map(field).join('')}<button type="submit">See what applies to us</button></form>`;
     this.root.querySelector('form')!.addEventListener('submit', async (e) => {
       e.preventDefault();
       const profile = profileFromForm(questions, new FormData(e.target as HTMLFormElement));

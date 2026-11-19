@@ -821,7 +821,7 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ token: t.token, note: 'Shown once. Store it in your secret manager.' }, 201);
   });
 
-  // ---------------------------------------------------------------- Always Compliance (RFC 0003)
+  // ---------------------------------------------------------------- Always Safety (RFC 0003)
   registerAccountRoutes(app, sql);
   registerComplianceRoutes(app, sql, now);
   registerWebhookRoutes(app, sql);

@@ -3,7 +3,7 @@ import type { AgeBand } from './consent.js';
 /**
  * Compliant by default: the rules Always Platform enforces, packaged for any app to use.
  * Each helper fails closed. They help a platform meet common obligations; they are not
- * legal advice, and the Always Compliance register says which obligations apply.
+ * legal advice, and the Always Safety register says which obligations apply.
  */
 
 export interface AgeGuard {
