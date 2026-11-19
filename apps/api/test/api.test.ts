@@ -247,6 +247,59 @@ describe('minors', () => {
     const [o] = await sql`select org_id from handoff_offer where handoff_id = ${r.body.handoffId}`;
     expect(o.org_id).toBe(ids.a); // verified_youth only
   });
+  it('records a 13 to 14 year old\'s own yes as their assent', async () => {
+    const r = await call('POST', '/v1/responses', {
+      token: tokens.sender,
+      body: { ...baseResponse, ageBand: '13-14', step: 'youth', parentContact: { kind: 'mobile', value: '0411111111' } },
+    });
+    const [c] = await sql`select child_assent_at, party from consent where response_id = ${r.body.responseId}`;
+    expect(c.party).toBe('self');
+    expect(c.child_assent_at).not.toBeNull();
+  });
+
+  it('needs a parent to confirm their under-13 child agrees too', async () => {
+    const parentBody = { ...baseResponse, firstName: undefined, ageBand: 'under13', step: 'youth' };
+    const refused = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...parentBody, consent: { ...baseResponse.consent, party: 'parent' } } });
+    expect(refused.status).toBe(422);
+    expect(refused.body.error).toBe('child_assent_required');
+    const ok = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...parentBody, consent: { ...baseResponse.consent, party: 'parent', childAssent: true } } });
+    expect(ok.status).toBe(201);
+    const [c] = await sql`select child_assent_at from consent where response_id = ${ok.body.responseId}`;
+    expect(c.child_assent_at).not.toBeNull();
+  });
+
+  it('refuses a stored under-15 consent with no assent at the database', async () => {
+    const [r] = await sql`select response_id from consent where age_band = '13-14' limit 1`;
+    await expect(sql`update consent set child_assent_at = null where response_id = ${r.response_id}`).rejects.toThrow(/under15_child_assent/);
+  });
+});
+
+describe('12-month consent', () => {
+  it('sets consent to lapse after 12 months, and lets an adult renew it', async () => {
+    const r = await call('POST', '/v1/responses', { token: tokens.sender, body: baseResponse });
+    const [c] = await sql`select collected_at, expires_at from consent where response_id = ${r.body.responseId}`;
+    const months = (new Date(c.expires_at).getTime() - new Date(c.collected_at).getTime()) / (86_400_000 * 30.4);
+    expect(Math.round(months)).toBe(12);
+    const renew = await call('POST', `/v1/me/${r.body.selfToken}/renew`);
+    expect(renew.status).toBe(200);
+    expect(new Date(renew.body.expiresAt).getTime()).toBeGreaterThanOrEqual(new Date(c.expires_at).getTime());
+  });
+
+  it('stops a church accepting once consent has lapsed', async () => {
+    const r = await call('POST', '/v1/responses', { token: tokens.sender, body: baseResponse });
+    await sql`update consent set expires_at = now() - interval '1 minute' where response_id = ${r.body.responseId}`;
+    const [o] = await sql`select org_id from handoff_offer where handoff_id = ${r.body.handoffId} and outcome = 'pending'`;
+    const token = o.org_id === ids.a ? tokens.a : tokens.b;
+    const res = await call('POST', `/v1/handoffs/${r.body.handoffId}/accept`, { token });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('consent:expired');
+  });
+
+  it('does not let a young person\'s consent be renewed by link', async () => {
+    const r = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...baseResponse, ageBand: '15-17', step: 'youth' } });
+    const renew = await call('POST', `/v1/me/${r.body.selfToken}/renew`);
+    expect(renew.status).toBe(409);
+  });
 });
 
 describe('withdrawal and retention', () => {
