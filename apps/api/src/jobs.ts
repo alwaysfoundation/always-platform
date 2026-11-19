@@ -74,7 +74,7 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
       const to = params.to ?? decrypt(o?.notify_email_ct);
       if (!to) return; // no address yet: nothing to send, mark sent
       // Email says "someone is waiting" and links to the inbox. No names, no faith details (PV-8).
-      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '' } });
+      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', complianceUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/compliance/my` } });
       return;
     }
     case 'sms': {
