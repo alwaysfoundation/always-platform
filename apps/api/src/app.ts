@@ -10,6 +10,7 @@ import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
+import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
@@ -87,7 +88,7 @@ async function turnstile(token: string | undefined, ip?: string): Promise<boolea
   return data.success === true;
 }
 
-export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean> }) {
+export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean>; complianceFetcher?: Fetcher; complianceSummariser?: Summariser }) {
   const now = opts.now ?? (() => new Date());
   const verifyHuman = opts.verifyHuman ?? turnstile;
   const app = new Hono<Env>();
@@ -567,6 +568,9 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ token: t.token, note: 'Shown once. Store it in your secret manager.' }, 201);
   });
 
+  // ---------------------------------------------------------------- Always Compliance (RFC 0003)
+  registerComplianceRoutes(app, sql, now);
+
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
   const job = (fn: (sql: Sql, t: Date, a: Adapters) => Promise<unknown>) => async (c: any) => {
     const secret = process.env.CRON_SECRET;
@@ -575,7 +579,8 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     if (!secret || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
     return c.json(await fn(sql, now(), opts.adapters));
   };
-  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention]] as const) {
+  const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);
+  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
     app.post(path, job(fn));
     app.get(path, job(fn));
   }
