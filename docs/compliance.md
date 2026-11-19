@@ -1,6 +1,6 @@
 # Always Compliance: developer guide
 
-Always Compliance helps Australian churches and ministries stay on top of privacy, child safety, charity and messaging rules. This guide is for developers and for the foundation team. The design is in [RFC 0003](rfc/0003-always-compliance.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
+Always Compliance helps Australian churches and ministries stay on top of privacy, child safety, charity and messaging rules. This guide is for developers and for the foundation team. The design is in [RFC 0003](rfc/0003-always-compliance.md), [RFC 0004](rfc/0004-compliance-infrastructure.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
 
 It is a guide to common obligations. It is not legal advice.
 
@@ -13,6 +13,9 @@ It is a guide to common obligations. It is not legal advice.
 | API routes and jobs | `apps/api/src/compliance.ts` |
 | Tables, with row-level security | `db/migrations/0020_compliance.sql` |
 | Cross-tenant test | `db/test/compliance_rls_test.sql` |
+| Webhook endpoints and change alerts | `apps/api/src/webhooks.ts`, `queueChangeAlerts` in `apps/api/src/compliance.ts` |
+| Guardrails for any app | `packages/sdk/src/guardrails.ts` |
+| Embeddable check-up | `packages/sdk/src/compliance-widget.ts` |
 
 ## Use the register
 
@@ -33,6 +36,46 @@ Or use the engine directly in TypeScript:
 ```ts
 import { assess } from '@always/core';
 const result = assess(register, profile, answers, {}, new Date());
+```
+
+## Build on it
+
+Pin a version, or follow the latest with its ETag:
+
+```sh
+curl https://api.alwaysfoundation.org/v1/compliance/register/versions
+curl https://api.alwaysfoundation.org/v1/compliance/register/2027.01.0
+```
+
+Get change alerts. Create an endpoint (admin, or a token with the `webhooks` scope) and keep the secret it returns:
+
+```sh
+curl -X POST https://api.alwaysfoundation.org/v1/webhooks \
+  -H "authorization: Bearer $ALWAYS_TOKEN" -H "x-always-org: $ORG_ID" -H 'content-type: application/json' \
+  -d '{"url":"https://your-app.example/hooks/always","events":["always.compliance.obligations.affected"]}'
+```
+
+| Event | Sent to | Data |
+| --- | --- | --- |
+| `always.compliance.register.published` | every subscriber | version, status, summary, changed obligations |
+| `always.compliance.obligations.affected` | members whose obligations changed | version, obligation ids |
+
+Verify each delivery with `verifyWebhook` from `@always/sdk`. Affected members also get an email.
+
+Embed the check-up in any page. It calls the public check-up, so nothing is stored and no token is needed:
+
+```html
+<script type="module" src="https://cdn.alwaysfoundation.org/sdk/v0/compliance-widget.js"></script>
+<always-compliance-check accent="#5B67D8"></always-compliance-check>
+```
+
+Use the guardrails in your own code. They fail closed:
+
+```ts
+import { ageGuard, requireConsent, personalDataProblems, spamActProblems, messageFooter } from '@always/sdk';
+
+if (!ageGuard(person.ageBand).aiAllowed) skipAi();
+requireConsent(person.consent, 'connect.church'); // throws without it
 ```
 
 ## Statuses

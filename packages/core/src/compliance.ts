@@ -209,6 +209,13 @@ export interface RegisterChange {
 }
 
 /** What changed between two register versions: the "what changed this quarter" feed. */
+/** JSON with sorted keys, so a stored copy (jsonb reorders keys) compares equal to the original. */
+function stable(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`;
+  if (v && typeof v === 'object') return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`;
+  return JSON.stringify(v) ?? 'null';
+}
+
 export function diffRegisters(before: Register, after: Register): RegisterChange[] {
   const old = new Map(before.obligations.map((o) => [o.id, o]));
   const now = new Map(after.obligations.map((o) => [o.id, o]));
@@ -222,10 +229,10 @@ export function diffRegisters(before: Register, after: Register): RegisterChange
     const what: string[] = [];
     if (prev.status !== o.status) what.push(`status: ${prev.status} to ${o.status}`);
     if (prev.commences !== o.commences) what.push('start date');
-    if (JSON.stringify(prev.appliesWhen) !== JSON.stringify(o.appliesWhen) || JSON.stringify(prev.requiredWhen) !== JSON.stringify(o.requiredWhen)) what.push('who it applies to');
-    if (JSON.stringify(prev.evidence) !== JSON.stringify(o.evidence)) what.push('what to show');
+    if (stable(prev.appliesWhen) !== stable(o.appliesWhen) || stable(prev.requiredWhen) !== stable(o.requiredWhen)) what.push('who it applies to');
+    if (stable(prev.evidence) !== stable(o.evidence)) what.push('what to show');
     if (prev.summary !== o.summary || prev.title !== o.title) what.push('wording');
-    if (JSON.stringify(prev.law) !== JSON.stringify(o.law)) what.push('legal source');
+    if (stable(prev.law) !== stable(o.law)) what.push('legal source');
     if (what.length) out.push({ obligationId: o.id, title: o.title, change: 'changed', what });
   }
   for (const o of before.obligations) if (!now.has(o.id)) out.push({ obligationId: o.id, title: o.title, change: 'removed', what: [] });
