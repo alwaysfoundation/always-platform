@@ -7,6 +7,7 @@ export default defineConfig({
       '@always/core': fileURLToPath(new URL('./packages/core/src/index.ts', import.meta.url)),
       '@always/db': fileURLToPath(new URL('./packages/db/src/index.ts', import.meta.url)),
       '@always/sdk': fileURLToPath(new URL('./packages/sdk/src/index.ts', import.meta.url)),
+      '@always/integrations': fileURLToPath(new URL('./packages/integrations/src/index.ts', import.meta.url)),
     },
   },
   test: { globals: true, fileParallelism: false, testTimeout: 20000 },

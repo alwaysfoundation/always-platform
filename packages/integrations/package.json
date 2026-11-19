@@ -1,0 +1,9 @@
+{
+  "name": "@always/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Connectors that put accepted people into a church's own church management system, behind the consent and minors gate.",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "Apache-2.0"
+}
