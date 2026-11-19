@@ -22,6 +22,9 @@
       ],
       "@always/sdk": [
         "./packages/sdk/src/index.ts"
+      ],
+      "@always/integrations": [
+        "./packages/integrations/src/index.ts"
       ]
     }
   },
