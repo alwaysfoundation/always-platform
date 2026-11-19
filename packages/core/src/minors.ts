@@ -9,6 +9,8 @@ export interface AgeRules {
   collectOwnDetails: boolean;
   /** Is parent or guardian confirmation required before any handoff? */
   requiresParentConfirmation: boolean;
+  /** Must the child also agree (assent), alongside the parent's consent? */
+  requiresChildAssent: boolean;
   /** Only Verified youth partners may receive. */
   youthPartnersOnly: boolean;
   /** May AI features process this record? */
@@ -23,13 +25,13 @@ export function rulesFor(band: AgeBand | undefined): AgeRules {
   const b: AgeBand = band ?? 'under13';
   switch (b) {
     case 'under13':
-      return { collectOwnDetails: false, requiresParentConfirmation: true, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
+      return { collectOwnDetails: false, requiresParentConfirmation: true, requiresChildAssent: true, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
     case '13-14':
-      return { collectOwnDetails: true, requiresParentConfirmation: true, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
+      return { collectOwnDetails: true, requiresParentConfirmation: true, requiresChildAssent: true, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
     case '15-17':
-      return { collectOwnDetails: true, requiresParentConfirmation: false, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
+      return { collectOwnDetails: true, requiresParentConfirmation: false, requiresChildAssent: false, youthPartnersOnly: true, aiAllowed: false, bulkAllowed: false, isMinor: true };
     case '18+':
-      return { collectOwnDetails: true, requiresParentConfirmation: false, youthPartnersOnly: false, aiAllowed: true, bulkAllowed: true, isMinor: false };
+      return { collectOwnDetails: true, requiresParentConfirmation: false, requiresChildAssent: false, youthPartnersOnly: false, aiAllowed: true, bulkAllowed: true, isMinor: false };
   }
 }
 
