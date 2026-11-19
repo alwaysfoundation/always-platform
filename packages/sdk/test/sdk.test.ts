@@ -37,3 +37,16 @@ describe('client', () => {
     expect(calls[0].url).toBe('https://api.test/v1/handoffs/h1/accept');
   });
 });
+
+describe('church feed', () => {
+  it('builds the feed query and sends the app key', async () => {
+    const calls: any[] = [];
+    const fake = (async (url: string, init: any) => { calls.push({ url, init }); return new Response(JSON.stringify({ items: [], licence: 'x' }), { status: 200 }); }) as any;
+    const c = new AlwaysClient({ appKey: 'alk_test_abc', fetch: fake, baseUrl: 'https://api.test' });
+    await c.feed.churches({ postcode: '2150', welcoming: true, step: 'youth' });
+    expect(calls[0].url).toBe('https://api.test/v1/feed/churches?postcode=2150&welcoming=true&step=youth');
+    expect(calls[0].init.headers['x-always-key']).toBe('alk_test_abc');
+    await c.feed.verify('hope church');
+    expect(calls[1].url).toBe('https://api.test/v1/verify/hope%20church');
+  });
+});

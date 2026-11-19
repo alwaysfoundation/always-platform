@@ -31,13 +31,14 @@ export class AlwaysError extends Error {
  * backend endpoint, or a publishable placement key.
  */
 export class AlwaysClient {
-  constructor(private opts: { baseUrl?: string; token?: string; org?: string; fetch?: typeof fetch } = {}) {}
+  constructor(private opts: { baseUrl?: string; token?: string; org?: string; appKey?: string; fetch?: typeof fetch } = {}) {}
 
   private async req<T>(method: string, path: string, body?: unknown): Promise<T> {
     const f = this.opts.fetch ?? fetch;
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (this.opts.token) headers.authorization = `Bearer ${this.opts.token}`;
     if (this.opts.org) headers['x-always-org'] = this.opts.org;
+    if (this.opts.appKey) headers['x-always-key'] = this.opts.appKey;
     const res = await f(`${this.opts.baseUrl ?? 'https://api.alwaysfoundation.org'}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
     const json = (await res.json().catch(() => ({}))) as any;
     if (!res.ok) throw new AlwaysError(res.status, json.error ?? 'request_failed');
@@ -50,6 +51,30 @@ export class AlwaysClient {
     tally: () => this.req<{ total: number; byState: { state: AuState; kind: string; n: number }[] }>('GET', '/v1/directory/tally'),
     get: (slug: string) => this.req<ChurchPage>('GET', `/v1/orgs/${encodeURIComponent(slug)}`),
     claim: (orgId: string, b: { email: string; role: string; evidence?: string }) => this.req<{ status: 'pending' }>('POST', `/v1/orgs/${orgId}/claims`, b),
+  };
+
+  /** The church feed: facts about churches that opted in, never people. Safe to call from a browser. */
+  feed = {
+    churches: (q: FeedQuery = {}) => {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries(q)) if (v !== undefined) p.set(k, String(v));
+      return this.req<{ items: FeedChurch[]; licence: string }>('GET', `/v1/feed/churches?${p}`);
+    },
+    /** Whether a church is verified and welcoming now. */
+    verify: (slug: string) => this.req<Verification>('GET', `/v1/verify/${encodeURIComponent(slug)}`),
+  };
+
+  /** Evangelist API: Scripture with an evangelism layer. Approved content only unless `drafts` is set. */
+  evangelist = {
+    passages: (q: { theme?: string; q?: string; drafts?: boolean } = {}) =>
+      this.req<{ items: EvangelistPassage[]; licence: string }>('GET', `/v1/evangelist/passages?${evQuery(q)}`),
+    passage: (id: string, opts: { drafts?: boolean } = {}) =>
+      this.req<EvangelistPassage & { objections: { id: string; question: string }[] }>('GET', `/v1/evangelist/passages/${encodeURIComponent(id)}?${evQuery(opts)}`),
+    objections: (opts: { drafts?: boolean } = {}) =>
+      this.req<{ items: { id: string; question: string; status: string }[] }>('GET', `/v1/evangelist/objections?${evQuery(opts)}`),
+    objection: (id: string, opts: { drafts?: boolean } = {}) =>
+      this.req<EvangelistObjection>('GET', `/v1/evangelist/objections/${encodeURIComponent(id)}?${evQuery(opts)}`),
+    themes: (opts: { drafts?: boolean } = {}) => this.req<{ themes: { id: string; passages: number }[] }>('GET', `/v1/evangelist/themes?${evQuery(opts)}`),
   };
 
   responses = {
@@ -70,6 +95,22 @@ export class AlwaysClient {
   profile = {
     get: () => this.req<Record<string, unknown>>('GET', '/v1/org/profile'),
     update: (p: Record<string, unknown>) => this.req<{ ok: true }>('PUT', '/v1/org/profile', p),
+  };
+
+  /** Open compliance data and the stateless check-up. No token needed for these. */
+  compliance = {
+    register: (version?: string) => this.req<ComplianceRegister>('GET', version ? `/v1/compliance/register/${encodeURIComponent(version)}` : '/v1/compliance/register'),
+    versions: () => this.req<{ versions: { version: string; status: string; publishedAt: string; summary: string | null }[] }>('GET', '/v1/compliance/register/versions'),
+    changes: () => this.req<{ versions: { version: string; publishedAt: string; summary: string | null; changes: { obligationId: string; title: string; change: 'added' | 'changed' | 'removed'; what: string[] }[] }[] }>('GET', '/v1/compliance/changes'),
+    check: (profile: ComplianceProfile, answers: Record<string, 'yes' | 'no' | 'unsure' | 'not_applicable'> = {}) =>
+      this.req<ComplianceAssessment>('POST', '/v1/compliance/check', { profile, answers }),
+  };
+
+  /** Signed webhooks, including compliance change alerts. The secret is returned once, on create. */
+  webhooks = {
+    list: () => this.req<{ endpoints: { id: string; url: string; events: string[]; active: boolean }[] }>('GET', '/v1/webhooks'),
+    create: (url: string, events: string[]) => this.req<{ id: string; url: string; events: string[]; secret: string }>('POST', '/v1/webhooks', { url, events }),
+    remove: (id: string) => this.req<{ ok: true }>('DELETE', `/v1/webhooks/${id}`),
   };
 
   /** Person self-service, with the private link token from their text message. */
@@ -111,4 +152,92 @@ export interface InboxItem {
   step: Step;
   contact?: { kind: 'mobile' | 'email'; value: string };
   note?: string | null;
+}
+
+export interface FeedQuery {
+  postcode?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  step?: Step;
+  /** Only churches welcoming people this month. */
+  welcoming?: boolean;
+  /** Only verified youth partners. */
+  youth?: boolean;
+  state?: AuState;
+  limit?: number;
+}
+
+export interface FeedChurch {
+  slug: string;
+  name: string;
+  kind: 'church' | 'ministry' | 'network';
+  denomination: string | null;
+  suburb: string | null;
+  state: AuState | null;
+  postcode: string | null;
+  location: { lat: number; lng: number } | null;
+  steps: Step[];
+  languages: string[];
+  serviceTimes: string | null;
+  welcomingNow: boolean;
+  youthPartner: boolean;
+  verified: boolean;
+  distanceKm?: number;
+  url: string;
+  updatedAt: string | null;
+}
+
+export interface Verification {
+  slug: string;
+  name: string;
+  verified: boolean;
+  youthPartner: boolean;
+  welcomingNow: boolean;
+  verifiedAt: string | null;
+}
+
+export interface EvangelistPassage {
+  id: string; ref: string; translation: string; text: string; themes: string[];
+  explain: string; whenToShare: string; status: 'draft' | 'approved';
+}
+export interface EvangelistObjection {
+  id: string; question: string; answer: string; tips: string[]; status: 'draft' | 'approved';
+  passages: EvangelistPassage[];
+}
+function evQuery(q: { theme?: string; q?: string; drafts?: boolean }): string {
+  const p = new URLSearchParams();
+  if (q.theme) p.set('theme', q.theme);
+  if (q.q) p.set('q', q.q);
+  if (q.drafts) p.set('drafts', '1');
+  return p.toString();
+}
+
+export interface ComplianceProfile {
+  states: AuState[];
+  collectsPersonalInfo: boolean;
+  turnoverOver3m: boolean;
+  providesHealthService: boolean;
+  usesOverseasServices: boolean;
+  worksWithChildren: boolean;
+  onlineServicesForChildren: boolean;
+  sendsEmailOrSms: boolean;
+  acncRegistered: boolean;
+  basicReligiousCharity: boolean;
+  acncMediumOrLarge: boolean;
+}
+
+export interface ComplianceRegister {
+  version: string;
+  status: 'draft' | 'reviewed';
+  notice: string;
+  profileQuestions: { id: keyof ComplianceProfile; type: 'states' | 'boolean'; label: string; help?: string }[];
+  obligations: { id: string; area: string; title: string; summary: string; status: string }[];
+}
+
+export interface ComplianceAssessment {
+  registerVersion: string;
+  items: { obligationId: string; title: string; summary: string; strength: 'required' | 'recommended'; status: 'met' | 'attention' | 'check' | 'upcoming'; guidance: string }[];
+  summary: { required: number; met: number; attention: number; check: number; upcoming: number };
+  notice: string;
 }

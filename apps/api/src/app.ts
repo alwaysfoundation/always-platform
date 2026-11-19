@@ -1,15 +1,22 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
+import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { asApp, asService, type Sql } from '@always/db';
-import { rulesFor, POLICY, type PassReason } from '@always/core';
+import { rulesFor, consentExpiresAt, POLICY, type PassReason } from '@always/core';
 import { authenticate, requirePrincipal, HttpError, type Env } from './auth.js';
 import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual } from './crypto.js';
 import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
+import { buildReport, toCsv } from './reports.js';
+import { mountEvangelist } from './evangelist.js';
+import { mountMcp } from './mcp.js';
+import { registerWebhookRoutes } from './webhooks.js';
+import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
@@ -35,6 +42,8 @@ const NewResponse = z.object({
     allowNextNearby: z.boolean(),
     wordingVersion: z.string().min(1).max(40),
     party: z.enum(['self', 'parent']),
+    /** Under 15, when a parent fills the form: the parent confirms the child has agreed too. */
+    childAssent: z.boolean().optional(),
   }),
 });
 
@@ -87,7 +96,7 @@ async function turnstile(token: string | undefined, ip?: string): Promise<boolea
   return data.success === true;
 }
 
-export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean> }) {
+export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date; verifyHuman?: (token: string | undefined, ip?: string) => Promise<boolean>; complianceFetcher?: Fetcher; complianceSummariser?: Summariser }) {
   const now = opts.now ?? (() => new Date());
   const verifyHuman = opts.verifyHuman ?? turnstile;
   const app = new Hono<Env>();
@@ -97,6 +106,12 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     c.set('sql', sql);
     await next();
   });
+  // Open, read-only endpoints may be called from any website (no cookies, no credentials).
+  for (const path of ['/v1/feed/*', '/v1/verify/*', '/v1/directory', '/v1/events', '/mcp']) app.use(path, cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type', 'x-always-key', 'mcp-protocol-version'], maxAge: 86400 }));
+  // Hosted response pages can also live on foundation subdomains (e.g. a partner's own app at sydneyfire.alwaysfoundation.org).
+  // Only https origins under alwaysfoundation.org may call these, and no cookies or credentials are used.
+  const FOUNDATION_ORIGIN = /^https:\/\/([a-z0-9-]+\.)?alwaysfoundation\.org$/;
+  app.use('/v1/pages/*', cors({ origin: (o) => (FOUNDATION_ORIGIN.test(o) ? o : null), allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'], maxAge: 86400 }));
   app.use('*', rateLimit({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_PER_MIN ?? 120) }));
   app.use('/v1/*', authenticate());
 
@@ -154,6 +169,135 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ status: 'pending' }, 202);
   });
 
+  // ---------------------------------------------------------------- Church feed and verification (open, RFC 0001)
+  // Organisation facts only, for churches that opted in. Never people, never staff contact details.
+  // A developer key (x-always-key) is optional; if sent, it must be valid.
+  const checkAppKey = async (c: Context<Env>) => {
+    const key = c.req.header('x-always-key');
+    if (!key) return;
+    const [k] = await asService(sql, (tx) => tx`
+      update app_key set last_used_at = now() where key_hash = ${tokenHash(key)} and revoked_at is null returning id`);
+    if (!k) throw new HttpError(401, 'bad_app_key');
+  };
+  const feedRow = (r: any) => ({
+    slug: r.slug, name: r.display_name, kind: r.kind, denomination: r.denomination ?? null,
+    suburb: r.suburb ?? null, state: r.state ?? null, postcode: r.postcode ?? null,
+    location: r.geo_lat == null ? null : { lat: Number(Number(r.geo_lat).toFixed(3)), lng: Number(Number(r.geo_lng).toFixed(3)) },
+    steps: r.steps ?? [], languages: r.languages ?? [], serviceTimes: r.service_times ?? null,
+    welcomingNow: !!r.welcoming_now, youthPartner: !!r.youth_partner,
+    verified: ['verified', 'verified_youth'].includes(r.trust_level),
+    distanceKm: r.distance_km == null ? undefined : Number(Number(r.distance_km).toFixed(1)),
+    url: `https://alwaysfoundation.org/#/church/${r.slug}`,
+    updatedAt: r.last_confirmed_at ?? null,
+  });
+  const FEED_COLUMNS = (tx: any) => tx`
+    o.slug, o.display_name, o.kind::text as kind, o.denomination, o.suburb, o.state, o.postcode, o.geo_lat, o.geo_lng,
+    o.languages, o.service_times, o.trust_level::text as trust_level, o.last_confirmed_at,
+    coalesce((select array_agg(category::text order by category) from offer_category where org_id = o.id and active), '{}') as steps,
+    r.welcoming_now, r.youth_partner`;
+
+  app.get('/v1/feed/churches', async (c) => {
+    await checkAppKey(c);
+    const q = parse(z.object({
+      postcode: z.string().regex(/^\d{4}$/).optional(),
+      lat: z.coerce.number().min(-45).max(-9).optional(), lng: z.coerce.number().min(112).max(155).optional(),
+      radiusKm: z.coerce.number().min(1).max(200).default(25),
+      step: z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']).optional(),
+      welcoming: z.enum(['true', 'false']).optional(), youth: z.enum(['true', 'false']).optional(),
+      state: z.string().max(3).optional(), limit: z.coerce.number().min(1).max(100).default(25),
+    }), c.req.query());
+    const rows = await asService(sql, async (tx) => {
+      let lat = q.lat, lng = q.lng;
+      if (q.postcode && (lat == null || lng == null)) {
+        const [pl] = await tx`select lat, lng from place_centroid where postcode = ${q.postcode} limit 1`;
+        if (pl) { lat = pl.lat; lng = pl.lng; }
+      }
+      const near = lat != null && lng != null;
+      return tx`
+        select ${FEED_COLUMNS(tx)},
+          ${near ? tx`6371 * 2 * asin(sqrt(power(sin(radians(o.geo_lat - ${lat}) / 2), 2) + cos(radians(${lat})) * cos(radians(o.geo_lat)) * power(sin(radians(o.geo_lng - ${lng}) / 2), 2)))` : tx`null::float8`} as distance_km
+        from organisation o join org_readiness r on r.org_id = o.id
+        where o.feed_opt_in_at is not null and not o.is_care_team
+          and (${q.state ?? null}::text is null or o.state = ${q.state ?? null})
+          and (${q.welcoming !== 'true'} or r.welcoming_now)
+          and (${q.youth !== 'true'} or r.youth_partner)
+          and (${q.step ?? null}::text is null or exists (select 1 from offer_category oc where oc.org_id = o.id and oc.active and oc.category::text = ${q.step ?? null}))
+          ${near ? tx`and o.geo_lat is not null and 6371 * 2 * asin(sqrt(power(sin(radians(o.geo_lat - ${lat}) / 2), 2) + cos(radians(${lat})) * cos(radians(o.geo_lat)) * power(sin(radians(o.geo_lng - ${lng}) / 2), 2))) <= ${q.radiusKm}` : tx``}
+        order by ${near ? tx`distance_km` : tx`o.display_name`}
+        limit ${q.limit}`;
+    });
+    c.header('cache-control', 'public, max-age=300');
+    return c.json({ items: rows.map(feedRow), licence: 'Facts provided by each church for the Always church feed. Free to use with attribution to the Always Foundation.' });
+  });
+
+  app.get('/v1/feed/churches.jsonl', async (c) => {
+    await checkAppKey(c);
+    const rows = await asService(sql, (tx) => tx`
+      select ${FEED_COLUMNS(tx)}, null::float8 as distance_km
+      from organisation o join org_readiness r on r.org_id = o.id
+      where o.feed_opt_in_at is not null and not o.is_care_team order by o.state, o.display_name`);
+    c.header('content-type', 'application/x-ndjson; charset=utf-8');
+    c.header('cache-control', 'public, max-age=3600');
+    return c.body(rows.map((r: any) => JSON.stringify(feedRow(r))).join('\n') + '\n');
+  });
+
+  app.get('/v1/verify/:slug', async (c) => {
+    await checkAppKey(c);
+    const [r] = await asService(sql, (tx) => tx`
+      select o.slug, o.display_name, o.trust_level::text as trust_level, o.verified_at, o.youth_verified_at, r.welcoming_now, r.youth_partner
+      from organisation o join org_readiness r on r.org_id = o.id
+      where o.slug = ${c.req.param('slug')} and not o.is_care_team`);
+    if (!r) throw new HttpError(404, 'not_found');
+    c.header('cache-control', 'public, max-age=300');
+    return c.json({
+      slug: r.slug, name: r.display_name,
+      verified: ['verified', 'verified_youth'].includes(r.trust_level), youthPartner: !!r.youth_partner,
+      welcomingNow: !!r.welcoming_now, verifiedAt: r.verified_at ?? null,
+    });
+  });
+
+  app.get('/v1/org/feed', async (c) => {
+    const p = requirePrincipal(c, 'profile');
+    const [o] = await asService(sql, (tx) => tx`
+      select o.feed_opt_in_at, o.slug, r.welcoming_now, r.youth_partner, r.on_time_rate, r.recent_offers,
+             o.trust_level::text as trust_level, o.connect_trained_at, o.last_confirmed_at
+      from organisation o join org_readiness r on r.org_id = o.id where o.id = ${p.orgId}`);
+    if (!o) throw new HttpError(404, 'not_found');
+    // Only this organisation sees its own response rate.
+    return c.json({
+      optedIn: !!o.feed_opt_in_at, at: o.feed_opt_in_at ?? null, slug: o.slug, welcomingNow: !!o.welcoming_now, youthPartner: !!o.youth_partner,
+      checks: {
+        verified: ['verified', 'verified_youth'].includes(o.trust_level), trained: !!o.connect_trained_at,
+        confirmedRecently: !!o.last_confirmed_at && new Date(o.last_confirmed_at).getTime() > Date.now() - 90 * 86_400_000,
+        onTimeRate: o.on_time_rate == null ? null : Number(o.on_time_rate), recentOffers: o.recent_offers,
+      },
+    });
+  });
+
+  app.put('/v1/org/feed', async (c) => {
+    const p = requirePrincipal(c, 'profile');
+    const body = parse(z.object({ optIn: z.boolean() }), await c.req.json());
+    const [o] = await asService(sql, async (tx) => {
+      const rows = await tx`update organisation set feed_opt_in_at = ${body.optIn ? now() : null} where id = ${p.orgId} returning feed_opt_in_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: body.optIn ? 'feed.opt_in' : 'feed.opt_out', subject: `org:${p.orgId}` });
+      return rows;
+    });
+    return c.json({ optedIn: !!o?.feed_opt_in_at, at: o?.feed_opt_in_at ?? null });
+  });
+
+  app.post('/v1/ops/app-keys', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const body = parse(z.object({ name: z.string().min(2).max(80), contactEmail: z.string().email(), kind: z.enum(['test', 'live']).default('test') }), await c.req.json());
+    const t = newToken(`alk_${body.kind}`);
+    const k = await asService(sql, async (tx) => {
+      const [row] = await tx`insert into app_key (name, contact_email_ct, kind, key_hash) values (${body.name}, ${encrypt(body.contactEmail)}, ${body.kind}, ${t.hash}) returning id`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'app_key.create', subject: `app_key:${row!.id}` });
+      return row!;
+    });
+    return c.json({ id: k.id, key: t.token, kind: body.kind, note: 'Shown once. Store it in your server environment.' }, 201);
+  });
+
   // ---------------------------------------------------------------- Responses (senders)
   /** Create a consenting response and start its introduction. Shared by senders and hosted response pages. */
   async function createResponse(senderOrgId: string, body: z.output<typeof NewResponse>) {
@@ -166,6 +310,11 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     }
     if (rules.requiresParentConfirmation && body.consent.party !== 'parent' && !body.parentContact) {
       throw new HttpError(422, 'parent_contact_required');
+    }
+    // Under 15: the child agrees as well as the parent. A child filling the form is agreeing themselves;
+    // a parent filling it must confirm the child agrees.
+    if (rules.requiresChildAssent && body.consent.party === 'parent' && body.consent.childAssent !== true) {
+      throw new HttpError(422, 'child_assent_required');
     }
     if (!body.consent.purposes.includes('connect.church')) throw new HttpError(422, 'consent_connect_required');
     if (body.note && body.ageBand !== '18+') body.note = undefined; // no free-text notes for minors
@@ -185,22 +334,25 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
                 ${new Date(t.getTime() + retentionDays * 86_400_000)})
         returning id`;
       if (!r) throw new Error('insert_failed');
-      await tx`insert into consent (response_id, purposes, recipients, allow_next_nearby, wording_version, party, age_band, collected_at)
+      const childAssentAt = rules.requiresChildAssent ? t : null; // checked above for parents; a child's own yes is their assent
+      await tx`insert into consent (response_id, purposes, recipients, allow_next_nearby, wording_version, party, age_band, collected_at,
+                                    child_assent_at, expires_at)
                values (${r.id}, ${body.consent.purposes}, ${body.consent.recipients}, ${body.consent.allowNextNearby},
-                       ${body.consent.wordingVersion}, ${body.consent.party}, ${body.ageBand}, ${t})`;
+                       ${body.consent.wordingVersion}, ${body.consent.party}, ${body.ageBand}, ${t},
+                       ${childAssentAt}, ${consentExpiresAt({ collectedAt: t })})`;
       const self = newToken('alp');
       await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                values (${self.hash}, ${r.id}, 'self_service', ${new Date(t.getTime() + 90 * 86_400_000)})`;
-      await tx`insert into outbox (channel, template, response_id, params_ct)
-               values ('sms', 'person.thanks', ${r.id}, ${encrypt(JSON.stringify({ link: self.token }))})`;
+      await tx`insert into outbox (channel, template, response_id, params_ct, not_before)
+               values ('sms', 'person.thanks', ${r.id}, ${encrypt(JSON.stringify({ link: self.token }))}, ${t})`;
       let parentToken: string | undefined;
       if (rules.requiresParentConfirmation && body.consent.party !== 'parent') {
         const pt = newToken('alg');
         parentToken = pt.token;
         await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                  values (${pt.hash}, ${r.id}, 'parent_confirm', ${new Date(t.getTime() + POLICY.retention.parentConfirmationDays * 86_400_000)})`;
-        await tx`insert into outbox (channel, template, response_id, params_ct)
-                 values ('sms', 'parent.confirm', ${r.id}, ${encrypt(JSON.stringify({ link: pt.token, to: body.parentContact }))})`;
+        await tx`insert into outbox (channel, template, response_id, params_ct, not_before)
+                 values ('sms', 'parent.confirm', ${r.id}, ${encrypt(JSON.stringify({ link: pt.token, to: body.parentContact }))}, ${t})`;
       }
       const handoff = await engine.start(tx, randomUUID(), r.id, t);
       await audit(tx, { orgId: senderOrgId, action: 'response.create', subject: `response:${r.id}` });
@@ -425,6 +577,21 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ state: s.state, church: s.church ?? null });
   });
 
+  /** Renew consent for another 12 months. Adults only: a young person's family renews through a new response. */
+  app.post('/v1/me/:token/renew', async (c) => {
+    const l = await linkFor(c.req.param('token'), 'self_service');
+    const t = now();
+    const renewed = await asService(sql, async (tx) => {
+      const [row] = await tx`update consent set expires_at = ${consentExpiresAt({ collectedAt: t })}
+                             where response_id = ${l.response_id} and withdrawn_at is null and age_band = '18+'
+                             returning expires_at`;
+      if (row) await audit(tx, { action: 'consent.renew', subject: `response:${l.response_id}` });
+      return row;
+    });
+    if (!renewed) throw new HttpError(409, 'cannot_renew');
+    return c.json({ expiresAt: renewed.expires_at });
+  });
+
   app.post('/v1/me/:token/withdraw', async (c) => {
     const l = await linkFor(c.req.param('token'), 'self_service');
     await asService(sql, (tx) => engine.withdraw(tx, l.handoff_id, now()));
@@ -507,9 +674,9 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
         await tx`insert into membership (user_id, org_id, role) values (${u.id}, ${cr.org_id}, 'admin') on conflict do nothing`;
         await tx`update organisation set trust_level = 'claimed' where id = ${cr.org_id} and trust_level = 'listed'`;
       }
-      await tx`insert into outbox (channel, template, org_id, params_ct)
+      await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
                values ('email', ${b.decision === 'approve' ? 'claim.approved' : 'claim.declined'}, ${cr.org_id},
-                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))})`;
+                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))}, ${now()})`;
       await audit(tx, { actor: p.userId, orgId: p.orgId, action: `claim.${b.decision}`, subject: `org:${cr.org_id}` });
       return { status: b.decision === 'approve' ? 'approved' : 'rejected' };
     });
@@ -536,6 +703,92 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     });
     if (!ev) throw new HttpError(404, 'not_found_or_decided');
     return c.json(ev);
+  });
+
+  // ---------------------------------------------------------------- Reports (de-identified totals for ministries, churches and funders)
+  const ReportQ = z.object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    view: z.enum(['sender', 'receiver']).default('sender'),
+    source: z.string().uuid().optional(),
+  });
+  const readQuery = (c: any) => { const q = parse(ReportQ, Object.fromEntries(new URL(c.req.url).searchParams)); return { ...q, view: q.view ?? 'sender' }; };
+
+  app.get('/v1/org/report', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const q = readQuery(c);
+    const r = await asService(sql, (tx) => buildReport(tx, { orgId: p.orgId, view: q.view, from: q.from, to: q.to, sourceId: q.source }));
+    const [profile] = await asService(sql, (tx) => tx`select title, funder_name, intro from report_profile where org_id = ${p.orgId}`);
+    const [org] = await asService(sql, (tx) => tx`select display_name from organisation where id = ${p.orgId}`);
+    return c.json({ organisation: org?.display_name, profile: profile ?? null, ...r });
+  });
+
+  app.get('/v1/org/report.csv', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const q = readQuery(c);
+    const r = await asService(sql, (tx) => buildReport(tx, { orgId: p.orgId, view: q.view, from: q.from, to: q.to, sourceId: q.source }));
+    return c.body(toCsv(r), 200, { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="always-report-${q.from}-to-${q.to}.csv"` });
+  });
+
+  app.put('/v1/org/report-profile', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const b = parse(z.object({ title: z.string().max(120).optional(), funderName: z.string().max(120).optional(), intro: z.string().max(1200).optional() }), await c.req.json());
+    await asService(sql, async (tx) => {
+      await tx`insert into report_profile (org_id, title, funder_name, intro, updated_at) values (${p.orgId}, ${b.title ?? null}, ${b.funderName ?? null}, ${b.intro ?? null}, ${now()})
+               on conflict (org_id) do update set title = excluded.title, funder_name = excluded.funder_name, intro = excluded.intro, updated_at = excluded.updated_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'report.profile', subject: `org:${p.orgId}` });
+    });
+    return c.json({ ok: true });
+  });
+
+  /** A private, revocable link a ministry can send to a funder. Shown once. */
+  app.post('/v1/org/report-shares', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const b = parse(z.object({ label: z.string().min(2).max(80), from: ReportQ.shape.from, to: ReportQ.shape.to, source: z.string().uuid().optional(), days: z.number().int().min(1).max(366).default(90) }), await c.req.json());
+    const t = newToken('alr');
+    const [row] = await asService(sql, async (tx) => {
+      const report = await buildReport(tx, { orgId: p.orgId, view: 'sender', from: b.from, to: b.to, sourceId: b.source });
+      const [profile] = await tx`select title, funder_name, intro from report_profile where org_id = ${p.orgId}`;
+      const [org] = await tx`select display_name from organisation where id = ${p.orgId}`;
+      const snapshot = { organisation: org?.display_name, profile: profile ?? null, ...report, sharedAt: now().toISOString() };
+      const r = await tx`insert into report_share (org_id, token_hash, label, from_day, to_day, source_id, snapshot, expires_at)
+                         values (${p.orgId}, ${t.hash}, ${b.label}, ${b.from}, ${b.to}, ${b.source ?? null}, ${tx.json(snapshot as any)},
+                                 ${new Date(now().getTime() + (b.days ?? 90) * 86_400_000)}) returning id, expires_at`;
+      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'report.share', subject: `report_share:${r[0]?.id}` });
+      return r;
+    });
+    return c.json({ id: row?.id, token: t.token, expiresAt: row?.expires_at, note: 'Shown once. Anyone with this link can see these totals until it expires or you switch it off.' }, 201);
+  });
+
+  app.get('/v1/org/report-shares', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const rows = await asService(sql, (tx) => tx`select id, label, from_day, to_day, expires_at, revoked_at, views, last_viewed_at, created_at from report_share where org_id = ${p.orgId} order by created_at desc`);
+    return c.json({ items: rows });
+  });
+
+  app.post('/v1/org/report-shares/:id/revoke', async (c) => {
+    const p = requirePrincipal(c, 'reports');
+    const r = await asService(sql, (tx) => tx`update report_share set revoked_at = ${now()} where id = ${c.req.param('id')} and org_id = ${p.orgId} and revoked_at is null returning id`);
+    if (!r[0]) throw new HttpError(404, 'not_found');
+    return c.json({ ok: true });
+  });
+
+  app.get('/v1/reports/shared/:token', async (c) => {
+    const out = await asService(sql, async (tx) => {
+      const [s] = await tx`update report_share set views = views + 1, last_viewed_at = ${now()}
+                           where token_hash = ${tokenHash(c.req.param('token'))} and revoked_at is null and expires_at > ${now()}
+                           returning label, snapshot`;
+      if (!s) throw new HttpError(404, 'not_found');
+      return { label: s.label, ...s.snapshot };
+    });
+    return c.json(out);
+  });
+
+  app.get('/v1/ops/report', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const q = readQuery(c);
+    return c.json(await asService(sql, (tx) => buildReport(tx, { view: 'network', from: q.from, to: q.to })));
   });
 
   // ---------------------------------------------------------------- Feedback (public, with the human check)
@@ -567,18 +820,36 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ token: t.token, note: 'Shown once. Store it in your secret manager.' }, 201);
   });
 
+  // ---------------------------------------------------------------- Always Compliance (RFC 0003)
+  registerComplianceRoutes(app, sql, now);
+  registerWebhookRoutes(app, sql);
+
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
+  // On Supabase the cron secret is generated inside the database (Vault) by db/supabase/jobs.sql,
+  // so no person ever copies it. Read once and cached; absent outside Supabase.
+  let cronSecret: string | null | undefined;
+  const vaultCronSecret = async () => {
+    if (cronSecret !== undefined) return cronSecret;
+    try {
+      const [r] = await sql`select decrypted_secret as s from vault.decrypted_secrets where name = 'always_cron_secret'`;
+      cronSecret = (r?.s as string | undefined) ?? null;
+    } catch { cronSecret = null; }
+    return cronSecret;
+  };
   const job = (fn: (sql: Sql, t: Date, a: Adapters) => Promise<unknown>) => async (c: any) => {
-    const secret = process.env.CRON_SECRET;
     // Vercel Cron sends GET with "Authorization: Bearer <CRON_SECRET>"; other schedulers use x-cron-secret.
     const given = c.req.header('x-cron-secret') ?? c.req.header('authorization')?.replace(/^Bearer /, '') ?? '';
-    if (!secret || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
+    const secret = process.env.CRON_SECRET || (await vaultCronSecret());
+    if (!secret || !given || !safeEqual(given, secret)) throw new HttpError(401, 'bad_cron_secret');
     return c.json(await fn(sql, now(), opts.adapters));
   };
-  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention]] as const) {
+  const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);
+  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
     app.post(path, job(fn));
     app.get(path, job(fn));
   }
 
+  mountMcp(app);
+  mountEvangelist(app);
   return app;
 }

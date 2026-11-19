@@ -63,7 +63,7 @@ function route(h: Handoff, world: World, now: Date): Step {
   const candidates = rankCandidates(world.response, world.orgs, now, offeredSet(h));
   for (const c of candidates) {
     const isNextNearby = h.offers.length > 0;
-    const decision = canProcess(world.consent, 'connect.church', c.org.id, { isNextNearby: isNextNearby || !world.consent?.recipients.includes(c.org.id) });
+    const decision = canProcess(world.consent, 'connect.church', c.org.id, { isNextNearby: isNextNearby || !world.consent?.recipients.includes(c.org.id), now });
     if (!decision.ok) continue;
     let deadline = addStaffedMinutes(now, POLICY.acceptWindowStaffedMinutes);
     if (deadline > ceiling) deadline = ceiling;
@@ -87,7 +87,7 @@ export function accept(h: Handoff, orgId: string, world: World, now: Date): Step
   const offer = currentOffer(h);
   if (h.state !== 'offered' || !offer || offer.orgId !== orgId) throw new Error('no_pending_offer_for_org');
   if (now > offer.deadline) throw new Error('offer_expired');
-  const decision = canProcess(world.consent, 'connect.church', orgId, { isNextNearby: h.offers.length > 1 || !world.consent?.recipients.includes(orgId) });
+  const decision = canProcess(world.consent, 'connect.church', orgId, { isNextNearby: h.offers.length > 1 || !world.consent?.recipients.includes(orgId), now });
   if (!decision.ok) throw new Error(`consent:${decision.reason}`);
   const offers = h.offers.map((o) => (o === offer ? { ...o, outcome: 'accepted' as const, decidedAt: now } : o));
   return { handoff: { ...h, state: 'accepted', offers, acceptedAt: now }, actions: [] };

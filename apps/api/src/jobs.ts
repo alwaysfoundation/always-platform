@@ -92,7 +92,7 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
         : await sql`select w.url, w.secret_ct, w.events from webhook_endpoint w join response r on r.sender_org_id = w.org_id where r.id = ${m.response_id} and w.active`;
       for (const ep of endpoints) {
         if (!ep.events.includes(m.template) && !ep.events.includes('*')) continue;
-        // CloudEvents 1.0, structured mode. Data carries ids only.
+        // CloudEvents 1.0, structured mode. Data carries ids only; compliance events carry register facts, never people.
         const body = JSON.stringify({
           specversion: '1.0',
           id: `outbox-${m.id}`,
@@ -100,7 +100,7 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
           type: m.template,
           time: now.toISOString(),
           datacontenttype: 'application/json',
-          data: { responseId: m.response_id },
+          data: m.template.startsWith('always.compliance.') ? params : { responseId: m.response_id },
         });
         const ts = Math.floor(now.getTime() / 1000).toString();
         const sig = hmacSign(decrypt(ep.secret_ct)!, `${ts}.${body}`);

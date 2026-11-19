@@ -18,7 +18,7 @@ describe('handoff engine', () => {
   });
 
   it('holds under-15s until a parent confirms', () => {
-    const w = world({ response: response({ createdAt: SYD_8PM, ageBand: '13-14', step: 'youth' }), consent: consent({ ageBand: '13-14' }), orgs: [org('y', { offers: ['youth'], trustLevel: 'verified_youth' })] });
+    const w = world({ response: response({ createdAt: SYD_8PM, ageBand: '13-14', step: 'youth' }), consent: consent({ ageBand: '13-14', childAssentAt: SYD_8PM }), orgs: [org('y', { offers: ['youth'], trustLevel: 'verified_youth' })] });
     const s = createHandoff('h2', w, SYD_8PM);
     expect(s.handoff.state).toBe('awaiting_parent');
     const w2 = { ...w, consent: { ...w.consent!, parentConfirmedAt: minutes(SYD_8PM, 10) } };
@@ -27,7 +27,7 @@ describe('handoff engine', () => {
   });
 
   it('expires the parent request after 7 days', () => {
-    const w = world({ response: response({ createdAt: SYD_8PM, ageBand: '13-14', step: 'youth' }), consent: consent({ ageBand: '13-14' }) });
+    const w = world({ response: response({ createdAt: SYD_8PM, ageBand: '13-14', step: 'youth' }), consent: consent({ ageBand: '13-14', childAssentAt: SYD_8PM }) });
     const s = createHandoff('h3', w, SYD_8PM);
     const t = tick(s.handoff, w, hours(SYD_8PM, 24 * 7));
     expect(t.handoff.state).toBe('withdrawn');

@@ -4,7 +4,7 @@ Rules for Claude Code (and any AI coding assistant) working in Always Foundation
 
 ## What we are building
 
-An open-source, Australian-only platform that maps Australia's churches and hands each consenting person who responds to the Lord Jesus Christ to a verified local church or ministry, with a guaranteed fallback. Read `docs/spec/` (Always Platform Software Specification) and the Always Handoff standard before changing behaviour.
+Always Platform: the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings Australian churches and Christian ministries together ("Together for the Gospel"). It equips them with free tools (the Always App, branded response pages, forms), supports them with shared tools for governance, compliance, safeguarding and reporting, and connects them as one network: mapping Australia's churches and handing each consenting person who responds to the Lord Jesus Christ to a verified local church or ministry, with a guaranteed fallback. All personal data stays in Australia. Read `docs/spec/` (Always Platform Software Specification) and the Always Handoff standard before changing behaviour.
 
 ## Non-negotiables
 

@@ -63,7 +63,7 @@ Chosen for three things: personal data stays in Australia, it costs very little 
 | Web apps | Next.js on Vercel | Church inbox, page builder, care console, person pages, public directory | syd1 |
 | Marketing site | Static, Cloudflare Pages | Free, fast, no personal data | Global CDN |
 | Scheduler | Vercel Cron (every minute) calling idempotent job endpoints; Supabase pg_cron as backup | Timers, outbox, nightly retention | Sydney |
-| Email | Resend (transactional and partner broadcasts) | Free to 3,000 emails a month, then from US$20; staff alerts carry no personal data | US (no Australian region; alerts contain no personal data) |
+| Email | Amazon SES (transactional) | About US$0.10 per 1,000 emails; email addresses are processed onshore; staff alerts carry no personal data | Sydney (ap-southeast-2) |
 | SMS | An Australian SMS provider (Mobile Message, MessageMedia or similar) | Data stays onshore; low volume because churches text from their own phones | Australia |
 | Field encryption keys | AWS KMS | One key per environment; the database only sees ciphertext | Sydney |
 | Maps | Suburb centroids from ABS open data; MapLibre with self-hosted tiles | No Google Maps bill; no street addresses for people | Sydney |
@@ -91,7 +91,7 @@ Estimated monthly cost at launch (US dollars, before GST), checked November 2026
 | Supabase staging project | about $10 |
 | Vercel Pro (one seat; extra seats $20 each) | $20 |
 | Cloudflare (DNS, WAF, Pages) | $0 |
-| Resend (free tier to start) | $0–20 |
+| Amazon SES | about $1 |
 | AWS KMS (two keys) | about $2 |
 | SMS (about 1,000 confirmation texts at roughly 5 cents) | about $50 |
 | Domain and email (Google Workspace for Nonprofits or Microsoft 365 nonprofit grant) | $0 to $10 |
@@ -155,8 +155,8 @@ Main branch:
 
 5/ **AWS** (one account, Sydney only, with an organisation policy denying other regions):
 - KMS keys for staging and production
-- Resend with send.alwaysfoundation.org verified (SPF, DKIM), and a DMARC record on the root domain
-- separate Resend API keys for staging and production, sending access only
+- SES in Sydney with send.alwaysfoundation.org verified (SPF, DKIM), a DMARC record on the root domain, and production access requested
+- separate IAM users for staging and production, allowed only ses:SendEmail
 
 6/ **SMS.** Open an account with an Australian provider, register the "Always" sender ID, and store the API key.
 

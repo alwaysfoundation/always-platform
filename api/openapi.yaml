@@ -25,7 +25,134 @@ tags:
   - name: Profile
   - name: Person
   - name: Operations
+  - name: Compliance
+  - name: Webhooks
 paths:
+  /v1/feed/churches:
+    get:
+      tags: [Church feed]
+      security: []
+      summary: Churches near a place, from the opt-in church feed (no personal data)
+      parameters:
+        - { name: postcode, in: query, schema: { type: string, pattern: '^\d{4}$' } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: radiusKm, in: query, schema: { type: number, default: 25, maximum: 200 } }
+        - { name: step, in: query, schema: { type: string, enum: [church, explore, talk, youth, group, help, read] } }
+        - { name: welcoming, in: query, schema: { type: boolean } }
+        - { name: youth, in: query, schema: { type: boolean } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 25, maximum: 100 } }
+        - { name: x-always-key, in: header, required: false, schema: { type: string }, description: Optional developer key }
+      responses:
+        '200': { description: Churches, nearest first }
+        '401': { description: The developer key sent is not valid }
+  /v1/feed/churches.jsonl:
+    get:
+      tags: [Church feed]
+      security: []
+      summary: The whole church feed as JSON Lines, refreshed hourly
+      responses:
+        '200': { description: One church per line, content: { application/x-ndjson: {} } }
+  /v1/verify/{slug}:
+    get:
+      tags: [Verification]
+      security: []
+      summary: Whether a church is verified, a verified youth partner, and welcoming now
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Verification status }
+        '404': { description: No such church }
+  /v1/org/feed:
+    put:
+      tags: [Church feed]
+      summary: A church opts in to, or out of, the church feed
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [optIn], properties: { optIn: { type: boolean } } } } } }
+      responses:
+        '200': { description: Current opt-in }
+  /mcp:
+    post:
+      tags: [AI]
+      security: []
+      summary: Always MCP server (Streamable HTTP, read-only, no personal data)
+      responses:
+        '200': { description: JSON-RPC response }
+        '202': { description: Notification accepted }
+  /v1/compliance/register:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: The latest published compliance register (open data, CC BY 4.0). CORS open; send If-None-Match with the ETag.
+      responses: { '200': { description: Register }, '304': { description: Not modified } }
+  /v1/compliance/register/versions:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: Every published register version, newest first
+      responses: { '200': { description: Versions } }
+  /v1/compliance/register/{version}:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: One published register version. Immutable.
+      parameters: [{ name: version, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Register }, '404': { description: Not found } }
+  /v1/compliance/changes:
+    get:
+      tags: [Compliance]
+      security: []
+      summary: What changed between published register versions, newest first
+      responses: { '200': { description: Change feed } }
+  /v1/compliance/check:
+    post:
+      tags: [Compliance]
+      security: []
+      summary: A free check-up. Nothing is stored.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [profile], properties: { profile: { $ref: '#/components/schemas/ComplianceProfile' }, answers: { type: object, additionalProperties: { enum: [yes, no, unsure, not_applicable] } } } } } } }
+      responses: { '200': { description: Assessment }, '422': { description: Invalid body } }
+  /v1/webhooks:
+    get: { tags: [Webhooks], summary: Your webhook endpoints (admin or webhooks scope). Secrets are never returned., responses: { '200': { description: Endpoints } } }
+    post:
+      tags: [Webhooks]
+      summary: Add an endpoint. Returns the signing secret once. Public https hosts only, ten at most.
+      description: Deliveries are CloudEvents 1.0, signed with HMAC-SHA256 (always-timestamp, always-signature). Compliance events are always.compliance.register.published and always.compliance.obligations.affected; their data carries register facts, never people.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [url, events], properties: { url: { type: string, format: uri }, events: { type: array, items: { type: string, example: always.compliance.obligations.affected } } } } } } }
+      responses: { '201': { description: Created, with secret }, '409': { description: Too many endpoints }, '422': { description: Invalid body } }
+  /v1/webhooks/{id}:
+    delete:
+      tags: [Webhooks]
+      summary: Remove an endpoint
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Removed }, '404': { description: Not found } }
+  /v1/compliance/profile:
+    get: { tags: [Compliance], summary: Your organisation's profile and answers (admin or compliance scope), responses: { '200': { description: Profile and answers } } }
+    put:
+      tags: [Compliance]
+      summary: Save your organisation's profile
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ComplianceProfile' } } } }
+      responses: { '200': { description: Saved } }
+  /v1/compliance/answers:
+    put:
+      tags: [Compliance]
+      summary: Save answers to evidence questions
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { answers: { type: array, items: { type: object, required: [evidenceId, answer], properties: { evidenceId: { type: string }, answer: { enum: [yes, no, unsure, not_applicable] }, note: { type: string, maxLength: 1000 } } } } } } } } }
+      responses: { '200': { description: Saved }, '422': { description: Unknown evidence } }
+  /v1/compliance/assessment:
+    get: { tags: [Compliance], summary: Your live assessment, responses: { '200': { description: Assessment }, '409': { description: Profile needed } } }
+  /v1/compliance/assessments:
+    get: { tags: [Compliance], summary: Your quarterly assessments, responses: { '200': { description: List } } }
+  /v1/compliance/assessments/{id}:
+    get:
+      tags: [Compliance]
+      summary: One quarterly assessment
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Assessment }, '404': { description: Not found } }
+  /v1/compliance/assessments/{id}/approve:
+    post:
+      tags: [Compliance]
+      summary: Approve the quarterly assessment (a signed-in person only)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Approved }, '403': { description: A person must approve }, '404': { description: Not found or already approved } }
   /v1/directory:
     get:
       tags: [Directory]
@@ -102,6 +229,8 @@ paths:
       responses: { '200': { description: Saved } }
   /v1/me/{token}:
     get: { tags: [Person], security: [], summary: The person's status and which church will contact them, parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Status } } }
+  /v1/me/{token}/renew:
+    post: { tags: [Person], security: [], summary: Renew my consent for another 12 months (adults only), parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Renewed, with the new expiry date }, '409': { description: Can't be renewed (withdrawn, or a young person) } } }
   /v1/me/{token}/withdraw:
     post: { tags: [Person], security: [], summary: Change my mind; details deleted within 7 days, parameters: [{ $ref: '#/components/parameters/PersonToken' }], responses: { '200': { description: Withdrawn } } }
   /v1/me/{token}/connected:
@@ -112,6 +241,16 @@ paths:
     post: { tags: [Operations], summary: Verify a church (care team only), parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }], responses: { '200': { description: Verified } } }
   /v1/ops/tokens:
     post: { tags: [Operations], summary: Issue a scoped API token (care team only), responses: { '201': { description: Token shown once } } }
+  /v1/evangelist/themes:
+    get: { tags: [Evangelist], security: [], summary: Themes with passage counts, parameters: [{ name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Themes } } }
+  /v1/evangelist/passages:
+    get: { tags: [Evangelist], security: [], summary: Key passages with notes (approved only unless drafts=1), parameters: [{ name: theme, in: query, schema: { type: string } }, { name: q, in: query, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Passages } } }
+  /v1/evangelist/passages/{id}:
+    get: { tags: [Evangelist], security: [], summary: One passage and the objections it helps answer, parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Passage }, '404': { description: Not found or not approved } } }
+  /v1/evangelist/objections:
+    get: { tags: [Evangelist], security: [], summary: Common objections, parameters: [{ name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Objections } } }
+  /v1/evangelist/objections/{id}:
+    get: { tags: [Evangelist], security: [], summary: One objection with its answer, tips and passages, parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { name: drafts, in: query, schema: { type: string, enum: ['1'] } }], responses: { '200': { description: Objection }, '404': { description: Not found or not approved } } }
 webhooks:
   always.offer.created: { post: { summary: An introduction was offered to your organisation, requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
   always.handoff.accepted: { post: { summary: A church accepted (sent to the sender if notify.sender was agreed), requestBody: { content: { application/cloudevents+json: { schema: { $ref: '#/components/schemas/Event' } } } }, responses: { '200': { description: OK } } } }
@@ -207,6 +346,21 @@ components:
     HandoffId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     PersonToken: { name: token, in: path, required: true, schema: { type: string } }
   schemas:
+    ComplianceProfile:
+      type: object
+      required: [states, collectsPersonalInfo, turnoverOver3m, providesHealthService, usesOverseasServices, worksWithChildren, onlineServicesForChildren, sendsEmailOrSms, acncRegistered, basicReligiousCharity, acncMediumOrLarge]
+      properties:
+        states: { type: array, items: { $ref: '#/components/schemas/State' }, minItems: 1 }
+        collectsPersonalInfo: { type: boolean }
+        turnoverOver3m: { type: boolean }
+        providesHealthService: { type: boolean }
+        usesOverseasServices: { type: boolean }
+        worksWithChildren: { type: boolean }
+        onlineServicesForChildren: { type: boolean }
+        sendsEmailOrSms: { type: boolean }
+        acncRegistered: { type: boolean }
+        basicReligiousCharity: { type: boolean }
+        acncMediumOrLarge: { type: boolean }
     NewEvent:
       type: object
       required: [title, startsAt, state]
@@ -233,6 +387,7 @@ components:
         allowNextNearby: { type: boolean }
         wordingVersion: { type: string }
         party: { enum: [self, parent] }
+        childAssent: { type: boolean, description: "Under 15, when a parent fills the form: the parent confirms the child agrees too. Required for under-13s and for 13 to 14 year olds when party is parent." }
     NewResponse:
       type: object
       required: [contact, suburb, postcode, state, ageBand, step, consent]

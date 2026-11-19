@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:api",
+  "outputDirectory": "public",
   "regions": ["syd1"],
-  "crons": [
-    { "path": "/jobs/tick", "schedule": "* * * * *" },
-    { "path": "/jobs/outbox", "schedule": "* * * * *" },
-    { "path": "/jobs/retention", "schedule": "17 16 * * *" }
-  ]
+  "functions": { "api/index.js": { "maxDuration": 30 } },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }
