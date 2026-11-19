@@ -4,7 +4,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { asApp, asService, type Sql } from '@always/db';
+import { asApp, asService, type Sql, type Tx } from '@always/db';
 import { rulesFor, consentExpiresAt, POLICY, type PassReason, normaliseMobile, journeyView, withhold, SELF_MILESTONES, MILESTONE_LABEL, type JourneyEvent, type JourneyMilestone } from '@always/core';
 import { authenticate, requirePrincipal, HttpError, type Env } from './auth.js';
 import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual, journeyLink, ministryCode } from './crypto.js';
@@ -726,10 +726,46 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   const readQuery = (c: any) => { const q = parse(ReportQ, Object.fromEntries(new URL(c.req.url).searchParams)); return { ...q, view: q.view ?? 'sender' }; };
 
   // ---------------------------------------------------------------- Journeys across ministries (ADR 0012)
+  /** The journey a response belongs to, if it is still linked with a current share.journey consent from an adult. */
+  async function linkedJourney(tx: Tx, responseId: string): Promise<string | null> {
+    const [jr] = await tx`select jr.journey_id from journey_response jr join consent co on co.response_id = jr.response_id
+                          where jr.response_id = ${responseId} and co.age_band = '18+' and co.withdrawn_at is null
+                            and 'share.journey' = any (co.purposes) and (co.expires_at is null or co.expires_at > now())`;
+    return jr?.journey_id ?? null;
+  }
+
   /**
-   * Earlier steps of the person a church has welcomed, if they agreed to share their journey.
-   * Milestone and month only: never other ministries' names, notes or exact dates. Every view is audited.
+   * The steps a ministry on the journey may see. Milestone and month only: never other ministries' names, notes or
+   * exact dates. Every view is audited.
    */
+  async function journeyFor(tx: Tx, journeyId: string, p: { userId?: string; orgId: string }, subject: string) {
+    const rows = await tx`
+      select r.id, r.created_at, r.sender_org_id,
+             (select min(offered_at) from handoff_offer where handoff_id = h2.id) as introduced_at,
+             coalesce(h2.accepted_at, (select max(decided_at) from handoff_offer where handoff_id = h2.id and outcome = 'accepted')) as accepted_at,
+             (select org_id from handoff_offer where handoff_id = h2.id and outcome = 'accepted' limit 1) as accepted_by,
+             h2.first_contact_at as contacted_at, h2.person_confirmed_connected_at as connected_at
+      from journey_response jr join response r on r.id = jr.response_id join consent co on co.response_id = r.id
+      left join handoff h2 on h2.response_id = r.id
+      where jr.journey_id = ${journeyId} and co.withdrawn_at is null and 'share.journey' = any (co.purposes)
+        and (co.expires_at is null or co.expires_at > now())`;
+    const events: JourneyEvent[] = [];
+    for (const r of rows) {
+      const mine = r.accepted_by === p.orgId;
+      events.push({ milestone: 'responded', at: new Date(r.created_at), byViewer: r.sender_org_id === p.orgId });
+      if (r.introduced_at) events.push({ milestone: 'introduced', at: new Date(r.introduced_at) });
+      if (r.accepted_at) events.push({ milestone: 'accepted', at: new Date(r.accepted_at), byViewer: mine });
+      if (r.contacted_at) events.push({ milestone: 'contacted', at: new Date(r.contacted_at), byViewer: mine });
+      if (r.connected_at) events.push({ milestone: 'connected', at: new Date(r.connected_at), byViewer: mine });
+    }
+    for (const m of await tx`select milestone, month from journey_self_milestone where journey_id = ${journeyId}`) {
+      events.push({ milestone: m.milestone as JourneyMilestone, at: new Date(m.month) });
+    }
+    await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'journey.view', subject });
+    return { linked: true as const, code: ministryCode(journeyId, p.orgId), steps: journeyView(events) };
+  }
+
+  /** For a church or ministry that welcomed the person: their journey, before and after. */
   app.get('/v1/handoffs/:id/journey', async (c) => {
     const p = requirePrincipal(c, 'inbox');
     const id = c.req.param('id');
@@ -737,34 +773,22 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       const [h] = await tx`select h.response_id from handoff h join handoff_offer ho on ho.handoff_id = h.id
                            where h.id = ${id} and ho.org_id = ${p.orgId} and ho.outcome = 'accepted'`;
       if (!h) throw new HttpError(404, 'not_found');
-      const [jr] = await tx`select jr.journey_id from journey_response jr join consent co on co.response_id = jr.response_id
-                            where jr.response_id = ${h.response_id} and co.age_band = '18+' and co.withdrawn_at is null
-                              and 'share.journey' = any (co.purposes) and (co.expires_at is null or co.expires_at > now())`;
-      if (!jr) return { linked: false as const };
-      const rows = await tx`
-        select r.id, r.created_at, h2.state, h2.id as handoff_id,
-               (select min(offered_at) from handoff_offer where handoff_id = h2.id) as introduced_at,
-               coalesce(h2.accepted_at, (select max(decided_at) from handoff_offer where handoff_id = h2.id and outcome = 'accepted')) as accepted_at,
-               (select org_id from handoff_offer where handoff_id = h2.id and outcome = 'accepted' limit 1) as accepted_by,
-               h2.first_contact_at as contacted_at, h2.person_confirmed_connected_at as connected_at
-        from journey_response jr join response r on r.id = jr.response_id join consent co on co.response_id = r.id
-        left join handoff h2 on h2.response_id = r.id
-        where jr.journey_id = ${jr.journey_id} and co.withdrawn_at is null and 'share.journey' = any (co.purposes)
-          and (co.expires_at is null or co.expires_at > now())`;
-      const events: JourneyEvent[] = [];
-      for (const r of rows) {
-        const mine = r.accepted_by === p.orgId;
-        events.push({ milestone: 'responded', at: new Date(r.created_at) });
-        if (r.introduced_at) events.push({ milestone: 'introduced', at: new Date(r.introduced_at) });
-        if (r.accepted_at) events.push({ milestone: 'accepted', at: new Date(r.accepted_at), byViewer: mine });
-        if (r.contacted_at) events.push({ milestone: 'contacted', at: new Date(r.contacted_at), byViewer: mine });
-        if (r.connected_at) events.push({ milestone: 'connected', at: new Date(r.connected_at), byViewer: mine });
-      }
-      for (const m of await tx`select milestone, month from journey_self_milestone where journey_id = ${jr.journey_id}`) {
-        events.push({ milestone: m.milestone as JourneyMilestone, at: new Date(m.month) });
-      }
-      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'journey.view', subject: `handoff:${id}` });
-      return { linked: true as const, code: ministryCode(jr.journey_id, p.orgId), steps: journeyView(events) };
+      const journeyId = await linkedJourney(tx, h.response_id);
+      return journeyId ? journeyFor(tx, journeyId, p, `handoff:${id}`) : { linked: false as const };
+    });
+    return c.json(out);
+  });
+
+  /** For the ministry the person first responded through: what happened next, such as finding a church. */
+  app.get('/v1/responses/:id/journey', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.scopes.includes('responses:write') && !p.scopes.includes('inbox') && !p.roles.includes('admin')) throw new HttpError(403, 'missing_scope');
+    const id = c.req.param('id');
+    const out = await asService(sql, async (tx) => {
+      const [r] = await tx`select id from response where id = ${id} and sender_org_id = ${p.orgId}`;
+      if (!r) throw new HttpError(404, 'not_found');
+      const journeyId = await linkedJourney(tx, r.id);
+      return journeyId ? journeyFor(tx, journeyId, p, `response:${id}`) : { linked: false as const };
     });
     return c.json(out);
   });

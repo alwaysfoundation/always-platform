@@ -165,6 +165,28 @@ describe('journeys across ministries', () => {
     else expect(v1.body.code).toBe(v2.body.code);
   });
 
+  it('shows the ministry the person first responded through what happened next, marking its own step', async () => {
+    const v = await call('GET', `/v1/responses/${first.responseId}/journey`, { token: tokens.sender });
+    expect(v.status).toBe(200);
+    expect(v.body.linked).toBe(true);
+    expect(v.body.code).toMatch(/^jny_/);
+    const ms = v.body.steps.map((s: any) => s.milestone);
+    expect(ms).toEqual(expect.arrayContaining(['responded', 'accepted', 'connected', 'baptised']));
+    expect(v.body.steps.some((s: any) => s.milestone === 'responded' && s.byYou)).toBe(true);
+    expect(v.body.steps.some((s: any) => s.milestone === 'accepted' && s.byYou)).toBe(false);
+    expect(JSON.stringify(v.body)).not.toMatch(/Hope Church|Grace Church|Sam|0422|Parramatta/);
+    const holder = (await sql`select org_id from handoff_offer where handoff_id = ${second.handoffId} and outcome = 'accepted'`)[0].org_id;
+    const church = await call('GET', `/v1/handoffs/${second.handoffId}/journey`, { token: holder === ids.a ? tokens.a : tokens.b });
+    expect(v.body.code).not.toBe(church.body.code);
+    const [{ n }] = await sql`select count(*)::int as n from audit_event where action = 'journey.view' and subject_ref = ${`response:${first.responseId}`}`;
+    expect(n).toBe(1);
+  });
+
+  it('shows a response journey only to the ministry that sent it', async () => {
+    expect((await call('GET', `/v1/responses/${first.responseId}/journey`, { token: tokens.a })).status).toBe(404);
+    expect((await call('GET', `/v1/responses/${first.responseId}/journey`, { token: tokens.listed })).status).toBe(403);
+  });
+
   it('shows nothing to a church that has not accepted the person', async () => {
     const holder = (await sql`select org_id from handoff_offer where handoff_id = ${second.handoffId} and outcome = 'accepted'`)[0].org_id;
     const other = holder === ids.a ? tokens.b : tokens.a;
@@ -177,6 +199,12 @@ describe('journeys across ministries', () => {
     const v = await call('GET', `/v1/handoffs/${second.handoffId}/journey`, { token: holder === ids.a ? tokens.a : tokens.b });
     expect(v.body.steps.map((s: any) => s.milestone)).not.toContain('baptised');
     expect(v.body.steps.filter((s: any) => s.milestone === 'responded')).toHaveLength(1);
+  });
+
+  it('shows the sender nothing once that response is withdrawn', async () => {
+    const v = await call('GET', `/v1/responses/${first.responseId}/journey`, { token: tokens.sender });
+    expect(v.status).toBe(200);
+    expect(v.body.linked).toBe(false);
   });
 
   it('reports network totals with small numbers withheld', async () => {

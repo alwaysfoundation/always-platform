@@ -87,7 +87,7 @@ Ministries each hold fragments today: an event knows someone said yes, a church 
 
 **Consent that travels**
 - Each consent names its purposes (`connect.church`, `notify.sender`, `share.journey`, `ai.assist`) and its recipients (`consent.recipients`), with `allowNextNearby` for the next church if the first passes.
-- New purpose `share.journey`: the person agrees that ministries who later help them may see their earlier steps (which church, which step, when), not notes.
+- New purpose `share.journey`: the person agrees that the ministries that help them may see their steps across the journey (which step, which month), not other ministries' names or notes.
 - A person can see, download and withdraw everything from their link (`/me/:token`). Withdrawal reaches every recipient through webhooks (`consent.withdrawn`) and deletes or de-identifies within the retention rules.
 - Every read of a person's record by a ministry is written to the audit chain.
 
