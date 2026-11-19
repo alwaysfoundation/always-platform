@@ -1,8 +1,14 @@
-# Always platform
+# Always Platform
 
-**No one who responds to Jesus should walk alone.**
+**Together for the Gospel.**
 
-Always connects the body of Christ in Australia, so everyone who responds to Jesus is offered their next best faith step, often a local church, sometimes a course, discipleship or care, with a real person walking with them. It is a gift to the Church: shared, not owned, open source, and every person's story stays theirs.
+Always Platform is the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together across Australia. It powers the tools members use to:
+
+- **Equip:** the Always App for evangelists, branded response pages, forms and QR codes.
+- **Support:** shared tools for governance, compliance, safeguarding and reporting.
+- **Connect:** the church and ministry directory, common standards, and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
+
+It is built together and shared freely: free for churches, open source, and every person's details stay theirs, in Australia.
 
 See [ROADMAP.md](ROADMAP.md) for what we're building next.
 
@@ -13,10 +19,11 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `packages/core` | The rules engine: the consent primitive, minors rules, matching, the two-clock handoff, retention. Pure and fully tested. |
 | `packages/db` | Database helpers. Every request runs under Postgres row-level security. |
 | `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
-| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Resend email, Australian SMS, signed webhooks). |
+| `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Amazon SES email in Sydney, Australian SMS, signed webhooks). |
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
+| `spec/compliance/` | The Always Compliance register: open, reviewed obligations for Australian ministries (CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. See `docs/compliance.md`. |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
 ## Run it locally
