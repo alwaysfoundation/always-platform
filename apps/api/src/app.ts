@@ -107,6 +107,10 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   });
   // Open, read-only endpoints may be called from any website (no cookies, no credentials).
   for (const path of ['/v1/feed/*', '/v1/verify/*', '/v1/directory', '/v1/events', '/mcp']) app.use(path, cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type', 'x-always-key', 'mcp-protocol-version'], maxAge: 86400 }));
+  // Hosted response pages can also live on foundation subdomains (e.g. a partner's own app at sydneyfire.alwaysfoundation.org).
+  // Only https origins under alwaysfoundation.org may call these, and no cookies or credentials are used.
+  const FOUNDATION_ORIGIN = /^https:\/\/([a-z0-9-]+\.)?alwaysfoundation\.org$/;
+  app.use('/v1/pages/*', cors({ origin: (o) => (FOUNDATION_ORIGIN.test(o) ? o : null), allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'], maxAge: 86400 }));
   app.use('*', rateLimit({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_PER_MIN ?? 120) }));
   app.use('/v1/*', authenticate());
 
