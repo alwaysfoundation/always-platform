@@ -3,7 +3,7 @@
  * Built only from journey_tally (de-identified counts). Every figure below the minimum group size is withheld,
  * and any figure that includes young people uses the higher minimum (POLICY.minGroupSize).
  */
-import type { Sql } from '@always/db';
+import type { Sql, Tx } from '@always/db';
 import { POLICY } from '@always/core';
 
 export const MILESTONES = ['responded', 'introduced', 'accepted', 'contacted', 'connected', 'care_team'] as const;
@@ -30,7 +30,7 @@ export function safe(total: number, minors: number): Figure {
 
 type Row = { milestone: Milestone; step: string; region: string; minor: boolean; month: string; n: number };
 
-export async function buildReport(tx: Sql, q: ReportQuery) {
+export async function buildReport(tx: Sql | Tx, q: ReportQuery) {
   const rows = (await tx`
     select milestone::text as milestone, step::text as step, region, minor, to_char(day, 'YYYY-MM') as month, sum(n)::int as n
     from journey_tally
