@@ -504,6 +504,31 @@ describe('reports', () => {
   });
 });
 
+describe('no linking of people across organisations (ADR 0013)', () => {
+  it('refuses the retired share.journey consent purpose', async () => {
+    const r = await call('POST', '/v1/responses', { token: tokens.sender, body: { ...baseResponse, contact: { kind: 'mobile', value: '0433333333' }, consent: { ...baseResponse.consent, purposes: ['connect.church', 'share.journey'] } } });
+    expect(r.status).toBe(422);
+  });
+
+  it('has no linkage tables, keys or journey endpoints', async () => {
+    const [t] = await sql`select count(*)::int as n from information_schema.tables where table_name in ('journey', 'journey_response', 'journey_self_milestone')`;
+    expect(t.n).toBe(0);
+    const crypto = await import('../src/crypto.js');
+    expect(Object.keys(crypto)).not.toContain('journeyLink');
+    expect(Object.keys(crypto)).not.toContain('ministryCode');
+    for (const path of ['/v1/handoffs/00000000-0000-0000-0000-000000000000/journey', '/v1/responses/00000000-0000-0000-0000-000000000000/journey']) {
+      expect((await app.request(path, { headers: { authorization: `Bearer ${tokens.a}` } })).status).toBe(404);
+    }
+  });
+
+  it('reports network totals by step only, with small numbers withheld', async () => {
+    const r = await call('GET', '/v1/network/totals', { token: tokens.ops, org: ids.care });
+    expect(r.status).toBe(200);
+    expect(r.body.milestones.map((m: any) => m.milestone)).toEqual(['responded', 'introduced', 'accepted', 'contacted', 'connected']);
+    expect(r.body.privacy).toContain('Totals only');
+  });
+});
+
 describe('church feed', () => {
   it('lists only churches that opted in, with no personal details', async () => {
     let r = await call('GET', '/v1/feed/churches?postcode=2150');

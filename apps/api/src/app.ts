@@ -5,9 +5,9 @@ import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { asApp, asService, type Sql } from '@always/db';
-import { rulesFor, consentExpiresAt, POLICY, type PassReason, normaliseMobile, journeyView, withhold, SELF_MILESTONES, MILESTONE_LABEL, type JourneyEvent, type JourneyMilestone } from '@always/core';
+import { rulesFor, consentExpiresAt, POLICY, type PassReason, withhold, MILESTONES, MILESTONE_LABEL } from '@always/core';
 import { authenticate, requirePrincipal, HttpError, type Env } from './auth.js';
-import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual, journeyLink, ministryCode } from './crypto.js';
+import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual } from './crypto.js';
 import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { rateLimit } from './rate-limit.js';
@@ -22,7 +22,7 @@ import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, h
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
 const State = z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);
-const Purpose = z.enum(['connect.church', 'notify.sender', 'resources', 'stats.anonymous', 'share.journey']);
+const Purpose = z.enum(['connect.church', 'notify.sender', 'resources', 'stats.anonymous']);
 
 const NewResponse = z.object({
   placementId: z.string().uuid().optional(),
@@ -318,8 +318,6 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       throw new HttpError(422, 'child_assent_required');
     }
     if (!body.consent.purposes.includes('connect.church')) throw new HttpError(422, 'consent_connect_required');
-    // Journeys across ministries are for adults only (ADR 0012). Refuse rather than quietly drop, so the sender fixes its form.
-    if (body.consent.purposes.includes('share.journey') && body.ageBand !== '18+') throw new HttpError(422, 'journey_adults_only');
     if (body.note && body.ageBand !== '18+') body.note = undefined; // no free-text notes for minors
 
     const t = now();
@@ -343,14 +341,6 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
                values (${r.id}, ${body.consent.purposes}, ${body.consent.recipients}, ${body.consent.allowNextNearby},
                        ${body.consent.wordingVersion}, ${body.consent.party}, ${body.ageBand}, ${t},
                        ${childAssentAt}, ${consentExpiresAt({ collectedAt: t })})`;
-      if (body.consent.purposes.includes('share.journey') && body.ageBand === '18+' && body.contact.kind === 'mobile') {
-        const mobile = normaliseMobile(body.contact.value);
-        if (mobile) {
-          const [j] = await tx`insert into journey (link_hash) values (${journeyLink(mobile)})
-                               on conflict (link_hash) do update set link_hash = excluded.link_hash returning id`;
-          await tx`insert into journey_response (response_id, journey_id) values (${r.id}, ${j!.id})`;
-        }
-      }
       const self = newToken('alp');
       await tx`insert into person_link (token_hash, response_id, purpose, expires_at)
                values (${self.hash}, ${r.id}, 'self_service', ${new Date(t.getTime() + 90 * 86_400_000)})`;
@@ -725,75 +715,16 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   });
   const readQuery = (c: any) => { const q = parse(ReportQ, Object.fromEntries(new URL(c.req.url).searchParams)); return { ...q, view: q.view ?? 'sender' }; };
 
-  // ---------------------------------------------------------------- Journeys across ministries (ADR 0012)
-  /**
-   * Earlier steps of the person a church has welcomed, if they agreed to share their journey.
-   * Milestone and month only: never other ministries' names, notes or exact dates. Every view is audited.
-   */
-  app.get('/v1/handoffs/:id/journey', async (c) => {
-    const p = requirePrincipal(c, 'inbox');
-    const id = c.req.param('id');
-    const out = await asService(sql, async (tx) => {
-      const [h] = await tx`select h.response_id from handoff h join handoff_offer ho on ho.handoff_id = h.id
-                           where h.id = ${id} and ho.org_id = ${p.orgId} and ho.outcome = 'accepted'`;
-      if (!h) throw new HttpError(404, 'not_found');
-      const [jr] = await tx`select jr.journey_id from journey_response jr join consent co on co.response_id = jr.response_id
-                            where jr.response_id = ${h.response_id} and co.age_band = '18+' and co.withdrawn_at is null
-                              and 'share.journey' = any (co.purposes) and (co.expires_at is null or co.expires_at > now())`;
-      if (!jr) return { linked: false as const };
-      const rows = await tx`
-        select r.id, r.created_at, h2.state, h2.id as handoff_id,
-               (select min(offered_at) from handoff_offer where handoff_id = h2.id) as introduced_at,
-               coalesce(h2.accepted_at, (select max(decided_at) from handoff_offer where handoff_id = h2.id and outcome = 'accepted')) as accepted_at,
-               (select org_id from handoff_offer where handoff_id = h2.id and outcome = 'accepted' limit 1) as accepted_by,
-               h2.first_contact_at as contacted_at, h2.person_confirmed_connected_at as connected_at
-        from journey_response jr join response r on r.id = jr.response_id join consent co on co.response_id = r.id
-        left join handoff h2 on h2.response_id = r.id
-        where jr.journey_id = ${jr.journey_id} and co.withdrawn_at is null and 'share.journey' = any (co.purposes)
-          and (co.expires_at is null or co.expires_at > now())`;
-      const events: JourneyEvent[] = [];
-      for (const r of rows) {
-        const mine = r.accepted_by === p.orgId;
-        events.push({ milestone: 'responded', at: new Date(r.created_at) });
-        if (r.introduced_at) events.push({ milestone: 'introduced', at: new Date(r.introduced_at) });
-        if (r.accepted_at) events.push({ milestone: 'accepted', at: new Date(r.accepted_at), byViewer: mine });
-        if (r.contacted_at) events.push({ milestone: 'contacted', at: new Date(r.contacted_at), byViewer: mine });
-        if (r.connected_at) events.push({ milestone: 'connected', at: new Date(r.connected_at), byViewer: mine });
-      }
-      for (const m of await tx`select milestone, month from journey_self_milestone where journey_id = ${jr.journey_id}`) {
-        events.push({ milestone: m.milestone as JourneyMilestone, at: new Date(m.month) });
-      }
-      await audit(tx, { actor: p.userId, orgId: p.orgId, action: 'journey.view', subject: `handoff:${id}` });
-      return { linked: true as const, code: ministryCode(jr.journey_id, p.orgId), steps: journeyView(events) };
-    });
-    return c.json(out);
-  });
-
-  /** The person tells us a milestone themselves. Always counted in de-identified totals; kept on their journey only if they share it. */
-  app.post('/v1/me/:token/milestones', async (c) => {
-    const l = await linkFor(c.req.param('token'), 'self_service');
-    const body = parse(z.object({ milestone: z.enum(SELF_MILESTONES) }), await c.req.json());
-    const t = now();
-    const month = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 1));
-    await asService(sql, async (tx) => {
-      await tx`select tally(${l.response_id}, null, ${body.milestone}::journey_milestone, ${t})`;
-      const [jr] = await tx`select journey_id from journey_response where response_id = ${l.response_id}`;
-      if (jr) await tx`insert into journey_self_milestone (journey_id, response_id, milestone, month) values (${jr.journey_id}, ${l.response_id}, ${body.milestone}, ${month})
-                       on conflict (journey_id, milestone) do nothing`;
-    });
-    return c.json({ milestone: body.milestone, label: MILESTONE_LABEL[body.milestone], thanks: 'Thank you for telling us. What a joy.' }, 201);
-  });
-
   /** Network totals across every ministry, by state and financial year. De-identified; small numbers withheld. */
-  app.get('/v1/network/journeys', async (c) => {
+  app.get('/v1/network/totals', async (c) => {
     requirePrincipal(c, 'reports');
     const fy = Number(new URL(c.req.url).searchParams.get('fy') ?? (now().getUTCMonth() >= 6 ? now().getUTCFullYear() + 1 : now().getUTCFullYear()));
     if (!Number.isInteger(fy) || fy < 2024 || fy > 2100) throw new HttpError(422, 'invalid_fy');
     const from = `${fy - 1}-07-01`, to = `${fy}-07-01`;
     const rows = await asService(sql, (tx) => tx`
       select region, milestone::text as milestone, sum(n)::int as n, bool_or(minor) as has_minors
-      from journey_tally where day >= ${from} and day < ${to} group by region, milestone`);
-    const order = ['responded', 'introduced', 'accepted', 'contacted', 'connected', 'baptised', 'in_group', 'serving', 'connected_12m'];
+      from journey_tally where day >= ${from} and day < ${to} and milestone::text = any (${MILESTONES as unknown as string[]}) group by region, milestone`);
+    const order = [...MILESTONES];
     const regions = [...new Set(rows.map((r: any) => r.region as string))].sort();
     const fig = (region: string | null, m: string) => {
       const sel = rows.filter((r: any) => r.milestone === m && (region === null || r.region === region));
@@ -803,9 +734,9 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     };
     return c.json({
       financialYear: `${fy - 1}-${String(fy).slice(2)}`,
-      milestones: order.map((m) => ({ milestone: m, label: MILESTONE_LABEL[m as JourneyMilestone], total: fig(null, m) })),
+      milestones: order.map((m) => ({ milestone: m, label: MILESTONE_LABEL[m], total: fig(null, m) })),
       byRegion: regions.map((region) => ({ region, figures: Object.fromEntries(order.map((m) => [m, fig(region, m)])) })),
-      privacy: `Totals only, across every ministry. Figures under ${POLICY.minGroupSize.adults} people (${POLICY.minGroupSize.minors} where young people are included) are withheld. Baptised, small group, serving and a year on are counted only when people tell us themselves.`,
+      privacy: `Totals only, across every ministry. Figures under ${POLICY.minGroupSize.adults} people (${POLICY.minGroupSize.minors} where young people are included) are withheld.`,
     });
   });
 
