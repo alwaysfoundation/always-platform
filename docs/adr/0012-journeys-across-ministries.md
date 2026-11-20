@@ -1,6 +1,6 @@
 # ADR 0012: Journeys across ministries
 
-Status: Implemented, awaiting CODEOWNER and Prolegis review
+Status: Withdrawn on 21 November 2026, superseded by ADR 0013. Never deployed to production; removed by migration 0022.
 
 ## Context
 

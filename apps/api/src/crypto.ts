@@ -8,7 +8,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes, createHash, 
  */
 const VERSION = 1;
 
-function key(name: 'FIELD_KEY' | 'HASH_KEY' | 'LINK_KEY' | 'ORG_CODE_KEY'): Buffer {
+function key(name: 'FIELD_KEY' | 'HASH_KEY'): Buffer {
   const v = process.env[name];
   if (!v) throw new Error(`${name} is not set`);
   const k = Buffer.from(v, 'base64');
@@ -58,17 +58,4 @@ export function safeEqual(a: string, b: string): boolean {
   const x = Buffer.from(a);
   const y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);
-}
-
-/**
- * Journeys (ADR 0012). The link is a keyed hash of a normalised mobile, held in the database and never returned.
- * LINK_KEY and ORG_CODE_KEY are separate from HASH_KEY so destroying LINK_KEY unlinks every journey without touching sign-in.
- */
-export function journeyLink(normalisedMobile: string): Buffer {
-  return createHmac('sha256', key('LINK_KEY')).update(normalisedMobile).digest();
-}
-
-/** A ministry's own code for a journey: stable for that ministry, unrelated between ministries. */
-export function ministryCode(journeyId: string, orgId: string): string {
-  return 'jny_' + createHmac('sha256', key('ORG_CODE_KEY')).update(`${journeyId}|${orgId}`).digest('base64url').slice(0, 22);
 }
