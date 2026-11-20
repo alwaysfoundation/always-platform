@@ -1,7 +1,7 @@
 # RFC 0006: Counting who comes, in Always Reports
 
 - Status: proposed
-- Builds on: RFC 0001 (network reporting), ADR 0012 (journeys)
+- Builds on: RFC 0001 (network reporting), ADR 0013 (no linking of people across organisations)
 
 ## Summary
 
@@ -15,7 +15,7 @@ Give churches a weekly, low-effort attendance figure, and give networks a nation
 
 ## The rule
 
-**Count people, never track a person.** Every signal becomes a total per service before it leaves the building or the tool it lives in. No signal is ever linked to a response, a journey, a giver or a device across weeks. This is what keeps attendance data out of the personal-data tables altogether.
+**Count people, never track a person.** Every signal becomes a total per service before it leaves the building or the tool it lives in. No signal is ever linked to a response, a giver or a device across weeks, and none is used to recognise a person across organisations. This is what keeps attendance data out of the personal-data tables altogether.
 
 ## Signals
 
@@ -42,7 +42,7 @@ A device address can be personal information under the Privacy Act. So the senso
 
 ### Giving counts
 
-Giving platforms such as Tithe.ly, Planning Center Giving and Pushpay can report weekly totals. We import the number of gifts and the number of distinct givers per week, nothing else. No names, no amounts per person, and never joined to attendance or journeys per person. Tithe.ly grants API access on request; Planning Center's Check-Ins and Giving APIs are read-only, which is all we need.
+Giving platforms such as Tithe.ly, Planning Center Giving and Pushpay can report weekly totals. We import the number of gifts and the number of distinct givers per week, nothing else. No names, no amounts per person, and never joined to attendance per person. Tithe.ly grants API access on request; Planning Center's Check-Ins and Giving APIs are read-only, which is all we need.
 
 ### Ruled out: Google Maps busyness
 
