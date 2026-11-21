@@ -16,6 +16,14 @@ This is a prototype. It has not been evaluated against a model yet, and it may n
 
 Needs a computer that can run Inkling 2 Mini (about 20 GB; a Mac with 32 GB or more).
 
+On a Mac, one command checks the memory, downloads the model, installs Always AI and, with `--eval`, runs the prompt checker:
+
+```bash
+packages/ai/setup-mac.sh <inkling-2-mini tag> --eval
+```
+
+Or step by step:
+
 ```bash
 ollama pull <inkling-2-mini tag>        # the tag Ollama lists for Inkling 2 Mini
 npm run ai:modelfile -- <that tag>      # regenerates packages/ai/Modelfile
