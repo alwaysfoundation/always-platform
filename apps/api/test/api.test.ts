@@ -425,6 +425,51 @@ describe('foundation team queue', () => {
     expect(m.n).toBe(1);
   });
 
+  it('approves a claim without the team when the email matches the website and is confirmed from that inbox', async () => {
+    const { decrypt } = await import('../src/crypto.js');
+    const [o] = await sql`insert into organisation (kind, display_name, slug, suburb, state, postcode, trust_level, website)
+      values ('church', 'Grace West', 'grace-west', 'Parramatta', 'NSW', '2150', 'listed', 'https://www.gracewest.example/') returning id`;
+    const r = await call('POST', `/v1/orgs/${o.id}/claims`, { body: { email: 'Pastor@GraceWest.example', role: 'Senior pastor' } });
+    expect(r.body).toEqual({ status: 'confirm_email' });
+    const [m] = await sql`select params_ct from outbox where template = 'claim.confirm' and org_id = ${o.id}`;
+    const token = JSON.parse(decrypt(m.params_ct)!).confirm as string;
+    const page = await app.request(`/v1/claims/confirm/${token}`);
+    expect(page.status).toBe(200);
+    const [still] = await sql`select trust_level::text as t from organisation where id = ${o.id}`;
+    expect(still.t).toBe('listed');
+    const ok = await app.request(`/v1/claims/confirm/${token}`, { method: 'POST' });
+    expect(ok.status).toBe(200);
+    const [after] = await sql`select trust_level::text as t from organisation where id = ${o.id}`;
+    expect(after.t).toBe('claimed');
+    const [cr] = await sql`select status::text as status, confirmed_by_email, confirm_token_hash from claim_request where org_id = ${o.id}`;
+    expect(cr).toMatchObject({ status: 'approved', confirmed_by_email: true, confirm_token_hash: null });
+    const [n] = await sql`select count(*)::int as n from membership where org_id = ${o.id} and role = 'admin'`;
+    expect(n.n).toBe(1);
+    expect((await app.request(`/v1/claims/confirm/${token}`, { method: 'POST' })).status).toBe(410);
+  });
+
+  it('sends a claim to the team when the email does not match, the church is already claimed, or the link has expired', async () => {
+    const { decrypt } = await import('../src/crypto.js');
+    const [o] = await sql`insert into organisation (kind, display_name, slug, suburb, state, postcode, trust_level, website)
+      values ('church', 'Hope East', 'hope-east', 'Parramatta', 'NSW', '2150', 'listed', 'hopeeast.example') returning id`;
+    expect((await call('POST', `/v1/orgs/${o.id}/claims`, { body: { email: 'pastor@gmail.com', role: 'Pastor' } })).body).toEqual({ status: 'pending' });
+    expect((await call('POST', `/v1/orgs/${o.id}/claims`, { body: { email: 'pastor@hopeeast.example.net', role: 'Pastor' } })).body).toEqual({ status: 'pending' });
+    expect((await call('POST', `/v1/orgs/${ids.b}/claims`, { body: { email: 'x@grace-north-parramatta.example', role: 'Pastor' } })).body).toEqual({ status: 'pending' });
+    const r = await call('POST', `/v1/orgs/${o.id}/claims`, { body: { email: 'office@hopeeast.example', role: 'Office' } });
+    expect(r.body).toEqual({ status: 'confirm_email' });
+    const [m] = await sql`select params_ct from outbox where template = 'claim.confirm' and org_id = ${o.id}`;
+    const token = JSON.parse(decrypt(m.params_ct)!).confirm as string;
+    const was = clock;
+    clock = new Date(clock.getTime() + 49 * 3_600_000);
+    try {
+      expect((await app.request(`/v1/claims/confirm/${token}`, { method: 'POST' })).status).toBe(410);
+    } finally {
+      clock = was;
+    }
+    const list = await call('GET', '/v1/ops/claims', { token: tokens.ops, org: ids.care });
+    expect(list.body.items.filter((i: any) => i.org_id === o.id)).toHaveLength(3);
+  });
+
   it('publishes a suggested event once the foundation team checks it', async () => {
     const s = await call('POST', '/v1/events/suggest', { body: { title: 'Campus night', kind: 'outreach', startsAt: inDays(13, 8), state: 'NSW', humanToken: 'human-ok' } });
     expect(s.status).toBe(202);
