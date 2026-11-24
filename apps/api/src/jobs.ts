@@ -74,7 +74,7 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
       const to = params.to ?? decrypt(o?.notify_email_ct);
       if (!to) return; // no address yet: nothing to send, mark sent
       // Email says "someone is waiting" and links to the inbox. No names, no faith details (PV-8).
-      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', complianceUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/compliance/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}) } });
+      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', safetyUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/safety/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}) } });
       return;
     }
     case 'sms': {
@@ -91,16 +91,19 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
         ? await sql`select url, secret_ct, events from webhook_endpoint where org_id = ${m.org_id} and active`
         : await sql`select w.url, w.secret_ct, w.events from webhook_endpoint w join response r on r.sender_org_id = w.org_id where r.id = ${m.response_id} and w.active`;
       for (const ep of endpoints) {
-        if (!ep.events.includes(m.template) && !ep.events.includes('*')) continue;
-        // CloudEvents 1.0, structured mode. Data carries ids only; compliance events carry register facts, never people.
+        // Endpoints that subscribed under the earlier always.compliance.* names still get those names.
+        const legacy = m.template.replace(/^always\.safety\./, 'always.compliance.');
+        const type = ep.events.includes(m.template) || ep.events.includes('*') ? m.template : ep.events.includes(legacy) ? legacy : null;
+        if (!type) continue;
+        // CloudEvents 1.0, structured mode. Data carries ids only; safety events carry register facts, never people.
         const body = JSON.stringify({
           specversion: '1.0',
           id: `outbox-${m.id}`,
           source: 'https://api.alwaysfoundation.org',
-          type: m.template,
+          type,
           time: now.toISOString(),
           datacontenttype: 'application/json',
-          data: m.template.startsWith('always.compliance.') ? params : { responseId: m.response_id },
+          data: m.template.startsWith('always.safety.') || m.template.startsWith('always.compliance.') ? params : { responseId: m.response_id },
         });
         const ts = Math.floor(now.getTime() / 1000).toString();
         const sig = hmacSign(decrypt(ep.secret_ct)!, `${ts}.${body}`);

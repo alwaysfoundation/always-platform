@@ -5,17 +5,25 @@
  * its answers and what Always Platform already guarantees, produce an assessment:
  * which obligations apply, which are met, what needs attention, and what is coming.
  *
- * The engine never decides what the law says. It only applies obligations a qualified
- * person has approved into the register (RFC 0003). It is not legal advice.
+ * The engine never decides what the law says. It only applies obligations a named person
+ * on the foundation team has published into the register. It is not legal advice.
  */
 
+/** Countries and regions the register covers. GB is the United Kingdom; EU is EU-wide law. */
+export type Country = 'AU' | 'US' | 'CA' | 'GB' | 'EU' | 'NZ';
+export const COUNTRIES: readonly Country[] = ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'];
+
+/** Australian states and territories. */
 export type Jurisdiction = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
 export const JURISDICTIONS: readonly Jurisdiction[] = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 
 export type Area = 'privacy' | 'child_safety' | 'charity' | 'messages';
 
 /** What a ministry tells us about itself. Organisation facts only, never people's details. */
-export interface ComplianceProfile {
+export interface SafetyProfile {
+  /** Where the ministry operates. Missing means Australia, for profiles saved before other countries were added. */
+  countries?: Country[];
+  /** Australian states and territories, when the ministry operates in Australia. */
   states: Jurisdiction[];
   collectsPersonalInfo: boolean;
   turnoverOver3m: boolean;
@@ -27,14 +35,33 @@ export interface ComplianceProfile {
   acncRegistered: boolean;
   basicReligiousCharity: boolean;
   acncMediumOrLarge: boolean;
+  /** A registered charity or recognised tax-exempt nonprofit outside Australia. */
+  registeredCharity?: boolean;
+  /** A church, convention or association of churches (matters for US filing rules). */
+  isChurch?: boolean;
+}
+
+/** @deprecated Use SafetyProfile. */
+export type ComplianceProfile = SafetyProfile;
+
+const BOOLEAN_FIELDS = ['collectsPersonalInfo', 'turnoverOver3m', 'providesHealthService', 'usesOverseasServices', 'worksWithChildren',
+  'onlineServicesForChildren', 'sendsEmailOrSms', 'acncRegistered', 'basicReligiousCharity', 'acncMediumOrLarge', 'registeredCharity', 'isChurch'] as const;
+
+/** Fill defaults so unanswered questions read as "no", and older profiles mean Australia. */
+export function normaliseProfile(p: SafetyProfile): Required<SafetyProfile> {
+  const out = { ...p } as Record<string, unknown>;
+  for (const f of BOOLEAN_FIELDS) out[f] = p[f] === true;
+  out.states = Array.isArray(p.states) ? p.states : [];
+  out.countries = p.countries?.length ? [...new Set(p.countries)] : ['AU'];
+  return out as Required<SafetyProfile>;
 }
 
 export type Condition =
   | { all: Condition[] }
   | { any: Condition[] }
   | { not: Condition }
-  | { field: keyof ComplianceProfile; is: boolean }
-  | { field: 'states'; includesAny: string[] };
+  | { field: (typeof BOOLEAN_FIELDS)[number]; is: boolean }
+  | { field: 'states' | 'countries'; includesAny: string[] };
 
 /** Checks Always Platform can vouch for itself, because it enforces them in code. */
 export type PlatformCheck = 'consent_records' | 'access_controls' | 'retention_schedule' | 'data_in_australia' | 'minors_rules';
@@ -56,8 +83,11 @@ export interface LawRef {
 
 export interface Obligation {
   id: string;
+  /** The country or region the obligation belongs to. Missing means Australia. */
+  country?: Country;
   area: Area;
-  jurisdiction: 'CTH' | 'STATES' | Jurisdiction;
+  /** Where in that country: national (CTH, US, CA, GB, EU, NZ), STATES for state-by-state rules, or one Australian state. */
+  jurisdiction: 'CTH' | 'STATES' | Jurisdiction | Country;
   title: string;
   summary: string;
   law: LawRef[];
@@ -115,18 +145,22 @@ export interface Assessment {
 }
 
 /** Evaluate a condition against a profile. Unknown shapes fail closed (false). */
-export function holds(c: Condition | undefined, p: ComplianceProfile): boolean {
+export function holds(c: Condition | undefined, p: SafetyProfile): boolean {
   if (!c) return true;
   if ('all' in c) return c.all.every((x) => holds(x, p));
   if ('any' in c) return c.any.some((x) => holds(x, p));
   if ('not' in c) return !holds(c.not, p);
-  if ('includesAny' in c) return c.field === 'states' && c.includesAny.some((s) => p.states.includes(s as Jurisdiction));
-  if ('is' in c) return (p[c.field] as unknown) === c.is;
+  if ('includesAny' in c) {
+    if (c.field === 'states') return c.includesAny.some((s) => p.states.includes(s as Jurisdiction));
+    if (c.field === 'countries') return c.includesAny.some((s) => (p.countries ?? ['AU']).includes(s as Country));
+    return false;
+  }
+  if ('is' in c) return (p[c.field] === true) === c.is;
   return false;
 }
 
 /** Whether the obligation is a legal requirement for this ministry, or good practice. */
-export function strengthOf(o: Obligation, p: ComplianceProfile): AssessmentItem['strength'] {
+export function strengthOf(o: Obligation, p: SafetyProfile): AssessmentItem['strength'] {
   if (o.recommendedOnly) return 'recommended';
   return holds(o.requiredWhen, p) ? 'required' : 'recommended';
 }
@@ -145,11 +179,13 @@ function answer(a: Answer | undefined): 'ok' | 'missing' | 'unanswered' {
 const ORDER: Record<ItemStatus, number> = { attention: 0, check: 1, upcoming: 2, met: 3 };
 
 /** The assessment for one ministry, as of a date. Deterministic: same inputs, same output. */
-export function assess(register: Register, profile: ComplianceProfile, answers: Answers, signals: PlatformSignals, asOf: Date): Assessment {
+export function assess(register: Register, input: SafetyProfile, answers: Answers, signals: PlatformSignals, asOf: Date): Assessment {
+  const profile = normaliseProfile(input);
   const items: AssessmentItem[] = [];
   const watching: Assessment['watching'] = [];
 
   for (const o of register.obligations) {
+    if (!profile.countries.includes(o.country ?? 'AU')) continue;
     if (!holds(o.appliesWhen, profile)) continue;
     if (o.status === 'watch') {
       watching.push({ obligationId: o.id, title: o.title, summary: o.summary });
@@ -194,7 +230,7 @@ export function assess(register: Register, profile: ComplianceProfile, answers: 
 }
 
 /** For state-by-state obligations, show only the laws for the states the ministry works in. */
-function lawFor(o: Obligation, p: ComplianceProfile): LawRef[] {
+function lawFor(o: Obligation, p: SafetyProfile): LawRef[] {
   if (o.jurisdiction !== 'STATES') return o.law;
   const local = o.law.filter((l) => !l.jurisdiction || p.states.includes(l.jurisdiction));
   return local.length ? local : o.law;
@@ -256,6 +292,7 @@ export function validateRegister(r: Register): string[] {
     if (ids.has(o.id)) problems.push(`duplicate obligation ${o.id}`);
     ids.add(o.id);
     if (!o.law.length) problems.push(`${o.id}: no legal source`);
+    if (o.country && !COUNTRIES.includes(o.country)) problems.push(`${o.id}: unknown country ${o.country}`);
     for (const l of o.law) if (!/^https:\/\//.test(l.url)) problems.push(`${o.id}: source must be https`);
     if (o.status === 'upcoming' && !o.commences) problems.push(`${o.id}: upcoming without a start date`);
     for (const e of o.evidence) {

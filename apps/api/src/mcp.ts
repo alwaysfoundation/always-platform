@@ -46,6 +46,42 @@ const TOOLS = [
     annotations: { readOnlyHint: true, openWorldHint: false },
   },
   {
+    name: 'safety_obligations',
+    title: 'List Always Safety obligations',
+    description: 'List the safety obligations in the open Always Safety register for a country or region (AU, US, CA, GB, EU, NZ), optionally for one area. Each comes with its official source. The register is a draft; it is a guide to common obligations, not legal advice.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        country: { type: 'string', enum: ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'] },
+        area: { type: 'string', enum: ['privacy', 'child_safety', 'charity', 'messages'] },
+      },
+      required: ['country'],
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
+    name: 'safety_check',
+    title: 'Run the Always Safety check-up',
+    description: 'Run the stateless Always Safety check-up for a ministry from organisation facts only (never anyone\'s personal details). Nothing is stored. Returns which obligations apply and what to look at first. Not legal advice.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        countries: { type: 'array', items: { type: 'string', enum: ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'] }, minItems: 1 },
+        states: { type: 'array', items: { type: 'string', enum: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'] }, description: 'Australian states, when Australia is chosen' },
+        collectsPersonalInfo: { type: 'boolean' },
+        providesHealthService: { type: 'boolean' },
+        usesOverseasServices: { type: 'boolean' },
+        worksWithChildren: { type: 'boolean' },
+        onlineServicesForChildren: { type: 'boolean' },
+        sendsEmailOrSms: { type: 'boolean' },
+        registeredCharity: { type: 'boolean' },
+        isChurch: { type: 'boolean' },
+      },
+      required: ['countries', 'collectsPersonalInfo', 'providesHealthService', 'usesOverseasServices', 'worksWithChildren', 'onlineServicesForChildren', 'sendsEmailOrSms'],
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  {
     name: 'how_always_works',
     title: 'How Always works',
     description: 'A short guide to how Always connects someone who says yes to Jesus with a next step, the consent and age rules, and how developers can build on it. Use before explaining Always to someone.',
@@ -64,9 +100,16 @@ Rules that never change: nothing is shared without the person's permission; thei
 and go only to the church that welcomes them; under 15s need a parent or guardian and give their own agreement;
 young people only meet verified youth partners; no AI ever touches a young person's information.
 
+Always Safety is the shared source of truth for ministry safety rules: an open register of obligations for
+Australia, the United States, Canada, the United Kingdom, the European Union and New Zealand (a draft, with
+official sources), a stateless check-up and guardrails. It is not legal advice; each ministry remains responsible
+for its own legal advice and decisions. Use safety_obligations and safety_check.
+
 Builders: the church feed and verification are open (https://api.alwaysfoundation.org/v1/feed/churches,
 /v1/verify/{slug}). Sending a person to a church uses the Handoff API with consent and needs a member key.
-SDK: npm install @always/sdk. Docs: https://alwaysfoundation.org/#/docs`;
+The SDK is in the open-source repository (github.com/alwaysfoundation/always-platform). It is free and open
+source: check it with your own developers and lawyers, and report bugs to security@alwaysfoundation.org
+(security issues) or as GitHub issues. Docs: https://alwaysfoundation.org/#/docs`;
 
 type RpcReq = { jsonrpc: '2.0'; id?: string | number | null; method: string; params?: any };
 
@@ -76,8 +119,30 @@ export function mountMcp(app: Hono<Env>) {
     return { ok: res.ok, status: res.status, body: (await res.json().catch(() => ({}))) as any };
   };
 
+  const NOTICE = 'A guide to common obligations, not legal advice. The register is a draft.';
+  const COUNTRY_CODES = ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'];
+
   async function callTool(name: string, args: any): Promise<{ text: string; structured?: unknown; isError?: boolean }> {
     if (name === 'how_always_works') return { text: GUIDE };
+    if (name === 'safety_obligations') {
+      const country = String(args?.country ?? '');
+      if (!COUNTRY_CODES.includes(country)) return { text: `Please choose one of ${COUNTRY_CODES.join(', ')}.`, isError: true };
+      const r = await get('/v1/safety/register');
+      if (!r.ok) return { text: `The register returned ${r.status}.`, isError: true };
+      const items = ((r.body.obligations ?? []) as any[])
+        .filter((o) => (o.country ?? 'AU') === country && (!args?.area || o.area === args.area))
+        .map((o) => ({ id: o.id, area: o.area, title: o.title, summary: o.summary, status: o.status, sources: (o.law ?? []).map((l: any) => ({ name: l.name, url: l.url })) }));
+      const text = items.length ? items.map((o) => `- ${o.title}${o.status === 'watch' ? ' (watching)' : ''}: ${o.summary} Source: ${o.sources.map((x: any) => x.name).join('; ')}`).join('\n') + `\n\n${NOTICE}` : 'No obligations for that selection yet.';
+      return { text, structured: { registerVersion: r.body.version, items, notice: NOTICE } };
+    }
+    if (name === 'safety_check') {
+      const res = await app.request('/v1/safety/check', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ profile: args ?? {} }) });
+      if (!res.ok) return { text: 'Those answers could not be checked. Every yes/no question needs an answer, and Australia needs at least one state.', isError: true };
+      const a = (await res.json()) as any;
+      const todo = (a.items as any[]).filter((i) => i.status !== 'met');
+      const text = `${a.summary.required} required obligations apply. To look at first:\n${todo.slice(0, 10).map((i) => `- ${i.title}: ${i.guidance}`).join('\n')}\n\n${NOTICE}`;
+      return { text, structured: a };
+    }
     if (name === 'find_churches') {
       if (!/^\d{4}$/.test(String(args?.postcode ?? ''))) return { text: 'Please give a four-digit Australian postcode.', isError: true };
       const q = new URLSearchParams({ postcode: String(args.postcode), limit: String(Math.min(Number(args.limit ?? 10), 25)) });
@@ -118,7 +183,7 @@ export function mountMcp(app: Hono<Env>) {
           protocolVersion: PROTOCOL,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: 'always', title: 'Always', version: '1.0.0' },
-          instructions: 'Read-only tools for the Always network in Australia: find partner churches near a postcode, see which are partner churches, list events. No personal data is available here.',
+          instructions: 'Read-only tools for the Always network: find partner churches near an Australian postcode, see which are partner churches, list events, and use Always Safety (the open register of ministry safety obligations and a stateless check-up). No personal data is available here. Always Safety is not legal advice.',
         });
       case 'ping':
         return reply({});
@@ -137,6 +202,7 @@ export function mountMcp(app: Hono<Env>) {
     const body = await c.req.json().catch(() => null);
     if (!body) return c.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400);
     const msgs: RpcReq[] = Array.isArray(body) ? body : [body];
+    if (msgs.length > 20) return c.json({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Too many requests in one batch' } }, 400);
     const out = [];
     for (const m of msgs) if (m.id !== undefined && m.id !== null) out.push(await handle(m));
     if (!out.length) return c.body(null, 202); // notifications only
@@ -144,14 +210,16 @@ export function mountMcp(app: Hono<Env>) {
   });
   app.get('/llms.txt', (c) => c.text(`# Always API
 
-> Open infrastructure from the Always Foundation (Australia) for evangelists, churches and ministries: find partner churches, see which are partner churches, list events, and hand someone a next step with their consent.
+> Open infrastructure from the Always Foundation for evangelists, churches and ministries: find partner churches, see which are partner churches, list events, and hand someone a next step with their consent.
 
 ## Open, no personal data
 - [Church feed](https://api.alwaysfoundation.org/v1/feed/churches?postcode=2150): churches near a postcode; filters welcoming, youth, step
 - [Whole feed, JSON Lines](https://api.alwaysfoundation.org/v1/feed/churches.jsonl)
 - [Verify a church](https://api.alwaysfoundation.org/v1/verify/{slug})
 - [Events](https://api.alwaysfoundation.org/v1/events)
-- [MCP server](https://api.alwaysfoundation.org/mcp): read-only tools find_churches, verify_church, list_events, how_always_works
+- [MCP server](https://api.alwaysfoundation.org/mcp): read-only tools find_churches, verify_church, list_events, safety_obligations, safety_check, how_always_works
+- [Always Safety register](https://api.alwaysfoundation.org/v1/safety/register): open register of ministry safety obligations for AU, US, CA, GB, EU and NZ (draft; not legal advice)
+- [Always Safety check-up](https://api.alwaysfoundation.org/v1/safety/check): POST organisation facts; nothing is stored
 
 ## Members only, with consent
 - Handoff API (POST /v1/responses): send a person who said yes to a church, with their consent receipt

@@ -35,7 +35,7 @@ describe('messages', () => {
   });
 });
 
-describe('compliance client', () => {
+describe('safety client', () => {
   it('reads open data without a token and posts the stateless check-up', async () => {
     const calls: { url: string; init: any }[] = [];
     const fake = (async (url: string, init: any) => {
@@ -43,9 +43,10 @@ describe('compliance client', () => {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }) as unknown as typeof fetch;
     const c = new AlwaysClient({ baseUrl: 'https://api.test', fetch: fake });
-    await c.compliance.register('2027.01.0');
-    await c.compliance.check({ states: ['NSW'], collectsPersonalInfo: true, turnoverOver3m: false, providesHealthService: false, usesOverseasServices: false, worksWithChildren: true, onlineServicesForChildren: false, sendsEmailOrSms: true, acncRegistered: true, basicReligiousCharity: true, acncMediumOrLarge: false });
-    expect(calls[0]!.url).toBe('https://api.test/v1/compliance/register/2027.01.0');
+    await c.safety.register('2027.01.0');
+    await c.compliance.check({ countries: ['AU'], states: ['NSW'], collectsPersonalInfo: true, turnoverOver3m: false, providesHealthService: false, usesOverseasServices: false, worksWithChildren: true, onlineServicesForChildren: false, sendsEmailOrSms: true, acncRegistered: true, basicReligiousCharity: true, acncMediumOrLarge: false });
+    expect(calls[0]!.url).toBe('https://api.test/v1/safety/register/2027.01.0');
+    expect(calls[1]!.url).toBe('https://api.test/v1/safety/check');
     expect(calls[0]!.init.headers.authorization).toBeUndefined();
     expect(calls[1]!.init.method).toBe('POST');
     expect(JSON.parse(calls[1]!.init.body).answers).toEqual({});

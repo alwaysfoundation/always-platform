@@ -2,10 +2,10 @@
 
 **Together for the Gospel.**
 
-Always Platform is the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together across Australia. It powers the tools members use to:
+Always Platform is the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together. It is a Delaware nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). It powers the tools members use to:
 
 - **Equip:** the Always App for evangelists, branded response pages, forms and QR codes.
-- **Support:** shared tools for governance, compliance, safeguarding and reporting.
+- **Support:** shared tools for governance, safety, safeguarding and reporting.
 - **Connect:** the church and ministry directory, common standards, and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
 
 It is built together and shared freely: free for churches, open source, and every person's details stay theirs, in Australia.
@@ -23,7 +23,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
-| `spec/compliance/` | The Always Safety register: open, reviewed obligations for Australian ministries (CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. See `docs/compliance.md`. |
+| `spec/safety/` | The Always Safety register: open obligations for ministries in Australia, the US, Canada, the UK, the EU and New Zealand (draft, CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. Not legal advice. See `docs/safety.md`. |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
 ## Run it locally
@@ -47,3 +47,7 @@ make check                            # types and 68 tests against real Postgres
 ## Licences
 
 Code: Apache 2.0 (`LICENSE`). Docs, the standard and policies: CC BY 4.0 (`CONTENT-LICENSE.md`). The Always name and mark are trademarks (`TRADEMARKS.md`). Contributions use the DCO (`CONTRIBUTING.md`). Report security issues privately (`SECURITY.md`).
+
+## Using this code
+
+Always Platform is free and open source under Apache 2.0. Check it with your own developers and lawyers before you rely on it: Always Safety is a guide to common obligations, not legal advice, and each ministry remains responsible for its own legal advice and decisions. Report bugs as GitHub issues, and security issues privately as described in [SECURITY.md](SECURITY.md).

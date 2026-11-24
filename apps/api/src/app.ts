@@ -18,7 +18,7 @@ import { mountEvangelist } from './evangelist.js';
 import { mountMcp } from './mcp.js';
 import { registerWebhookRoutes } from './webhooks.js';
 import { registerAccountRoutes } from './account.js';
-import { registerComplianceRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
+import { registerSafetyRoutes, runComplianceWatch, runComplianceQuarterly, httpFetcher, type Fetcher, type Summariser } from './compliance.js';
 
 const AgeBand = z.enum(['under13', '13-14', '15-17', '18+']);
 const Step = z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read']);
@@ -876,7 +876,7 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
   app.post('/v1/ops/tokens', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam) throw new HttpError(403, 'care_team_only');
-    const b = parse(z.object({ orgId: z.string().uuid(), name: z.string().min(2).max(60), scopes: z.array(z.enum(['responses:write', 'inbox', 'profile', 'activity'])).min(1) }), await c.req.json());
+    const b = parse(z.object({ orgId: z.string().uuid(), name: z.string().min(2).max(60), scopes: z.array(z.enum(['responses:write', 'inbox', 'profile', 'activity', 'safety'])).min(1) }), await c.req.json());
     const t = newToken(process.env.NODE_ENV === 'production' ? 'alw_live' : 'alw_test');
     await asService(sql, async (tx) => {
       await tx`insert into api_token (org_id, name, token_hash, scopes) values (${b.orgId}, ${b.name}, ${t.hash}, ${b.scopes})`;
@@ -887,7 +887,7 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
 
   // ---------------------------------------------------------------- Always Safety (RFC 0003)
   registerAccountRoutes(app, sql);
-  registerComplianceRoutes(app, sql, now);
+  registerSafetyRoutes(app, sql, now);
   registerWebhookRoutes(app, sql);
 
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
@@ -910,7 +910,7 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
     return c.json(await fn(sql, now(), opts.adapters));
   };
   const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);
-  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
+  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/safety-watch', complianceWatch], ['/jobs/safety-quarterly', runComplianceQuarterly], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
     app.post(path, job(fn));
     app.get(path, job(fn));
   }

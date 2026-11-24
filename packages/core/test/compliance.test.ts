@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { assess, diffRegisters, holds, quarterOf, strengthOf, validateRegister, type ComplianceProfile, type Register } from '../src/compliance.js';
 
-const register = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/compliance/register.json', import.meta.url)), 'utf8')) as Register;
+const register = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url)), 'utf8')) as Register;
 
 /** A small NSW church: under the Privacy Act threshold, runs a youth group, a registered Basic Religious Charity. Synthetic. */
 const church: ComplianceProfile = {
@@ -146,8 +146,37 @@ describe('quarters', () => {
 
 describe('register diff and stored copies', () => {
   it('ignores key order, which jsonb changes', () => {
-    const reg = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/compliance/register.json', import.meta.url)), 'utf8'));
+    const reg = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url)), 'utf8'));
     const reordered = JSON.parse(JSON.stringify(reg), (_k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).reverse()) : v));
     expect(diffRegisters(reg, reordered)).toEqual([]);
+  });
+});
+
+describe('countries', () => {
+  const base = { ...church, states: [] as never[], acncRegistered: false, basicReligiousCharity: false };
+  it('treats a profile without countries as Australian', () => {
+    expect(ids(assess(register, church, {}, {}, day))).toContain('privacy-policy');
+  });
+  it('gives a US-only ministry US obligations and no Australian ones', () => {
+    const a = assess(register, { ...base, countries: ['US'], registeredCharity: true, isChurch: false }, {}, {}, day);
+    expect(ids(a)).toContain('us-annual-return');
+    expect(ids(a).some((id) => register.obligations.find((o) => o.id === id)?.country === 'AU')).toBe(false);
+  });
+  it('excepts US churches from the IRS annual return', () => {
+    const a = assess(register, { ...base, countries: ['US'], registeredCharity: true, isChurch: true }, {}, {}, day);
+    expect(ids(a)).not.toContain('us-annual-return');
+  });
+  it('covers every country in the register, and only listed countries', () => {
+    const seen = new Set(register.obligations.map((o) => o.country ?? 'AU'));
+    expect([...seen].sort()).toEqual(['AU', 'CA', 'EU', 'GB', 'NZ', 'US']);
+  });
+  it('combines countries for a ministry in more than one place', () => {
+    const a = assess(register, { ...base, countries: ['GB', 'NZ'] }, {}, {}, day);
+    expect(ids(a)).toEqual(expect.arrayContaining(['gb-breach', 'nz-breach']));
+  });
+  it('reads unanswered questions as "no"', () => {
+    const a = assess(register, { countries: ['CA'], states: [], collectsPersonalInfo: true } as never, {}, {}, day);
+    expect(ids(a)).not.toContain('ca-annual-return');
+    expect(ids(a)).toContain('ca-privacy');
   });
 });

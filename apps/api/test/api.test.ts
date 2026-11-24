@@ -661,7 +661,7 @@ describe('MCP server (read-only, no personal data)', () => {
   it('initialises and lists only read-only tools', async () => {
     expect((await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 't', version: '1' } })).result.serverInfo.name).toBe('always');
     const tools = (await rpc('tools/list')).result.tools;
-    expect(tools.map((t: any) => t.name)).toEqual(['find_churches', 'verify_church', 'list_events', 'how_always_works']);
+    expect(tools.map((t: any) => t.name)).toEqual(['find_churches', 'verify_church', 'list_events', 'safety_obligations', 'safety_check', 'how_always_works']);
     expect(tools.every((t: any) => t.annotations.readOnlyHint)).toBe(true);
   });
   it('finds churches from the feed', async () => {
@@ -669,6 +669,24 @@ describe('MCP server (read-only, no personal data)', () => {
     expect(r.result.isError).toBe(false);
     expect(r.result.content[0].text).toMatch(/Hope Church Parramatta/);
     expect(JSON.stringify(r.result)).not.toMatch(/example\.org|Sam/);
+  });
+  it('lists Always Safety obligations for a country, with sources and the notice', async () => {
+    const r = await rpc('tools/call', { name: 'safety_obligations', arguments: { country: 'NZ', area: 'privacy' } });
+    expect(r.result.isError).toBe(false);
+    expect(r.result.structuredContent.items.map((i: any) => i.id)).toContain('nz-privacy-officer');
+    expect(r.result.content[0].text).toMatch(/not legal advice/);
+  });
+  it('runs the stateless safety check-up from organisation facts', async () => {
+    const r = await rpc('tools/call', { name: 'safety_check', arguments: { countries: ['EU'], collectsPersonalInfo: true, providesHealthService: false, usesOverseasServices: true, worksWithChildren: false, onlineServicesForChildren: false, sendsEmailOrSms: false } });
+    expect(r.result.isError).toBe(false);
+    expect(r.result.structuredContent.items.map((i: any) => i.obligationId)).toContain('eu-transfers');
+    const bad = await rpc('tools/call', { name: 'safety_check', arguments: { countries: ['AU'] } });
+    expect(bad.result.isError).toBe(true);
+  });
+  it('refuses oversized batches', async () => {
+    const batch = Array.from({ length: 21 }, (_, i) => ({ jsonrpc: '2.0', id: i, method: 'tools/list' }));
+    const res = await app.request('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(batch) });
+    expect(res.status).toBe(400);
   });
   it('acknowledges notifications without a body', async () => {
     const res = await app.request('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) });

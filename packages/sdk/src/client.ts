@@ -97,16 +97,19 @@ export class AlwaysClient {
     update: (p: Record<string, unknown>) => this.req<{ ok: true }>('PUT', '/v1/org/profile', p),
   };
 
-  /** Open compliance data and the stateless check-up. No token needed for these. */
-  compliance = {
-    register: (version?: string) => this.req<ComplianceRegister>('GET', version ? `/v1/compliance/register/${encodeURIComponent(version)}` : '/v1/compliance/register'),
-    versions: () => this.req<{ versions: { version: string; status: string; publishedAt: string; summary: string | null }[] }>('GET', '/v1/compliance/register/versions'),
-    changes: () => this.req<{ versions: { version: string; publishedAt: string; summary: string | null; changes: { obligationId: string; title: string; change: 'added' | 'changed' | 'removed'; what: string[] }[] }[] }>('GET', '/v1/compliance/changes'),
-    check: (profile: ComplianceProfile, answers: Record<string, 'yes' | 'no' | 'unsure' | 'not_applicable'> = {}) =>
-      this.req<ComplianceAssessment>('POST', '/v1/compliance/check', { profile, answers }),
+  /** Always Safety: the open rules register and the stateless check-up. No token needed for these. */
+  safety = {
+    register: (version?: string) => this.req<SafetyRegister>('GET', version ? `/v1/safety/register/${encodeURIComponent(version)}` : '/v1/safety/register'),
+    versions: () => this.req<{ versions: { version: string; status: string; publishedAt: string; summary: string | null }[] }>('GET', '/v1/safety/register/versions'),
+    changes: () => this.req<{ versions: { version: string; publishedAt: string; summary: string | null; changes: { obligationId: string; title: string; change: 'added' | 'changed' | 'removed'; what: string[] }[] }[] }>('GET', '/v1/safety/changes'),
+    check: (profile: SafetyProfile, answers: Record<string, 'yes' | 'no' | 'unsure' | 'not_applicable'> = {}) =>
+      this.req<SafetyAssessment>('POST', '/v1/safety/check', { profile, answers }),
   };
 
-  /** Signed webhooks, including compliance change alerts. The secret is returned once, on create. */
+  /** @deprecated Use safety. */
+  get compliance() { return this.safety; }
+
+  /** Signed webhooks, including Always Safety rule-change alerts. The secret is returned once, on create. */
   webhooks = {
     list: () => this.req<{ endpoints: { id: string; url: string; events: string[]; active: boolean }[] }>('GET', '/v1/webhooks'),
     create: (url: string, events: string[]) => this.req<{ id: string; url: string; events: string[]; secret: string }>('POST', '/v1/webhooks', { url, events }),
@@ -213,31 +216,45 @@ function evQuery(q: { theme?: string; q?: string; drafts?: boolean }): string {
   return p.toString();
 }
 
-export interface ComplianceProfile {
-  states: AuState[];
+export type SafetyCountry = 'AU' | 'US' | 'CA' | 'GB' | 'EU' | 'NZ';
+
+export interface SafetyProfile {
+  /** Where the ministry operates. Missing means Australia. */
+  countries?: SafetyCountry[];
+  /** Australian states and territories; required when Australia is chosen. */
+  states?: AuState[];
   collectsPersonalInfo: boolean;
-  turnoverOver3m: boolean;
   providesHealthService: boolean;
   usesOverseasServices: boolean;
   worksWithChildren: boolean;
   onlineServicesForChildren: boolean;
   sendsEmailOrSms: boolean;
-  acncRegistered: boolean;
-  basicReligiousCharity: boolean;
-  acncMediumOrLarge: boolean;
+  turnoverOver3m?: boolean;
+  acncRegistered?: boolean;
+  basicReligiousCharity?: boolean;
+  acncMediumOrLarge?: boolean;
+  registeredCharity?: boolean;
+  isChurch?: boolean;
 }
 
-export interface ComplianceRegister {
+export interface SafetyRegister {
   version: string;
   status: 'draft' | 'reviewed';
   notice: string;
-  profileQuestions: { id: keyof ComplianceProfile; type: 'states' | 'boolean'; label: string; help?: string }[];
-  obligations: { id: string; area: string; title: string; summary: string; status: string }[];
+  profileQuestions: { id: keyof SafetyProfile; type: 'countries' | 'states' | 'boolean'; label: string; help?: string; onlyWhen?: unknown }[];
+  obligations: { id: string; country?: SafetyCountry; area: string; title: string; summary: string; status: string }[];
 }
 
-export interface ComplianceAssessment {
+export interface SafetyAssessment {
   registerVersion: string;
   items: { obligationId: string; title: string; summary: string; strength: 'required' | 'recommended'; status: 'met' | 'attention' | 'check' | 'upcoming'; guidance: string }[];
   summary: { required: number; met: number; attention: number; check: number; upcoming: number };
   notice: string;
 }
+
+/** @deprecated Use SafetyProfile. */
+export type ComplianceProfile = SafetyProfile;
+/** @deprecated Use SafetyRegister. */
+export type ComplianceRegister = SafetyRegister;
+/** @deprecated Use SafetyAssessment. */
+export type ComplianceAssessment = SafetyAssessment;
