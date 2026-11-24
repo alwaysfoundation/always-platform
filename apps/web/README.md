@@ -1,6 +1,6 @@
 # Always web
 
-The Always app, at app.alwaysfoundation.org: starting an account (`/start`), the Always home (`/home`), the church inbox, reports, the listing, and the foundation console for the care team. Next.js. Once signed in it wears the church's own logo and colours. The marketing site is a separate repo (always-website).
+The Always app, at my.alwaysfoundation.org: starting an account (`/start`), the Always home (`/home`, including Always AI), the church inbox, reports, the listing, and the foundation console for the care team. Next.js. Once signed in it wears the church's own logo and colours. The marketing site is a separate repo (always-website).
 
 ## Run it
 

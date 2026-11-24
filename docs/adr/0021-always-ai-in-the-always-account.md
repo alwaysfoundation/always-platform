@@ -27,6 +27,8 @@ The rules must not move: what people ask an AI stays private (non-negotiable 5, 
 8. **Faithful by the same rules everywhere.** Scripture is looked up, never generated; the Nicene Creed (AD 381) is the boundary; beyond it the organisation's own statement of faith is followed where present, otherwise the main views are set out fairly. No persona, no spiritual authority, no companion features (ADR 0018 point 3).
 9. **The account adds, never requires.** The study tool still needs no account. With an account, an organisation can export a **church library pack** (its statement of faith and documents it chooses) for leaders to import into the study tool. The pack is a file; it goes from the browser to the leader's computer and never back to Always.
 
+10. **What people write is theirs.** Sermons, studies, pages and messages written with Always AI belong to their authors. Always claims no rights in them and never receives them.
+
 ## Consequences
 
 - `MODULES` gains `ai`; the `organisation.modules` check constraint is widened (migration 0027).

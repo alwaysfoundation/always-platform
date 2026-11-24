@@ -14,7 +14,7 @@ const DRAFT = 'always.start';
 const STEPS = ['Your church', 'Your look', 'Your account'] as const;
 const DEFAULT_SWATCHES = ['#1B4740', '#1F3A5F', '#5B2A86', '#8C1C13', '#0F5257', '#2D2D2D'];
 const ACCENTS = ['#E8A577', '#F2C14E', '#7FB7BE', '#E07A5F', '#A8D5BA', '#F4F1DE'];
-const STARTING_MODULES = ['respond', 'safety', 'reports'];
+const STARTING_MODULES = ['respond', 'safety', 'reports', 'ai'];
 
 type Draft = Look & { site: string };
 const blank: Draft = { name: '', kind: 'church', site: '', primary: '#1B4740', accent: '#E8A577', heading: 'modern', logo: null };
@@ -155,7 +155,7 @@ export default function Start() {
           {step === 2 && (
             <div className="pane">
               <h1 ref={heading} tabIndex={-1}>Create your account</h1>
-              <p className="lead">We&rsquo;ll switch on response pages, Safety and Reports for {d.name.trim() || `your ${word}`}. Change them any time, and invite your team once you&rsquo;re in.</p>
+              <p className="lead">We&rsquo;ll switch on response pages, Safety, Reports and Always AI for {d.name.trim() || `your ${word}`}. Change them any time, and invite your team once you&rsquo;re in.</p>
               <div className="creed">
                 <label className="agree"><input type="checkbox" checked={creed} onChange={(e) => setCreed(e.target.checked)} /><span>We affirm the Nicene Creed (AD 381), the faith Always partners share.</span></label>
                 <details><summary>Read the Creed</summary>{CREED.map((p) => <p key={p.slice(0, 20)}>{p}</p>)}</details>
