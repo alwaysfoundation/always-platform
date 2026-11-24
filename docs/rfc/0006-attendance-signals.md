@@ -83,13 +83,13 @@ This complements national surveys rather than replacing them. With churches' agr
 
 ## Open questions
 
-- Does Prolegis agree that salted, in-memory device hashes that never leave the sensor keep us outside "collection" of personal information? We will do a privacy impact assessment before any wireless sensor runs.
+- Does legal review agree that salted, in-memory device hashes that never leave the sensor keep us outside "collection" of personal information? We will do a privacy impact assessment before any wireless sensor runs.
 - Which door counters meet "no images kept" and are affordable for a small church?
 - Should online attendance (live-stream viewers) be a separate signal or left out?
 - How do multi-site churches report: per site, per service, or both?
 
 ## Needs
 
-- Prolegis review and a privacy impact assessment for wireless sensing.
+- Legal review and a privacy impact assessment for wireless sensing.
 - API access from Tithe.ly, and Planning Center OAuth for connectors.
 - A small hardware budget for pilot sensors and counters.

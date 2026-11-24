@@ -80,7 +80,7 @@ A daily job (`/jobs/compliance-quarterly`) drafts one assessment per member per 
 
 ## Open questions
 
-- [ ] Who reviews the register: Prolegis, a volunteer legal panel, or both? Before the first `reviewed` version.
+- [ ] Who reviews the register: a legal adviser, a volunteer legal panel, or both? Before the first `reviewed` version.
 - [ ] Do we show a score? This RFC deliberately shows counts, not a percentage, to avoid false comfort.
 - [ ] Which denominational safe ministry programs should map to evidence first?
 - [ ] Reportable conduct schemes (NSW, VIC, QLD, ACT) as their own obligations in the next version.

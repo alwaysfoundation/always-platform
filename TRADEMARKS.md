@@ -16,4 +16,4 @@
 - Present an unverified church or service as "Always verified".
 - Use the name or mark on anything that collects people's details outside the Always consent rules.
 
-Until incorporation, Rejoice holds any registrations on trust for the foundation and will assign them to it.
+Rejoice holds any registrations on trust for Always Foundation, a US 501(c)(3), and will assign them to it.
