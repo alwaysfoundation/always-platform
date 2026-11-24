@@ -368,4 +368,43 @@ describe('first sign-in for a new ministry', () => {
     expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: 'One too many', state: 'NSW' } })).status).toBe(429);
   });
 
+  it('starts with every module off', async () => {
+    const r = await call('GET', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'admin@newchurch.example') });
+    expect(r.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules).toEqual({ respond: 'off', connect: 'off', safety: 'off', reports: 'off' });
+  });
+
+  it('switches modules on and off for the admin, and records it', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['respond', 'safety', 'safety'] } });
+    expect(r.status).toBe(200);
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on', reports: 'off' });
+    const off = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['safety'] } });
+    expect(off.body.modules.respond).toBe('off');
+    const [a] = await sql`select count(*)::int as n from audit_event where org_id = ${ids.newcomer} and action = 'org.modules'`;
+    expect(a.n).toBe(2);
+  });
+
+  it('holds Connect until the partner check is done', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['connect'] } });
+    expect(r.body.modules.connect).toBe('awaiting_check');
+    await sql`update organisation set trust_level = 'verified' where id = ${ids.newcomer}`;
+    const after = await call('GET', '/v1/account/orgs', { token: t });
+    expect(after.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules.connect).toBe('on');
+    await sql`update organisation set trust_level = 'listed' where id = ${ids.newcomer}`;
+  });
+
+  it('lets a church choose modules when it is created', async () => {
+    const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000009', 'admin@modules.example');
+    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'reports'] } });
+    expect(r.status).toBe(201);
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on' });
+  });
+
+  it('keeps modules to admins of that organisation', async () => {
+    const t = await jwtWithEmail(stranger, 'someone@else.example');
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['respond'] } })).status).toBe(403);
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: await jwtWithEmail(newcomer, 'admin@newchurch.example'), body: { modules: ['giving'] } })).status).toBe(422);
+  });
+
 });
