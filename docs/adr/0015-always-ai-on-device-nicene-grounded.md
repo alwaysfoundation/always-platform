@@ -32,6 +32,6 @@ Always Foundation will build Always AI as open, shared infrastructure with these
 - Small models on low-end hardware are slower and less capable than hosted systems; the tool must say what it does not know.
 - Because Always holds no data, it cannot recover a lost library; export is the backup.
 - Open code can be forked and stripped of safeguards. The Always name is a trademark and may not be used on copies that change them.
-- Theologians from Catholic, Orthodox and Protestant traditions must review the Creed text, translations and propositions before release.
+- The Creed text, translations and propositions are published openly so anyone can suggest corrections; release does not wait on a formal theological sign-off.
 - Bible and Creed translation licences are checked language by language.
 - None of this processes personal data on Always infrastructure, so the Australian data-residency rule (non-negotiable 5) is not engaged. Any future hosted mode would need a new ADR.
