@@ -1,6 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "build": { "buildCommand": "npm ci" },
+  "build": { "buildCommand": "npm ci --include=dev" },
   "deploy": {
     "startCommand": "npm run migrate && npx tsx apps/api/src/server.ts",
     "healthcheckPath": "/health",
