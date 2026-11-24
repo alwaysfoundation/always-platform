@@ -10,6 +10,7 @@ import { authenticate, requirePrincipal, HttpError, type Env } from './auth.js';
 import { encrypt, decrypt, lookupHash, newToken, tokenHash, safeEqual } from './crypto.js';
 import * as engine from './engine.js';
 import { audit } from './audit.js';
+import { emailMatchesWebsite } from './claims.js';
 import { rateLimit } from './rate-limit.js';
 import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
 import { buildReport, toCsv } from './reports.js';
@@ -159,15 +160,57 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json(o);
   });
 
+  const CONFIRM_HOURS = 48;
+  // Approving makes the requester an admin and the listing 'claimed'. It never makes a church a partner.
+  const approveClaim = async (tx: any, cr: any, decidedBy: string | null, note: string | null, byEmail: boolean) => {
+    await tx`update claim_request set status = 'approved', decided_by = ${decidedBy}, decided_at = ${now()}, decision_note = ${note},
+             confirmed_by_email = ${byEmail}, confirm_token_hash = null where id = ${cr.id}`;
+    let [u] = await tx`select id from app_user_account where email_hash = ${cr.requester_email_hash}`;
+    if (!u) [u] = await tx`insert into app_user_account (email_ct, email_hash, display_name) values (${cr.requester_email_ct}, ${cr.requester_email_hash}, ${cr.requester_role}) returning id`;
+    if (!u) throw new Error('user_create_failed');
+    await tx`insert into membership (user_id, org_id, role) values (${u.id}, ${cr.org_id}, 'admin') on conflict do nothing`;
+    await tx`update organisation set trust_level = 'claimed' where id = ${cr.org_id} and trust_level = 'listed'`;
+    await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
+             values ('email', 'claim.approved', ${cr.org_id}, ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))}, ${now()})`;
+  };
+
   app.post('/v1/orgs/:id/claims', async (c) => {
     const body = parse(z.object({ email: z.string().email(), role: z.string().min(2).max(60), evidence: z.string().max(500).optional() }), await c.req.json());
-    await asService(sql, async (tx) => {
-      const [o] = await tx`select id from organisation where id = ${c.req.param('id')}`;
+    const status = await asService(sql, async (tx) => {
+      const [o] = await tx`select id, website, trust_level::text as trust_level from organisation where id = ${c.req.param('id')} and not is_care_team`;
       if (!o) throw new HttpError(404, 'not_found');
-      await tx`insert into claim_request (org_id, requester_email_ct, requester_email_hash, requester_role, evidence)
-               values (${o.id}, ${encrypt(body.email)}, ${lookupHash(body.email)}, ${body.role}, ${body.evidence ?? null})`;
+      // Only an unclaimed listing can be claimed without a person, so a second admin is always a human decision.
+      const auto = o.trust_level === 'listed' && emailMatchesWebsite(body.email, o.website);
+      const t = auto ? newToken('alw_claim') : null;
+      await tx`insert into claim_request (org_id, requester_email_ct, requester_email_hash, requester_role, evidence, confirm_token_hash, confirm_expires_at)
+               values (${o.id}, ${encrypt(body.email)}, ${lookupHash(body.email)}, ${body.role}, ${body.evidence ?? null},
+                       ${t?.hash ?? null}, ${t ? new Date(now().getTime() + CONFIRM_HOURS * 3_600_000) : null})`;
+      if (!t) return 'pending';
+      await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
+               values ('email', 'claim.confirm', ${o.id}, ${encrypt(JSON.stringify({ to: body.email, confirm: t.token }))}, ${now()})`;
+      return 'confirm_email';
     });
-    return c.json({ status: 'pending' }, 202);
+    return c.json({ status }, 202);
+  });
+
+  // The link in the email opens a page with a button, so a mail scanner fetching the link approves nothing.
+  const CONFIRM_PAGE = (msg: string, form: boolean) => `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Always Foundation</title>
+<body style="font-family:system-ui,sans-serif;background:#F8F3EA;color:#1E2A26;display:grid;place-items:center;min-height:100vh;margin:0">
+<main style="max-width:440px;padding:32px;text-align:center"><h1 style="color:#1B4740;font-size:28px">${msg}</h1>
+${form ? '<form method="post"><button style="font:600 17px system-ui;background:#1B4740;color:#F8F3EA;border:0;border-radius:16px;padding:14px 24px;min-height:52px;cursor:pointer">Confirm</button></form>' : ''}
+</main></body></html>`;
+  app.get('/v1/claims/confirm/:token', (c) => c.html(CONFIRM_PAGE('Confirm you manage this church on Always', true)));
+  app.post('/v1/claims/confirm/:token', async (c) => {
+    const ok = await asService(sql, async (tx) => {
+      const [cr] = await tx`select id, org_id, requester_email_ct, requester_email_hash, requester_role from claim_request
+                            where confirm_token_hash = ${tokenHash(c.req.param('token'))} and status = 'pending' and confirm_expires_at > ${now()} for update`;
+      if (!cr) return false;
+      await approveClaim(tx, cr, null, 'Email domain matches the church website; confirmed from that inbox', true);
+      await audit(tx, { orgId: cr.org_id, action: 'claim.approve_by_email', subject: `org:${cr.org_id}` });
+      return true;
+    });
+    return c.html(ok ? CONFIRM_PAGE('Done. Your church page is ready, and we\'ve emailed you how to sign in.', false)
+                     : CONFIRM_PAGE('This link has expired or was already used. Reply to our email and we\'ll help.', false), ok ? 200 : 410);
   });
 
   // ---------------------------------------------------------------- Church feed and verification (open, RFC 0001)
@@ -652,6 +695,7 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     if (!p.careTeam) throw new HttpError(403, 'care_team_only');
     const rows = await asService(sql, (tx) => tx`
       select cr.id, cr.requester_role as role, cr.evidence, cr.created_at, cr.requester_email_ct,
+             (cr.confirm_token_hash is not null and cr.confirm_expires_at > ${now()}) as awaiting_email,
              o.id as org_id, o.display_name, o.suburb, o.state, o.trust_level::text as trust_level
       from claim_request cr join organisation o on o.id = cr.org_id
       where cr.status = 'pending' order by cr.created_at limit 100`);
@@ -666,18 +710,13 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
       const [cr] = await tx`select id, org_id, requester_email_ct, requester_email_hash, requester_role, status::text as status from claim_request where id = ${c.req.param('id')} for update`;
       if (!cr) throw new HttpError(404, 'not_found');
       if (cr.status !== 'pending') throw new HttpError(409, 'already_decided');
-      await tx`update claim_request set status = ${b.decision === 'approve' ? 'approved' : 'rejected'}, decided_by = ${p.userId ?? null},
-               decided_at = ${now()}, decision_note = ${b.note ?? null} where id = ${cr.id}`;
-      if (b.decision === 'approve') {
-        let [u] = await tx`select id from app_user_account where email_hash = ${cr.requester_email_hash}`;
-        if (!u) [u] = await tx`insert into app_user_account (email_ct, email_hash, display_name) values (${cr.requester_email_ct}, ${cr.requester_email_hash}, ${cr.requester_role}) returning id`;
-        if (!u) throw new Error('user_create_failed');
-        await tx`insert into membership (user_id, org_id, role) values (${u.id}, ${cr.org_id}, 'admin') on conflict do nothing`;
-        await tx`update organisation set trust_level = 'claimed' where id = ${cr.org_id} and trust_level = 'listed'`;
+      if (b.decision === 'approve') await approveClaim(tx, cr, p.userId ?? null, b.note ?? null, false);
+      else {
+        await tx`update claim_request set status = 'rejected', decided_by = ${p.userId ?? null}, decided_at = ${now()}, decision_note = ${b.note ?? null},
+                 confirm_token_hash = null where id = ${cr.id}`;
+        await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
+                 values ('email', 'claim.declined', ${cr.org_id}, ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))}, ${now()})`;
       }
-      await tx`insert into outbox (channel, template, org_id, params_ct, not_before)
-               values ('email', ${b.decision === 'approve' ? 'claim.approved' : 'claim.declined'}, ${cr.org_id},
-                       ${encrypt(JSON.stringify({ to: decrypt(cr.requester_email_ct) }))}, ${now()})`;
       await audit(tx, { actor: p.userId, orgId: p.orgId, action: `claim.${b.decision}`, subject: `org:${cr.org_id}` });
       return { status: b.decision === 'approve' ? 'approved' : 'rejected' };
     });
