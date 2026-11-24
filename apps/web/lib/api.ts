@@ -1,29 +1,6 @@
 'use client';
-/**
- * A tiny client for the Always API, through this app's /api proxy.
- * The staff session lives in sessionStorage for this tab only; it is never logged or sent anywhere but /api.
- */
-const KEY = 'always.session';
-
-export type Session = { token: string; org: string };
-
-export function getSession(): Session | null {
-  try {
-    const raw = sessionStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function setSession(s: Session | null) {
-  try {
-    if (s) sessionStorage.setItem(KEY, JSON.stringify(s));
-    else sessionStorage.removeItem(KEY);
-  } catch {
-    /* storage unavailable: the session lasts until the page closes */
-  }
-}
+/** A tiny client for the Always API, through this app's /api proxy. */
+import { getOrg, token } from './auth';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string) {
@@ -32,12 +9,14 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
-  const s = getSession();
+  const t = await token();
+  const org = getOrg();
   const res = await fetch(`/api${path}`, {
     method: init.method ?? 'GET',
     headers: {
       'content-type': 'application/json',
-      ...(s ? { authorization: `Bearer ${s.token}`, 'x-always-org': s.org } : {}),
+      ...(t ? { authorization: `Bearer ${t}` } : {}),
+      ...(org && !path.startsWith('/v1/account/') ? { 'x-always-org': org } : {}),
     },
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
@@ -56,3 +35,10 @@ export function explain(e: unknown): string {
   }
   return 'Something went wrong. Please try again.';
 }
+
+export type ModuleState = 'on' | 'off' | 'awaiting_check';
+export type Brand = { primary: string; accent: string; heading: 'modern' | 'classic'; logo: string | null };
+export type Org = {
+  id: string; name: string; kind: 'church' | 'ministry'; partner: boolean; role: string; careTeam?: boolean;
+  modules: Record<'respond' | 'connect' | 'safety' | 'reports', ModuleState>; brand: Brand;
+};

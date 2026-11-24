@@ -74,7 +74,7 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
       const to = params.to ?? decrypt(o?.notify_email_ct);
       if (!to) return; // no address yet: nothing to send, mark sent
       // Email says "someone is waiting" and links to the inbox. No names, no faith details (PV-8).
-      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', safetyUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/safety/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}), ...(params.invite ? { inviteUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/account?invite=${params.invite}`, org: params.org ?? '' } : {}) } });
+      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', safetyUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/safety/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}), ...(params.invite ? { inviteUrl: `${process.env.APP_URL ?? 'https://app.alwaysfoundation.org'}/sign-in?invite=${params.invite}`, org: params.org ?? '' } : {}) } });
       return;
     }
     case 'sms': {

@@ -88,9 +88,9 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
 
   app.get('/v1/account/orgs', async (c) => {
     const id = identity(c);
-    const rows = await sql`select o.id, o.display_name, o.kind, o.trust_level, o.modules, o.brand_colour, o.page_layout, o.logo_data, m.role from membership m join organisation o on o.id = m.org_id
+    const rows = await sql`select o.id, o.display_name, o.kind, o.trust_level, o.modules, o.brand_colour, o.page_layout, o.logo_data, o.is_care_team, m.role from membership m join organisation o on o.id = m.org_id
                            where m.user_id = ${id.sub} order by o.display_name`;
-    return c.json({ orgs: rows.map((r) => ({ id: r.id, name: r.display_name, kind: r.kind, partner: isPartner(r.trust_level), role: r.role, modules: moduleStates(r.modules, r.trust_level), brand: brandOut(r) })) });
+    return c.json({ orgs: rows.map((r) => ({ id: r.id, name: r.display_name, kind: r.kind, partner: isPartner(r.trust_level), role: r.role, careTeam: !!r.is_care_team, modules: moduleStates(r.modules, r.trust_level), brand: brandOut(r) })) });
   });
 
   app.post('/v1/account/orgs', async (c) => {

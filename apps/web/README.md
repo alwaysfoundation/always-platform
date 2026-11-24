@@ -1,6 +1,6 @@
 # Always web
 
-Always for churches and ministries (the church inbox) and the foundation console (church claims, events, ideas and problems). Next.js, built with the Always brand kit.
+The Always app, at app.alwaysfoundation.org: starting an account (`/start`), the Always home (`/home`), the church inbox, reports, the listing, and the foundation console for the care team. Next.js. Once signed in it wears the church's own logo and colours. The marketing site is a separate repo (always-website).
 
 ## Run it
 
@@ -14,7 +14,9 @@ The browser only talks to this app. Requests to `/api/*` are passed to the API s
 
 ## Sign-in
 
-Pilot partners sign in with a staff session token and their organisation ID; the session lives in the tab and ends when it closes. Passkey sign-in through Supabase Auth replaces this before launch (see `ROADMAP.md`).
+Email and a one-time code, through Supabase Auth. No passwords. The session tokens are kept in the browser and refreshed before they expire; the organisation in use is chosen separately, so one person can belong to several. Invitations land on `/sign-in?invite=…` and are accepted once signed in.
+
+Starting an account (`/start`) asks for the church's name, an optional website (read by the brand import at brand.alwaysfoundation.org for its logo and colours), the look, then an email code and the Nicene Creed affirmation. It creates the organisation with Respond, Safety and Reports switched on.
 
 ## Principles
 
