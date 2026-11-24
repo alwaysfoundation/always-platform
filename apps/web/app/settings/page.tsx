@@ -143,7 +143,7 @@ function Team() {
         <label className="fld">Role<select name="role" defaultValue="follow_up"><option value="follow_up">Follow-up</option><option value="youth">Youth leader</option><option value="admin">Admin</option></select></label>
         <button className="btn btn-brand" type="submit">Send invite</button>
       </form>
-      <p className="meta">Youth leaders see young people&rsquo;s details only once their Working With Children Check is recorded.</p>
+      <p className="meta">Youth leaders see young people&rsquo;s details only once their child safety check (such as a Working With Children Check) is recorded.</p>
       <p className="status" role="status">{status}</p>
     </section>
   );
