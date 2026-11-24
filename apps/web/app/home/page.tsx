@@ -7,6 +7,7 @@ import { Icon } from '@/lib/icons';
 import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
 import type { Report } from '@/lib/report';
+import { PageCard } from '@/lib/page-card';
 
 const TOTALS = { responded: 'Responded', introduced: 'Introduced', accepted: 'Welcomed', contacted: 'Contacted', connected: 'Connected' } as const;
 
@@ -111,6 +112,8 @@ function Home() {
           </ul>
         )}
       </section>
+
+      <PageCard />
 
       {org.modules.reports !== 'off' && empty && items !== null && (
         <section className="glance" aria-labelledby="h-glance">

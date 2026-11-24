@@ -9,6 +9,7 @@ import { CREED } from '@/lib/creed';
 import { EmailCode } from '@/lib/email-code';
 import { Wordmark } from '@/lib/logo';
 import { Preview, type Look } from '@/lib/preview';
+import { demoLook, endDemo } from '@/lib/demo';
 
 const DRAFT = 'always.start';
 const STEPS = ['Your church', 'Your look', 'Your account'] as const;
@@ -34,6 +35,11 @@ export default function Start() {
 
   useEffect(() => {
     try { const saved = JSON.parse(localStorage.getItem(DRAFT) ?? 'null'); if (saved) setD({ ...blank, ...saved }); } catch { /* fresh start */ }
+    if (new URLSearchParams(location.search).get('from') === 'demo') {
+      const look = demoLook();
+      if (look) setD((x) => ({ ...x, ...Object.fromEntries(Object.entries(look).filter(([, v]) => v != null)) }));
+      endDemo();
+    }
     setSignedIn(!!getAuth());
   }, []);
   useEffect(() => { try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch { /* storage unavailable */ } }, [d]);

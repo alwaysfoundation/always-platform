@@ -12,7 +12,8 @@ import * as engine from './engine.js';
 import { audit } from './audit.js';
 import { emailMatchesWebsite } from './claims.js';
 import { rateLimit } from './rate-limit.js';
-import { runTick, runOutbox, runRetention, type Adapters } from './jobs.js';
+import { runTick, runOutbox, runRetention, runOnboarding, type Adapters } from './jobs.js';
+import { onboardingStopToken } from './onboarding.js';
 import { buildReport, toCsv } from './reports.js';
 import { mountEvangelist } from './evangelist.js';
 import { mountMcp } from './mcp.js';
@@ -482,10 +483,14 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
 
   // ---------------------------------------------------------------- Hosted response pages (online, print, street)
   app.get('/v1/pages/:slug', async (c) => {
-    const [pg] = await sql`select rp.slug, rp.title, rp.channel, rp.steps::text[] as steps, rp.brand, o.display_name as ministry
+    const [pg] = await sql`select rp.slug, rp.title, rp.channel, rp.steps::text[] as steps, rp.brand, o.display_name as ministry,
+      o.brand_colour, o.page_layout->'brand' as org_brand, o.logo_data
       from response_page rp join organisation o on o.id = rp.org_id where rp.slug = ${c.req.param('slug')} and rp.active`;
     if (!pg) throw new HttpError(404, 'not_found');
-    return c.json(pg);
+    const ob = (pg.org_brand ?? {}) as { accent?: string; heading?: string };
+    return c.json({ slug: pg.slug, title: pg.title, channel: pg.channel, steps: pg.steps, brand: pg.brand, ministry: pg.ministry,
+      look: { primary: pg.brand_colour ?? null, accent: ob.accent ?? null, heading: ob.heading ?? 'modern', logo: pg.logo_data ?? null },
+      showAlways: (pg.brand as { showAlways?: boolean } | null)?.showAlways !== false });
   });
 
   // The person submits the hosted page: an invisible human check, then the same consent rules as every response.
@@ -894,6 +899,15 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
   registerSafetyRoutes(app, sql, now);
   registerWebhookRoutes(app, sql);
 
+  // One click from a setup email stops the rest, with no sign-in. The token is tied to the organisation.
+  app.get('/v1/onboarding/stop/:token', async (c) => {
+    const [orgId, tok] = c.req.param('token').split('.');
+    const page = (msg: string) => c.html(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Always</title><style>body{font:18px/1.5 system-ui,sans-serif;background:#F8F3EA;color:#1E2A26;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px}main{max-width:32em}h1{font-size:28px;color:#1B4740}</style></head><body><main><h1>${msg}</h1><p>You can still find everything in your Always account.</p></main></body></html>`);
+    if (!orgId || !tok || !/^[0-9a-f-]{36}$/.test(orgId) || !safeEqual(tok, onboardingStopToken(orgId))) return page('That link didn’t work.');
+    await sql`update organisation set onboarding_emails = false where id = ${orgId}`;
+    return page('Done. We won’t send any more setup emails.');
+  });
+
   // ---------------------------------------------------------------- Scheduled jobs (called by cron)
   // On Supabase the cron secret is generated inside the database (Vault) by db/supabase/jobs.sql,
   // so no person ever copies it. Read once and cached; absent outside Supabase.
@@ -914,7 +928,7 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
     return c.json(await fn(sql, now(), opts.adapters));
   };
   const complianceWatch = (s: Sql, t: Date) => runComplianceWatch(s, t, opts.complianceFetcher ?? httpFetcher, opts.complianceSummariser);
-  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/safety-watch', complianceWatch], ['/jobs/safety-quarterly', runComplianceQuarterly], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
+  for (const [path, fn] of [['/jobs/tick', runTick], ['/jobs/outbox', runOutbox], ['/jobs/retention', runRetention], ['/jobs/onboarding', runOnboarding], ['/jobs/safety-watch', complianceWatch], ['/jobs/safety-quarterly', runComplianceQuarterly], ['/jobs/compliance-watch', complianceWatch], ['/jobs/compliance-quarterly', runComplianceQuarterly]] as const) {
     app.post(path, job(fn));
     app.get(path, job(fn));
   }

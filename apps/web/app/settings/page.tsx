@@ -7,6 +7,7 @@ import { Icon } from '@/lib/icons';
 import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
 import { useTheme, type Theme } from '@/lib/theme';
+import { useOwnPage } from '@/lib/page-card';
 
 export default function SettingsPage() {
   return <Shell><Settings /></Shell>;
@@ -28,12 +29,14 @@ function Settings() {
     <div className="page-wrap">
       <header className="page-head"><h1>Settings</h1><p className="lead">{org.name}&rsquo;s tools, look and team.</p></header>
       <Modules />
+      {admin && <ResponseSettings />}
       {admin && <Look />}
       {admin && <Team />}
       <section className="hsec" aria-labelledby="h-listing">
         <h2 id="h-listing">Your listing</h2>
         <Link className="row-link" href="/listing"><Icon name="globe" /><span><b>How people find you</b><span>Choose whether {org.name} appears in the church feed and on maps.</span></span><Icon name="arrow" /></Link>
       </section>
+      <InviteChurch />
       <Appearance />
       <Connect />
     </div>
@@ -194,6 +197,55 @@ function Appearance() {
       <div className="seg" role="radiogroup" aria-labelledby="h-appear">
         {opts.map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={theme === v} onClick={() => choose(v)}>{label}</button>)}
       </div>
+    </section>
+  );
+}
+
+const STEP_LABEL: Record<string, string> = { church: 'Find a church', explore: 'Explore faith', talk: 'Talk with someone', read: 'Read the Bible', youth: 'Youth group', group: 'Small group', help: 'Practical help' };
+
+function ResponseSettings() {
+  const { org } = useOrg();
+  const [page, setPage] = useOwnPage();
+  const [status, setStatus] = useState('');
+  if (!org || !page) return null;
+  async function save(change: Partial<{ steps: string[]; showAlways: boolean }>) {
+    const next = { ...page!, ...change };
+    setPage(next);
+    try { await api(`/v1/account/orgs/${org!.id}/page`, { method: 'PUT', body: change }); setStatus('Saved. Your page has changed.'); }
+    catch (e) { setStatus(explain(e)); }
+  }
+  function toggle(k: string) {
+    const on = page!.steps.includes(k);
+    if (on && page!.steps.length === 1) { setStatus('Keep at least one next step.'); return; }
+    if (!on && page!.steps.length >= 5) { setStatus('Up to five next steps keeps the page simple.'); return; }
+    void save({ steps: on ? page!.steps.filter((s) => s !== k) : [...page!.steps, k] });
+  }
+  return (
+    <section className="hsec" aria-labelledby="h-page">
+      <h2 id="h-page">Your response page</h2>
+      <p className="hsec-lede">Choose the next steps people can ask for. <a href={page.url} target="_blank" rel="noreferrer">See your page</a>.</p>
+      <div className="chipset" role="group" aria-label="Next steps offered">
+        {Object.keys(STEP_LABEL).map((k) => <button key={k} type="button" aria-pressed={page.steps.includes(k)} onClick={() => toggle(k)}>{page.steps.includes(k) && <Icon name="check" size={16} />}{STEP_LABEL[k]}</button>)}
+      </div>
+      <label className="checkrow"><input type="checkbox" checked={page.showAlways} onChange={(e) => void save({ showAlways: e.target.checked })} />Show a small &ldquo;Runs on Always&rdquo; link at the foot of your page, so other ministries can find these free tools</label>
+      <p className="status" role="status">{status}</p>
+    </section>
+  );
+}
+
+function InviteChurch() {
+  const { org } = useOrg();
+  if (!org) return null;
+  const subject = encodeURIComponent('Free tools we’re using to welcome people');
+  const body = encodeURIComponent(`Hi,\n\nWe’ve started using Always, free tools for welcoming people who say yes to Jesus. Response pages and QR codes under our own name, a simple inbox for follow-up, and reports for our board. It’s free and open source, and it took us a few minutes to set up.\n\nYou can try it here: https://my.alwaysfoundation.org/start\n\n${org.name}`);
+  return (
+    <section className="hsec" aria-labelledby="h-invite">
+      <h2 id="h-invite">Know another church?</h2>
+      <a className="row-link" href={`mailto:?subject=${subject}&body=${body}`}>
+        <Icon name="chat" />
+        <span><b>Tell them about Always</b><span>Opens an email you can edit and send yourself. We never contact anyone on your behalf.</span></span>
+        <Icon name="arrow" />
+      </a>
     </section>
   );
 }
