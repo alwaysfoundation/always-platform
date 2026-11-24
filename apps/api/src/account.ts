@@ -45,7 +45,8 @@ function brandOut(r: any) {
 const NewOrg = z.object({
   kind: z.enum(['church', 'ministry']),
   displayName: z.string().trim().min(2).max(120),
-  state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']),
+  // Australian state, when there is one; organisations elsewhere leave it out (ADR 0020).
+  state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']).optional(),
   postcode: z.string().regex(/^\d{4}$/).optional(),
   modules: z.array(z.enum(['respond', 'connect', 'safety', 'reports'])).max(4).optional(),
   brand: Brand.optional(),
@@ -109,7 +110,7 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
       if ((count?.n ?? 0) >= MAX_ORGS_PER_PERSON) throw new HttpError(429, 'too_many_orgs');
       const modules = [...new Set(body.data.modules ?? [])];
       const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash, modules, creed_affirmed_at)
-                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules}, now())
+                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state ?? null}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules}, now())
                            returning id, display_name, kind, modules`;
       if (body.data.brand) await saveBrand(tx, o!.id, body.data.brand);
       await tx`insert into membership (user_id, org_id, role) values (${id.sub}, ${o!.id}, 'admin')`;

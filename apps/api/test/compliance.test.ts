@@ -362,6 +362,11 @@ describe('first sign-in for a new ministry', () => {
     expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 's@else.example'), body: { kind: 'network', displayName: 'X', state: 'NSW' } })).status).toBe(422);
   });
 
+  it('creates an organisation outside Australia without a state', async () => {
+    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000011', 'admin@global.example'), body: { kind: 'ministry', displayName: 'Global Ministry', affirmsCreed: true } });
+    expect(r.status).toBe(201);
+  });
+
   it('needs the Nicene Creed affirmed', async () => {
     const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000008', 'admin@creed.example');
     expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Creed Church', state: 'NSW' } })).status).toBe(422);
