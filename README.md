@@ -21,7 +21,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
 | `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (Amazon SES email in Sydney, Australian SMS, signed webhooks). |
 | `db/migrations` | Schema, row-level security and the public directory views. |
-| `spec/` | The Always Handoff standard (JSON Schema, CC BY 4.0). |
+| `spec/` | The Always Handoff standard, JSON Schema, CC BY 4.0: v0.2 for any country (`handoff-standard-v0.2.schema.json`, with a synthetic example) and v0.1, the Australian profile. Also the Always Safety register. |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
 | `spec/safety/` | The Always Safety register: open obligations for ministries in Australia, the US, Canada, the UK, the EU and New Zealand (draft, CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. Not legal advice. See `docs/safety.md`. |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
