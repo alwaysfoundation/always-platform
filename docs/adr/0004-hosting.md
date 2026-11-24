@@ -1,6 +1,6 @@
 # ADR 0004: Hosting the API, web console and jobs
 
-Status: Proposed
+Status: Proposed. Residency superseded by ADR 0020.
 
 ## Context
 
