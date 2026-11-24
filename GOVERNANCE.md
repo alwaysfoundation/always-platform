@@ -1,6 +1,6 @@
 # Project governance
 
-- **Owner:** the Always Foundation (in pre-incorporation), on behalf of its members. Until incorporation, Rejoice and UEN steward the project and will assign the code, brand and related rights to the foundation.
+- **Owner:** the Always Foundation, a US 501(c)(3) nonprofit, on behalf of its members. Rejoice and UEN steward the project and will assign the code, brand and related rights to the foundation.
 - **Technology Steering Committee** owns the roadmap, the Always Handoff standard and security. It is open to contributors who have shown sustained, careful work.
 - **Safeguarding, Privacy and Ethics Committee** must approve any change to consent, minors rules, retention, routing timers or AI features. It can stop any feature that puts people at risk.
 - **Maintainers** review and merge. Two human approvals are required on every change; code owners on protected paths.

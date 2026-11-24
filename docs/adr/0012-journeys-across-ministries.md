@@ -23,7 +23,7 @@ A record that follows one person over time is reasonably identifiable, so it is 
 
 - Network funnels by region become possible from tallies alone.
 - Tests: cross-tenant tests that no ministry reads another's codes or journeys; minors tests that no link exists under 18; a test that `LINK_KEY` rotation re-links within one transaction.
-- Prolegis reviews the `share.journey` wording before release.
+- A legal adviser reviews the `share.journey` wording before release.
 
 ## Rejected
 

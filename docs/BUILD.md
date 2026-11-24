@@ -133,7 +133,7 @@ Main branch:
 - **Docs, the standard, policies and training:** CC BY 4.0.
 - **Brand:** "Always", "Always Foundation" and the mark are trademarks, not open licensed, so no look-alike service can misuse people's trust. Anyone may say "built on Always".
 - **Contributions:** Developer Certificate of Origin (signed-off commits), no CLA. Contributors keep their copyright and license it to everyone on the same terms. AI-assisted commits are disclosed with a co-author trailer.
-- **Ownership until incorporation:** Rejoice and UEN steward the code and brand on the foundation's behalf, and will assign them to the foundation once it is incorporated. A short assignment deed with Prolegis Lawyers makes this binding.
+- **Ownership:** Rejoice and UEN steward the code and brand on the foundation's behalf, and will assign them to Always Foundation, a US 501(c)(3). A short assignment deed makes this binding.
 - **Third-party terms:** apps using YouVersion through the SDK follow YouVersion's terms. NVIDIA Parakeet weights are CC BY 4.0: we credit NVIDIA in the app's About screen and in the docs.
 - **Governance:** Technology Steering Committee for the roadmap and standard; the Safeguarding, Privacy and Ethics Committee approves any change to consent, minors, retention, timers or AI; two human approvals on every change.
 
@@ -164,9 +164,9 @@ Main branch:
 
 8/ **Linear and GitHub Projects.** Mirror the build checklist as issues.
 
-9/ **Legal (Prolegis):**
-- the IP assignment deed from Rejoice and UEN
-- trademark filing for "Always Foundation" in Australia (IP Australia)
+9/ **Legal:**
+- the IP assignment deed from Rejoice and UEN to Always Foundation
+- trademark filing for "Always Foundation"
 - data processing terms with each provider
 - partner terms
 

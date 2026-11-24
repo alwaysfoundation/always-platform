@@ -68,4 +68,4 @@ Each stage starts only after the previous one passes its checks and a pilot.
 - Thresholds per stage, set before the first run.
 - Which open interface to package for the local kit.
 - Hosting provider and cost for stage 2 in Australia.
-- Whether the Model Acceptable Use Policy adds obligations for churches, to be confirmed with Prolegis.
+- Whether the Model Acceptable Use Policy adds obligations for churches, to be confirmed with a legal adviser.
