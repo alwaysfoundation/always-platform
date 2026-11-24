@@ -8,11 +8,26 @@ import { audit } from './audit.js';
 
 const MAX_ORGS_PER_PERSON = 5;
 
+export const MODULES = ['respond', 'connect', 'safety', 'reports'] as const;
+type Module = (typeof MODULES)[number];
+
+// Connect hands people to a church, so it waits for the partner check (verified trust level).
+const NEEDS_PARTNER_CHECK: readonly Module[] = ['connect'];
+
+const isPartner = (trust: string) => trust === 'verified' || trust === 'verified_youth';
+
+function moduleStates(on: string[], trust: string) {
+  return Object.fromEntries(MODULES.map((m) => [m, on.includes(m) ? (NEEDS_PARTNER_CHECK.includes(m) && !isPartner(trust) ? 'awaiting_check' : 'on') : 'off']));
+}
+
+const ModuleChange = z.object({ modules: z.array(z.enum(MODULES)).max(MODULES.length) });
+
 const NewOrg = z.object({
   kind: z.enum(['church', 'ministry']),
   displayName: z.string().trim().min(2).max(120),
   state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']),
   postcode: z.string().regex(/^\d{4}$/).optional(),
+  modules: z.array(z.enum(['respond', 'connect', 'safety', 'reports'])).max(4).optional(),
 });
 
 export function slugify(name: string): string {
@@ -34,9 +49,9 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
 
   app.get('/v1/account/orgs', async (c) => {
     const id = identity(c);
-    const rows = await sql`select o.id, o.display_name, o.kind, o.trust_level, m.role from membership m join organisation o on o.id = m.org_id
+    const rows = await sql`select o.id, o.display_name, o.kind, o.trust_level, o.modules, m.role from membership m join organisation o on o.id = m.org_id
                            where m.user_id = ${id.sub} order by o.display_name`;
-    return c.json({ orgs: rows.map((r) => ({ id: r.id, name: r.display_name, kind: r.kind, partner: r.trust_level === 'verified' || r.trust_level === 'verified_youth', role: r.role })) });
+    return c.json({ orgs: rows.map((r) => ({ id: r.id, name: r.display_name, kind: r.kind, partner: isPartner(r.trust_level), role: r.role, modules: moduleStates(r.modules, r.trust_level) })) });
   });
 
   app.post('/v1/account/orgs', async (c) => {
@@ -54,13 +69,31 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
       }
       const [count] = await tx`select count(*)::int as n from membership where user_id = ${id.sub} and role = 'admin'`;
       if ((count?.n ?? 0) >= MAX_ORGS_PER_PERSON) throw new HttpError(429, 'too_many_orgs');
-      const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash)
-                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)})
-                           returning id, display_name, kind`;
+      const modules = [...new Set(body.data.modules ?? [])];
+      const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash, modules)
+                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules})
+                           returning id, display_name, kind, modules`;
       await tx`insert into membership (user_id, org_id, role) values (${id.sub}, ${o!.id}, 'admin')`;
       await audit(tx, { actor: id.sub, orgId: o!.id, action: 'org.create', subject: `org:${o!.id}` });
       return o!;
     });
-    return c.json({ id: org.id, name: org.display_name, kind: org.kind, partner: false, role: 'admin' }, 201);
+    return c.json({ id: org.id, name: org.display_name, kind: org.kind, partner: false, role: 'admin', modules: moduleStates(org.modules, 'listed') }, 201);
+  });
+
+  app.put('/v1/account/orgs/:id/modules', async (c) => {
+    const id = identity(c);
+    const orgId = c.req.param('id');
+    if (!/^[0-9a-f-]{36}$/.test(orgId)) throw new HttpError(404, 'not_found');
+    const body = ModuleChange.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) throw new HttpError(422, 'invalid_body');
+    const modules = [...new Set(body.data.modules)];
+    const org = await asService(sql, async (tx) => {
+      const [m] = await tx`select role from membership where user_id = ${id.sub} and org_id = ${orgId}`;
+      if (!m || m.role !== 'admin') throw new HttpError(403, 'admin_only');
+      const [o] = await tx`update organisation set modules = ${modules} where id = ${orgId} returning trust_level, modules`;
+      await audit(tx, { actor: id.sub, orgId, action: 'org.modules', subject: `org:${orgId}` });
+      return o!;
+    });
+    return c.json({ modules: moduleStates(org.modules, org.trust_level) });
   });
 }
