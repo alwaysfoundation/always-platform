@@ -113,13 +113,53 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
       const modules = [...new Set(body.data.modules ?? [])];
       const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash, modules, creed_affirmed_at)
                            values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state ?? null}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules}, now())
-                           returning id, display_name, kind, modules`;
+                           returning id, slug, display_name, kind, modules`;
       if (body.data.brand) await saveBrand(tx, o!.id, body.data.brand);
+      // Every new church or ministry starts with a response page they can share straight away.
+      await tx`insert into response_page (org_id, slug, title) values (${o!.id}, ${o!.slug}, ${`Next steps with ${body.data.displayName}`}) on conflict (slug) do nothing`;
       await tx`insert into membership (user_id, org_id, role) values (${id.sub}, ${o!.id}, 'admin')`;
       await audit(tx, { actor: id.sub, orgId: o!.id, action: 'org.create', subject: `org:${o!.id}` });
       return o!;
     });
     return c.json({ id: org.id, name: org.display_name, kind: org.kind, partner: false, role: 'admin', modules: moduleStates(org.modules, 'listed'), brand: body.data.brand ? { ...body.data.brand, logo: body.data.brand.logo ?? null } : brandOut({ brand_colour: null, page_layout: null, logo_data: null }) }, 201);
+  });
+
+  const PageChange = z.object({
+    title: z.string().trim().min(3).max(120).optional(),
+    steps: z.array(z.enum(['church', 'explore', 'talk', 'youth', 'group', 'help', 'read'])).min(1).max(5).optional(),
+    showAlways: z.boolean().optional(),
+  });
+
+  app.get('/v1/account/orgs/:id/page', async (c) => {
+    const id = identity(c);
+    const orgId = c.req.param('id');
+    if (!/^[0-9a-f-]{36}$/.test(orgId)) throw new HttpError(404, 'not_found');
+    const page = await asService(sql, async (tx) => {
+      const [m] = await tx`select role from membership where user_id = ${id.sub} and org_id = ${orgId}`;
+      if (!m) throw new HttpError(404, 'not_found');
+      const [pg] = await tx`select slug, title, steps::text[] as steps, active, coalesce((brand->>'showAlways')::boolean, true) as show_always from response_page where org_id = ${orgId} order by created_at limit 1`;
+      return pg;
+    });
+    if (!page) throw new HttpError(404, 'not_found');
+    return c.json({ slug: page.slug, title: page.title, steps: page.steps, active: page.active, showAlways: page.show_always, url: `${process.env.APP_URL ?? 'https://my.alwaysfoundation.org'}/p/${page.slug}` });
+  });
+
+  app.put('/v1/account/orgs/:id/page', async (c) => {
+    const id = identity(c);
+    const orgId = c.req.param('id');
+    if (!/^[0-9a-f-]{36}$/.test(orgId)) throw new HttpError(404, 'not_found');
+    const body = PageChange.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) throw new HttpError(422, 'invalid_body');
+    const d = body.data;
+    await asService(sql, async (tx) => {
+      const [m] = await tx`select role from membership where user_id = ${id.sub} and org_id = ${orgId}`;
+      if (!m || m.role !== 'admin') throw new HttpError(403, 'admin_only');
+      if (d.title) await tx`update response_page set title = ${d.title} where org_id = ${orgId}`;
+      if (d.steps) await tx`update response_page set steps = ${'{' + d.steps.join(',') + '}'}::step_category[] where org_id = ${orgId}`;
+      if (d.showAlways !== undefined) await tx`update response_page set brand = brand || ${tx.json({ showAlways: d.showAlways })} where org_id = ${orgId}`;
+      await audit(tx, { actor: id.sub, orgId, action: 'page.update', subject: `org:${orgId}` });
+    });
+    return c.json({ ok: true });
   });
 
   app.put('/v1/account/orgs/:id/modules', async (c) => {

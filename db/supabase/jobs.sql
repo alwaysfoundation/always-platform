@@ -26,3 +26,4 @@ revoke all on function public.always_run_job(text) from public, anon, authentica
 select cron.schedule('always-tick', '* * * * *', $$select public.always_run_job('/jobs/tick')$$);
 select cron.schedule('always-outbox', '* * * * *', $$select public.always_run_job('/jobs/outbox')$$);
 select cron.schedule('always-retention', '17 16 * * *', $$select public.always_run_job('/jobs/retention')$$);
+select cron.schedule('always-onboarding', '7 * * * *', $$select public.always_run_job('/jobs/onboarding')$$);

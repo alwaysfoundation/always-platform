@@ -347,6 +347,45 @@ describe('first sign-in for a new ministry', () => {
     expect(o).toMatchObject({ trust_level: 'listed', has_notify: true });
   });
 
+  it('gives the new church a response page it can share straight away', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const own = await call('GET', `/v1/account/orgs/${ids.newcomer}/page`, { token: t });
+    expect(own.status).toBe(200);
+    expect(own.body).toMatchObject({ title: 'Next steps with New Test Church', active: true, showAlways: true });
+    expect(own.body.url).toMatch(/\/p\/new-test-church-[0-9a-f]{6}$/);
+    const put = await call('PUT', `/v1/account/orgs/${ids.newcomer}/page`, { token: t, body: { steps: ['church', 'talk'], showAlways: false } });
+    expect(put.status).toBe(200);
+    const pub = await call('GET', `/v1/pages/${own.body.slug}`);
+    expect(pub.status).toBe(200);
+    expect(pub.body).toMatchObject({ ministry: 'New Test Church', steps: ['church', 'talk'], showAlways: false });
+    expect(pub.body.look).toHaveProperty('primary');
+    const other = await jwtWithEmail(stranger, 'someone@else.example');
+    expect((await call('GET', `/v1/account/orgs/${ids.newcomer}/page`, { token: other })).status).toBe(404);
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/page`, { token: other, body: { title: 'Taken over' } })).status).toBe(403);
+  });
+
+  it('sends one setup email at a time, skips steps already done, and stops on request', async () => {
+    const { runOnboarding } = await import('../src/jobs.js');
+    const { onboardingStopToken } = await import('../src/onboarding.js');
+    await sql`delete from onboarding_email`;
+    await sql`update organisation set onboarding_emails = false where id <> ${ids.newcomer}`;
+    const [{ created_at: created }] = await sql`select created_at from organisation where id = ${ids.newcomer}`;
+    expect(await runOnboarding(sql, created)).toMatchObject({ queued: 1 });
+    expect(await runOnboarding(sql, created)).toMatchObject({ queued: 0 });
+    await sql`update organisation set logo_data = 'data:image/png;base64,AA' where id = ${ids.newcomer}`;
+    expect(await runOnboarding(sql, new Date(created.getTime() + 3 * 86_400_000))).toMatchObject({ queued: 0 });
+    expect(await runOnboarding(sql, new Date(created.getTime() + 6 * 86_400_000))).toMatchObject({ queued: 1 });
+    const steps = (await sql`select step from onboarding_email where org_id = ${ids.newcomer} order by sent_at`).map((r: { step: string }) => r.step);
+    expect(steps).toEqual(['welcome', 'team']);
+    const mail = await sql`select template from outbox where org_id = ${ids.newcomer} and template like 'onboard.%' order by id`;
+    expect(mail.map((m: { template: string }) => m.template)).toEqual(['onboard.welcome', 'onboard.team']);
+    expect((await app.request(`/v1/onboarding/stop/${ids.newcomer}.wrong`)).status).toBe(200);
+    expect((await sql`select onboarding_emails from organisation where id = ${ids.newcomer}`)[0].onboarding_emails).toBe(true);
+    await app.request(`/v1/onboarding/stop/${ids.newcomer}.${onboardingStopToken(ids.newcomer!)}`);
+    expect((await sql`select onboarding_emails from organisation where id = ${ids.newcomer}`)[0].onboarding_emails).toBe(false);
+    expect(await runOnboarding(sql, new Date(created.getTime() + 20 * 86_400_000))).toMatchObject({ checked: 0 });
+  });
+
   it('lets the new admin save a compliance profile straight away', async () => {
     const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
     expect((await call('PUT', '/v1/compliance/profile', { token: t, org: ids.newcomer, body: profile })).status).toBe(200);

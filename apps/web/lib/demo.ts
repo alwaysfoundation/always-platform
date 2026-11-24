@@ -13,6 +13,7 @@ type State = {
   team: { members: { id: string; email: string; role: string; you: boolean }[]; invites: { id: string; email: string; role: string }[] };
   inbox: Record<string, unknown>[];
   feedOptIn: boolean;
+  page?: Partial<{ title: string; steps: string[]; showAlways: boolean }>;
 };
 
 const fresh = (): State => ({
@@ -40,8 +41,14 @@ const fresh = (): State => ({
 
 export const isDemo = () => { try { return !!localStorage.getItem(KEY); } catch { return false; } };
 export function startDemo() { try { localStorage.setItem(KEY, JSON.stringify(fresh())); } catch { /* storage unavailable */ } }
+/** The look someone tried in the demo, carried into real sign-up. The made-up name stays behind. */
+export function demoLook() {
+  try { const b = (JSON.parse(localStorage.getItem(KEY) ?? 'null') as State | null)?.org.brand; return b ? { primary: b.primary ?? undefined, accent: b.accent ?? undefined, heading: b.heading, logo: b.logo ?? null } : null; } catch { return null; }
+}
 export function endDemo() { try { localStorage.removeItem(KEY); } catch { /* fine */ } }
 
+type Page = { title: string; steps: string[]; showAlways: boolean };
+const pageOf = (s: State): Page => ({ title: `Next steps with ${s.org.name}`, steps: ['church', 'explore', 'talk', 'read'], showAlways: true, ...(s.page ?? {}) });
 const load = (): State => { try { return JSON.parse(localStorage.getItem(KEY) ?? '') as State; } catch { return fresh(); } };
 const save = (s: State) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* fine */ } };
 
@@ -63,6 +70,10 @@ export async function demoApi(path: string, method: string, body: unknown): Prom
   }
   if (/\/invites\/[^/]+$/.test(path) && method === 'DELETE') { s.team.invites = s.team.invites.filter((i) => !path.endsWith(i.id)); save(s); return { ok: true }; }
   if (/\/members\/[^/]+$/.test(path) && method === 'DELETE') { s.team.members = s.team.members.filter((m) => m.you || !path.endsWith(m.id)); save(s); return { ok: true }; }
+  if (/\/page$/.test(path) && method === 'PUT') { s.page = { ...pageOf(s), ...b }; save(s); return { ok: true }; }
+  if (/\/page$/.test(path)) { const pg = pageOf(s); return { ...pg, slug: 'hope-church-demo', active: true, url: `${location.origin}/p/hope-church-demo` }; }
+  if (path === '/v1/pages/hope-church-demo') return { slug: 'hope-church-demo', ministry: s.org.name, ...pageOf(s), look: s.org.brand };
+  if (path === '/v1/pages/hope-church-demo/respond') return { ok: true };
   if (path === '/v1/inbox') return { items: s.inbox };
   if (path.startsWith('/v1/handoffs/')) {
     const [, , , id, action] = path.split('/');

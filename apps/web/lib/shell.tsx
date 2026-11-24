@@ -12,7 +12,7 @@ import { inkOn, OrgProvider, useOrg } from './org';
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const out = useCallback(() => { const demo = isDemo(); endDemo(); signOut(); router.replace(demo ? '/start' : '/sign-in'); }, [router]);
+  const out = useCallback(() => { const demo = isDemo(); endDemo(); signOut(); router.replace(demo ? '/start?from=demo' : '/sign-in'); }, [router]);
 
   useEffect(() => {
     if (!getAuth() && !isDemo()) router.replace('/sign-in');
@@ -75,7 +75,7 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
       </header>
 
       <main id="main">
-        {demo && <p className="demo-bar"><b>Demo</b> Everything here is made up and stays in this browser.</p>}
+        {demo && <p className="demo-bar"><b>Demo</b> Everything here is made up and stays in this browser. <Link href="/start?from=demo">Start for real</Link></p>}
         {children}
       </main>
 

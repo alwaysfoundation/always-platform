@@ -17,7 +17,7 @@ export default {
   ...(STATIC
     ? { output: 'export', trailingSlash: true, images: { unoptimized: true }, env: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'https://api.alwaysfoundation.org' } }
     : {
-        async rewrites() { return [{ source: '/api/:path*', destination: `${API_URL}/:path*` }, { source: '/r/:token', destination: '/r' }]; },
+        async rewrites() { return [{ source: '/api/:path*', destination: `${API_URL}/:path*` }, { source: '/r/:token', destination: '/r' }, { source: '/p/:slug', destination: '/p' }]; },
         async headers() { return [{ source: '/:path*', headers: security }]; },
       }),
 };

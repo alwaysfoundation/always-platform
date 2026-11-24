@@ -1,5 +1,6 @@
 import type { Sql } from '@always/db';
 import { decrypt, hmacSign } from './crypto.js';
+import { onboardingStopToken } from './onboarding.js';
 import * as engine from './engine.js';
 
 /**
@@ -74,7 +75,8 @@ async function deliver(sql: Sql, m: Record<string, any>, a: Adapters, now: Date)
       const to = params.to ?? decrypt(o?.notify_email_ct);
       if (!to) return; // no address yet: nothing to send, mark sent
       // Email says "someone is waiting" and links to the inbox. No names, no faith details (PV-8).
-      await a.email({ id: String(m.id), template: m.template, to, params: { inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', safetyUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/safety/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}), ...(params.invite ? { inviteUrl: `${process.env.APP_URL ?? 'https://my.alwaysfoundation.org'}/sign-in?invite=${params.invite}`, org: params.org ?? '' } : {}) } });
+      const extra = m.template.startsWith('onboard.') && m.org_id ? await onboardingParams(sql, m.org_id) : {};
+      await a.email({ id: String(m.id), template: m.template, to, params: { ...extra, inboxUrl: `${process.env.APP_URL ?? ''}/inbox`, appUrl: process.env.APP_URL ?? '', safetyUrl: `${process.env.SITE_URL ?? 'https://alwaysfoundation.org'}/#/safety/my`, ...(params.confirm ? { confirmUrl: `${process.env.API_URL ?? ''}/v1/claims/confirm/${params.confirm}` } : {}), ...(params.invite ? { inviteUrl: `${process.env.APP_URL ?? 'https://my.alwaysfoundation.org'}/sign-in?invite=${params.invite}`, org: params.org ?? '' } : {}) } });
       return;
     }
     case 'sms': {
@@ -120,4 +122,61 @@ export async function runRetention(sql: Sql, now: Date) {
   const links = await sql`delete from person_link where expires_at <= ${now} returning token_hash`;
   const outbox = await sql`delete from outbox where status in ('sent','dead') and created_at <= ${new Date(now.getTime() - 30 * 86_400_000)} returning id`;
   return { responsesDeleted: deleted.length, linksDeleted: links.length, outboxPurged: outbox.length };
+}
+
+const DAY = 86_400_000;
+type Step = 'welcome' | 'look' | 'team' | 'checkin' | 'story';
+
+/** Which setup email, if any, an organisation should get now. Steps already done are skipped. */
+export function nextOnboardingStep(o: { ageDays: number; hasLogo: boolean; teamSize: number; sent: Step[]; lastSentDaysAgo: number | null }): Step | null {
+  const due: [Step, boolean][] = [
+    ['welcome', true],
+    ['look', o.ageDays >= 2 && !o.hasLogo],
+    ['team', o.ageDays >= 5 && o.teamSize <= 1],
+    ['checkin', o.ageDays >= 14],
+    ['story', o.ageDays >= 90],
+  ];
+  for (const [step, ok] of due) {
+    if (!ok || o.sent.includes(step)) continue;
+    // Never two setup emails within two days of each other.
+    if (step !== 'welcome' && o.lastSentDaysAgo !== null && o.lastSentDaysAgo < 2) return null;
+    return step;
+  }
+  return null;
+}
+
+/** Hourly. Sends at most one setup email per organisation per run, and none to anyone who stopped them. */
+export async function runOnboarding(sql: Sql, now: Date) {
+  const orgs = await sql`
+    select o.id, o.created_at, o.logo_data is not null as has_logo,
+      (select count(*)::int from membership m where m.org_id = o.id) + (select count(*)::int from org_invite i where i.org_id = o.id) as team_size,
+      coalesce((select array_agg(step) from onboarding_email e where e.org_id = o.id), '{}') as sent,
+      (select max(sent_at) from onboarding_email e where e.org_id = o.id) as last_sent
+    from organisation o
+    where o.onboarding_emails and o.notify_email_ct is not null and o.created_at > ${new Date(now.getTime() - 100 * DAY)}
+      and exists (select 1 from membership m where m.org_id = o.id and m.role = 'admin')`;
+  let queued = 0;
+  for (const o of orgs) {
+    const step = nextOnboardingStep({
+      ageDays: (now.getTime() - new Date(o.created_at).getTime()) / DAY,
+      hasLogo: o.has_logo, teamSize: o.team_size, sent: o.sent as Step[],
+      lastSentDaysAgo: o.last_sent ? (now.getTime() - new Date(o.last_sent).getTime()) / DAY : null,
+    });
+    if (!step) continue;
+    const inserted = await sql`insert into onboarding_email (org_id, step, sent_at) values (${o.id}, ${step}, ${now}) on conflict do nothing returning step`;
+    if (!inserted.length) continue;
+    await sql`insert into outbox (channel, template, org_id, not_before) values ('email', ${`onboard.${step}`}, ${o.id}, ${now})`;
+    queued++;
+  }
+  return { checked: orgs.length, queued };
+}
+
+async function onboardingParams(sql: Sql, orgId: string) {
+  const [pg] = await sql`select slug from response_page where org_id = ${orgId} order by created_at limit 1`;
+  const app = process.env.APP_URL ?? 'https://my.alwaysfoundation.org';
+  return {
+    pageUrl: pg ? `${app}/p/${pg.slug}` : app,
+    settingsUrl: `${app}/settings`,
+    stopUrl: `${process.env.API_URL ?? 'https://api.alwaysfoundation.org'}/v1/onboarding/stop/${orgId}.${onboardingStopToken(orgId)}`,
+  };
 }
