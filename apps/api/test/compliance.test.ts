@@ -322,6 +322,13 @@ describe('first sign-in for a new ministry', () => {
     new SignJWT({ role: 'authenticated', ...(email ? { email } : {}) }).setProtectedHeader({ alg: 'HS256' }).setSubject(sub).setAudience('authenticated')
       .setExpirationTime('1h').sign(new TextEncoder().encode(process.env.AUTH_JWT_SECRET));
 
+  it('lets only foundation websites call account routes from a browser', async () => {
+    const ok = await app.request('/v1/account/orgs', { method: 'OPTIONS', headers: { origin: 'https://alwaysfoundation.org', 'access-control-request-method': 'GET', 'access-control-request-headers': 'authorization' } });
+    expect(ok.headers.get('access-control-allow-origin')).toBe('https://alwaysfoundation.org');
+    const bad = await app.request('/v1/account/orgs', { method: 'OPTIONS', headers: { origin: 'https://evil.example', 'access-control-request-method': 'GET' } });
+    expect(bad.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
   it('needs a session', async () => {
     expect((await call('GET', '/v1/account/orgs')).status).toBe(401);
   });
