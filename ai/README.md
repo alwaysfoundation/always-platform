@@ -78,3 +78,7 @@ python3 scripts/build-data.py /path/to/bible_databases <commit>   # rebuild Bibl
 ## Licence
 
 Apache-2.0. Built on Jan by Menlo Research (Apache-2.0); see [NOTICE](NOTICE). Always AI is not affiliated with or endorsed by Menlo Research.
+
+## Releasing
+
+Set `version` in `package.json`, then push a matching tag (`git tag ai-v0.1.0 && git push origin ai-v0.1.0`). The `always-ai-release` workflow tests and publishes to npm. It needs the `NPM_TOKEN` secret.
