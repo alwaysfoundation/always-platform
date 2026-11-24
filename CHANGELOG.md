@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.0.0](https://github.com/alwaysfoundation/always-platform/compare/v1.0.0...v2.0.0) (2026-11-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* share.journey is rejected; GET /v1/network/journeys is now GET /v1/network/totals; journey and milestone endpoints are removed.
+
+### Features
+
+* call the compliance product Always Safety ([#34](https://github.com/alwaysfoundation/always-platform/issues/34)) ([4a34ab4](https://github.com/alwaysfoundation/always-platform/commit/4a34ab4243b49ea735915b0e90bee8b9e622cde2))
+* **claims:** approve claims confirmed from the church's own email domain ([#43](https://github.com/alwaysfoundation/always-platform/issues/43)) ([cb57d46](https://github.com/alwaysfoundation/always-platform/commit/cb57d46e2015d7c487b1b9a98b8ab2d8d23942b1))
+* journeys across ministries, with consent ([#36](https://github.com/alwaysfoundation/always-platform/issues/36)) ([5a8247c](https://github.com/alwaysfoundation/always-platform/commit/5a8247cd9941a2cc00350b62f05dc61389961379))
+
+
+### Bug Fixes
+
+* **ci:** add the integrations workspace to the lock file ([#38](https://github.com/alwaysfoundation/always-platform/issues/38)) ([33d6466](https://github.com/alwaysfoundation/always-platform/commit/33d646659df8e293709e62abdb8210c08b18030f))
+
+
+### Miscellaneous Chores
+
+* remove journeys across ministries (record linkage) ([#41](https://github.com/alwaysfoundation/always-platform/issues/41)) ([0679614](https://github.com/alwaysfoundation/always-platform/commit/0679614bdecc4514c11184b8ec6792e4327fdce5))
+
 ## 1.0.0 (2026-11-19)
 
 
