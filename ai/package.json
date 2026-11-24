@@ -28,5 +28,9 @@
     "url": "https://github.com/alwaysfoundation/always-platform",
     "directory": "ai"
   },
-  "homepage": "https://alwaysfoundation.org/#/always-ai"
+  "homepage": "https://alwaysfoundation.org/#/always-ai",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }
