@@ -2,13 +2,15 @@
 
 **Together for the Gospel.**
 
-Always Platform is the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together. It is a Delaware nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). It powers the tools members use to:
+Always Platform is the open-source technology of the Always Foundation, a gospel technology ministry serving churches and Christian ministries freely. The foundation is a US nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). It powers the tools partners use to:
 
 - **Equip:** the Always App for evangelists, branded response pages, forms and QR codes.
 - **Support:** shared tools for governance, safety, safeguarding and reporting.
-- **Connect:** the church and ministry directory, common standards, and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
+- **Connect:** common standards and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
 
 It is built together and shared freely: free for churches, open source, and every person's details stay theirs.
+
+**Why we build.** The Gospel is the power of God for salvation; technology is a gift of common grace that can serve it but never change a heart. Christ builds His Church. We build with excellence, but we don't place our hope in what we build.
 
 See [ROADMAP.md](ROADMAP.md) for what we're building next.
 
