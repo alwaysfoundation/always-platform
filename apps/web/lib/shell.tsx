@@ -4,10 +4,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { getAuth, signOut } from './auth';
 import { endDemo, isDemo } from './demo';
+import { Icon } from './icons';
 import { Wordmark } from './logo';
 import { inkOn, OrgProvider, useOrg } from './org';
 
-/** Signed-in layout. The side bar wears the church's own colours and logo; Always stays in the background. */
+/** Signed-in layout: a quiet sidebar wearing the church's colour, and a tab bar on phones. */
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -26,46 +27,63 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
   const path = usePathname();
   const router = useRouter();
   const { org, orgs, choose } = useOrg();
+  const [demo, setDemo] = useState(false);
 
+  useEffect(() => { setDemo(isDemo()); }, []);
   useEffect(() => { if (!org) router.replace('/start'); }, [org, router]);
   if (!org) return null;
 
   const nav = [
-    { href: '/home', label: 'Home' },
-    ...(org.modules.ai !== 'off' ? [{ href: '/ai', label: 'Always AI' }] : []),
-    { href: '/inbox', label: 'Inbox' },
-    { href: '/reports', label: 'Reports' },
-    { href: '/listing', label: 'Your listing' },
-    ...(org.careTeam ? [{ href: '/foundation', label: 'Foundation' }] : []),
+    { href: '/home', label: 'Home', icon: 'home' },
+    { href: '/inbox', label: 'Inbox', icon: 'inbox' },
+    ...(org.modules.ai !== 'off' ? [{ href: '/ai', label: 'Always AI', icon: 'ai' }] : []),
+    { href: '/reports', label: 'Reports', icon: 'reports' },
+    { href: '/settings', label: 'Settings', icon: 'settings' },
+    ...(org.careTeam ? [{ href: '/foundation', label: 'Foundation', icon: 'foundation' }] : []),
   ];
+  const here = (href: string) => path === href || path === href + '/' || (href === '/settings' && path.startsWith('/listing'));
   const primary = org.brand.primary || '#1B4740';
   const style = { '--brand': primary, '--brand-ink': inkOn(primary), '--brand-accent': org.brand.accent || '#E8A577' } as React.CSSProperties;
+  const mark = org.brand.logo ? <img src={org.brand.logo} alt="" /> : <span aria-hidden="true">{org.name.slice(0, 1)}</span>;
 
   return (
     <div className="shell" style={style}>
-      <aside className="side">
-        <div className="who-org">
-          {org.brand.logo ? <img src={org.brand.logo} alt="" /> : <span className="mono" aria-hidden="true">{org.name.slice(0, 1)}</span>}
+      <aside className="side" aria-label="Main">
+        <div className="side-org">
+          <i className="side-mark">{mark}</i>
           {orgs.length > 1 ? (
             <select aria-label="Organisation" value={org.id} onChange={(e) => choose(e.target.value)}>
               {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           ) : <b>{org.name}</b>}
         </div>
-        <nav aria-label="Main">
+        <nav>
           {nav.map((n) => (
-            <Link key={n.href} href={n.href} aria-current={path === n.href || (path.startsWith(n.href + '/') && n.href !== '/reports') ? 'page' : undefined}>{n.label}</Link>
+            <Link key={n.href} href={n.href} aria-current={here(n.href) ? 'page' : undefined}><Icon name={n.icon} />{n.label}</Link>
           ))}
         </nav>
-        <div className="who">
-          <button className="btn btn-ghost" onClick={onSignOut}>Sign out</button>
-          <span className="runs-on">Runs on <Wordmark dark={inkOn(primary) !== '#1E2A26'} height={14} /></span>
+        <div className="side-foot">
+          <button className="side-out" onClick={onSignOut}><Icon name="out" />{demo ? 'Leave the demo' : 'Sign out'}</button>
+          <span className="runs-on">Runs on <Wordmark height={13} /></span>
         </div>
       </aside>
+
+      <header className="top">
+        <i className="side-mark">{mark}</i>
+        <b>{org.name}</b>
+        <button className="top-out" onClick={onSignOut} aria-label={demo ? 'Leave the demo' : 'Sign out'}><Icon name="out" /></button>
+      </header>
+
       <main id="main">
-        {isDemo() && <p className="demo-bar">You&rsquo;re in the demo account. Everything here is made up and stays in this browser. <button className="link" onClick={onSignOut}>Leave the demo</button></p>}
+        {demo && <p className="demo-bar">This is the demo account. Everything here is made up and stays in this browser.</p>}
         {children}
       </main>
+
+      <nav className="tabs" aria-label="Main">
+        {nav.filter((n) => n.href !== '/foundation').map((n) => (
+          <Link key={n.href} href={n.href} aria-current={here(n.href) ? 'page' : undefined}><Icon name={n.icon} size={22} /><span>{n.label === 'Always AI' ? 'Ask' : n.label}</span></Link>
+        ))}
+      </nav>
     </div>
   );
 }

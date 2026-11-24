@@ -29,7 +29,14 @@ function Chat() {
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => { void detect().then((d) => { setDevice(d); setChoice(route(d)?.choice ?? null); }); }, []);
-  useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs]);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!device || asked.current) return;
+    asked.current = true;
+    const q = new URLSearchParams(location.search).get('q');
+    if (q) { history.replaceState(null, '', location.pathname); void send(null, q.slice(0, 2000)); }
+  }, [device]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (msgs.length) end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs]);
   useEffect(() => {
     const t = box.current; if (!t) return;
     t.style.height = 'auto'; t.style.height = `${Math.min(t.scrollHeight, 220)}px`;
@@ -64,9 +71,9 @@ function Chat() {
     }, 30);
   }
 
-  async function send(e?: React.FormEvent) {
+  async function send(e?: React.FormEvent | null, given?: string) {
     e?.preventDefault();
-    const text = draft.trim();
+    const text = (given ?? draft).trim();
     if (!text || busy) return;
     setDraft('');
     const history = msgs;

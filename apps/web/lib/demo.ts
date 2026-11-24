@@ -17,7 +17,7 @@ type State = {
 
 const fresh = (): State => ({
   org: {
-    id: 'demo-hope-church', name: 'Hope Church (demo)', kind: 'church', partner: true, role: 'admin', careTeam: false,
+    id: 'demo-hope-church', name: 'Hope Church', kind: 'church', partner: true, role: 'admin', careTeam: false,
     modules: { respond: 'on', connect: 'on', safety: 'on', reports: 'on', ai: 'on' },
     brand: { primary: '#1F3A5F', accent: '#F2C14E', heading: 'modern', logo: null },
   },
@@ -77,7 +77,7 @@ export async function demoApi(path: string, method: string, body: unknown): Prom
     return { optedIn: s.feedOptIn, at: new Date().toISOString(), slug: 'hope-church-demo', welcomingNow: true, youthPartner: false,
       checks: { verified: true, trained: true, confirmedRecently: true, onTimeRate: 0.94, recentOffers: 12 } };
   }
-  if (path.startsWith('/v1/org/report?')) return { ...EXAMPLES[0]!.report, organisation: s.org.name, example: true };
+  if (path.startsWith('/v1/org/report?')) return { ...(EXAMPLES.find((e) => e.slug === 'local-church') ?? EXAMPLES[0]!).report, organisation: s.org.name, example: true };
   if (path === '/v1/org/report-shares' && method === 'GET') return { items: [] };
   if (path === '/v1/org/report-shares') return { token: 'demo' };
   if (path.startsWith('/v1/org/report')) return { ok: true };

@@ -1,200 +1,120 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { api, explain, type Brand, type ModuleState, type Org } from '@/lib/api';
-import { toDataUrl } from '@/lib/brand-import';
+import { api } from '@/lib/api';
+import { Icon } from '@/lib/icons';
 import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
+import type { Report } from '@/lib/report';
 
 export default function HomePage() {
   return <Shell><Home /></Shell>;
 }
 
-const MODULES: { key: keyof Org['modules']; name: string; does: string; ai: string }[] = [
-  { key: 'respond', name: 'Respond', does: 'Response pages, QR codes and cards, so anyone can ask for a next step.', ai: 'Checks every Bible verse on your pages, word for word' },
-  { key: 'connect', name: 'Connect', does: 'Receive people near you who said yes to Jesus, and welcome them.', ai: 'Drafts welcome messages your team approves once; names are filled in only when you send' },
-  { key: 'safety', name: 'Safety', does: 'Your rules register, quarterly check-up and board summary.', ai: 'Answers questions about a rule, citing the register' },
-  { key: 'reports', name: 'Reports', does: 'A monthly report for your board, written from what happened.', ai: 'Writes the story behind the numbers, from totals only' },
-  { key: 'ai', name: 'Always AI', does: 'Private AI for sermon and study preparation, on your own computer. Nothing you ask reaches us.', ai: '' },
+type Item = { handoffId: string; state: string; offer: 'pending' | 'accepted'; firstName?: string; suburb: string };
+type Step = { icon: string; title: string; detail: string; href: string; action: string; tone?: 'urgent' };
+
+const SUGGEST = [
+  'Plan a 6-week series on Philippians',
+  'Small group questions on Romans 12:1-2',
+  'A welcome text for someone new',
 ];
+
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
+
+function quarter() {
+  const d = new Date(), q = Math.floor(d.getMonth() / 3);
+  const iso = (x: Date) => x.toISOString().slice(0, 10);
+  return { from: iso(new Date(Date.UTC(d.getFullYear(), q * 3, 1))), to: iso(new Date(Date.UTC(d.getFullYear(), q * 3 + 3, 0))) };
+}
 
 function Home() {
   const { org } = useOrg();
+  const router = useRouter();
   const [welcome, setWelcome] = useState(false);
+  const [items, setItems] = useState<Item[] | null>(null);
+  const [report, setReport] = useState<Report | null>(null);
+  const [invites, setInvites] = useState(0);
+  const [ask, setAsk] = useState('');
+
   useEffect(() => { setWelcome(new URLSearchParams(location.search).get('welcome') === '1'); }, []);
-  if (!org) return null;
-  const admin = org.role === 'admin';
-  return (
-    <div className="home">
-      <p className="kicker">{welcome ? 'You\'re all set' : 'Home'}</p>
-      <h1>{welcome ? `Welcome, ${org.name}.` : org.name}</h1>
-      <p className="lead">{welcome ? 'Your account is ready. Here\'s everything in one place: switch tools on, tune your look and bring in your team.' : 'Everything for your ' + org.kind + ', in one place.'}</p>
-      <Modules />
-      {org.modules.ai !== 'off' && <AlwaysAI />}
-      {admin && <Look />}
-      {admin && <Team />}
-      <Connect />
-    </div>
-  );
-}
+  useEffect(() => {
+    if (!org) return;
+    if (org.modules.connect !== 'off') api<{ items: Item[] }>('/v1/inbox').then((r) => setItems(r.items)).catch(() => setItems([]));
+    else setItems([]);
+    if (org.modules.reports !== 'off') { const q = quarter(); api<Report>(`/v1/org/report?from=${q.from}&to=${q.to}`).then(setReport).catch(() => setReport(null)); }
+    if (org.role === 'admin') api<{ invites: unknown[] }>(`/v1/account/orgs/${org.id}/team`).then((t) => setInvites(t.invites.length)).catch(() => setInvites(0));
+  }, [org]);
 
-function Modules() {
-  const { org, update } = useOrg();
-  const [status, setStatus] = useState('');
   if (!org) return null;
-  const on = (s: ModuleState) => s !== 'off';
-  async function toggle(key: keyof Org['modules']) {
-    const next = MODULES.filter((m) => (m.key === key ? !on(org!.modules[m.key]) : on(org!.modules[m.key]))).map((m) => m.key);
-    try {
-      const r = await api<{ modules: Org['modules'] }>(`/v1/account/orgs/${org!.id}/modules`, { method: 'PUT', body: { modules: next } });
-      update({ ...org!, modules: r.modules });
-      setStatus('');
-    } catch (e) { setStatus(explain(e)); }
-  }
-  return (
-    <section className="hsec" aria-labelledby="h-mod">
-      <h2 id="h-mod">Your tools</h2>
-      <div className="mods">
-        {MODULES.map((m) => {
-          const s = org.modules[m.key];
-          return (
-            <div key={m.key} className="mod" data-k={m.key} data-on={on(s) || undefined}>
-              <div><h3>{m.name}</h3><p>{m.does}</p>{s === 'awaiting_check' && <p className="badge">On once we&rsquo;ve checked your details with your network</p>}
-                {m.ai && on(s) && on(org.modules.ai) && <p className="mod-ai"><span aria-hidden="true">✦</span> With Always AI: {m.ai} <em>Coming</em></p>}</div>
-              <button type="button" role="switch" aria-checked={on(s)} aria-label={`${m.name}`} disabled={org.role !== 'admin'} onClick={() => void toggle(m.key)}><i /></button>
-            </div>
-          );
-        })}
-      </div>
-      <p className="status" role="status">{status}</p>
-    </section>
-  );
-}
+  const ai = org.modules.ai !== 'off';
+  const go = (q: string) => router.push(`/ai?q=${encodeURIComponent(q)}`);
 
-function Look() {
-  const { org, update } = useOrg();
-  const [b, setB] = useState<Brand>(org!.brand);
-  const [status, setStatus] = useState('');
-  async function save() {
-    try {
-      const r = await api<{ brand: Brand }>(`/v1/account/orgs/${org!.id}/brand`, { method: 'PUT', body: { ...b, primary: b.primary || '#1B4740', accent: b.accent || '#E8A577' } });
-      update({ ...org!, brand: r.brand });
-      setStatus('Saved. Your pages use it straight away.');
-    } catch (e) { setStatus(explain(e)); }
-  }
+  const waiting = items?.filter((i) => i.offer === 'pending') ?? [];
+  const toContact = items?.filter((i) => i.offer === 'accepted' && i.state !== 'contacted') ?? [];
+  const steps: Step[] = [];
+  if (waiting.length) steps.push({ icon: 'inbox', tone: 'urgent', title: waiting.length === 1 ? 'Someone near you is waiting to be welcomed' : `${waiting.length} people near you are waiting to be welcomed`, detail: `From ${[...new Set(waiting.map((w) => w.suburb))].slice(0, 3).join(', ')}. Accept to see how to reach them.`, href: '/inbox', action: 'Open inbox' });
+  for (const p of toContact.slice(0, 2)) steps.push({ icon: 'person', title: `Get in touch with ${p.firstName ?? 'the person you accepted'}`, detail: 'You accepted them. A short, warm message today makes all the difference.', href: '/inbox', action: 'See details' });
+  if (welcome || !org.brand.logo) steps.push({ icon: 'paint', title: 'Make it look like you', detail: 'Add your logo and colours. They appear on everything people see.', href: '/settings#h-look', action: 'Add your look' });
+  if (org.role === 'admin') steps.push(invites ? { icon: 'team', title: `${invites} ${invites === 1 ? 'invitation is' : 'invitations are'} waiting`, detail: 'Remind them to check their email, or send a new one.', href: '/settings#h-team', action: 'See team' } : { icon: 'team', title: 'Bring in your team', detail: 'Invite your follow-up and youth leaders by email. Each sees only what their role needs.', href: '/settings#h-team', action: 'Invite' });
+  if (report) steps.push({ icon: 'reports', title: 'This quarter’s report is ready', detail: 'Share it with your board or funders in one link. Totals only, never names.', href: '/reports', action: 'View report' });
+  if (org.modules.safety !== 'off') steps.push({ icon: 'shield', title: 'Your quarterly safety check-up', detail: 'Ten minutes to check your rules are current, with a summary for your board.', href: 'https://alwaysfoundation.org/#/mysafety', action: 'Start check-up' });
+
+  const t = report?.totals ?? {};
+  const fig = (k: string) => (typeof t[k] === 'number' ? (t[k] as number).toLocaleString() : '—');
+
   return (
-    <section className="hsec" aria-labelledby="h-look">
-      <h2 id="h-look">Your look</h2>
-      <div className="look">
-        <label className="drop small">
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { const u = await toDataUrl(URL.createObjectURL(f)); if (u) setB({ ...b, logo: u }); } }} />
-          {b.logo ? <img src={b.logo} alt="Your logo" /> : <span className="drop-plus" aria-hidden="true">+</span>}
-          <span>{b.logo ? 'Change logo' : 'Add logo'}</span>
-        </label>
-        <label className="fld">Main colour<input type="color" value={b.primary || '#1B4740'} onChange={(e) => setB({ ...b, primary: e.target.value.toUpperCase() })} /></label>
-        <label className="fld">Button colour<input type="color" value={b.accent || '#E8A577'} onChange={(e) => setB({ ...b, accent: e.target.value.toUpperCase() })} /></label>
-        <div className="seg" role="radiogroup" aria-label="Headings">
-          <button type="button" role="radio" aria-checked={b.heading === 'modern'} onClick={() => setB({ ...b, heading: 'modern' })}>Modern</button>
-          <button type="button" role="radio" aria-checked={b.heading === 'classic'} onClick={() => setB({ ...b, heading: 'classic' })} className="serif">Classic</button>
+    <div className="today">
+      <header className="today-head">
+        <p className="today-date">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        <h1>{welcome ? `Welcome to Always, ${org.name}.` : `${greeting()}.`}</h1>
+      </header>
+
+      {ai && (
+        <form className="ask" onSubmit={(e) => { e.preventDefault(); if (ask.trim()) go(ask.trim()); }}>
+          <label className="sr-only" htmlFor="ask">Ask Always AI</label>
+          <Icon name="ai" size={22} />
+          <input id="ask" value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="What are you preparing this week?" autoComplete="off" />
+          <button type="submit" aria-label="Ask" disabled={!ask.trim()}><Icon name="arrow" /></button>
+        </form>
+      )}
+      {ai && (
+        <div className="ask-chips">
+          {SUGGEST.map((s) => <button key={s} type="button" onClick={() => go(s)}>{s}</button>)}
         </div>
-        <button className="btn btn-brand" type="button" onClick={() => void save()}>Save look</button>
-      </div>
-      <p className="status" role="status">{status}</p>
-    </section>
-  );
-}
+      )}
 
-type Team = { members: { id: string; email: string; role: string; you: boolean }[]; invites: { id: string; email: string; role: string }[] };
-const ROLE: Record<string, string> = { admin: 'Admin', follow_up: 'Follow-up', youth: 'Youth leader' };
-
-function Team() {
-  const { org } = useOrg();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [status, setStatus] = useState('');
-  const load = () => api<Team>(`/v1/account/orgs/${org!.id}/team`).then(setTeam).catch((e) => setStatus(explain(e)));
-  useEffect(() => { void load(); }, [org?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function invite(f: HTMLFormElement) {
-    const data = new FormData(f);
-    try {
-      await api(`/v1/account/orgs/${org!.id}/invites`, { method: 'POST', body: { email: String(data.get('email') ?? '').trim(), role: data.get('role') } });
-      f.reset(); setStatus('Invitation sent.'); void load();
-    } catch (e) { setStatus((e as { code?: string }).code === 'already_a_member' ? 'They\'re already on your team.' : explain(e)); }
-  }
-  async function remove(path: string) {
-    try { await api(path, { method: 'DELETE' }); void load(); } catch (e) { setStatus((e as { code?: string }).code === 'last_admin' ? 'Your team needs at least one admin.' : explain(e)); }
-  }
-  return (
-    <section className="hsec" aria-labelledby="h-team">
-      <h2 id="h-team">Your team</h2>
-      <ul className="team">
-        {team?.members.map((m) => (
-          <li key={m.id}><span>{m.email}{m.you && <em> (you)</em>}</span><span className="meta">{ROLE[m.role] ?? m.role}</span>
-            {!m.you && <button className="link" onClick={() => void remove(`/v1/account/orgs/${org!.id}/members/${m.id}`)}>Remove</button>}</li>
-        ))}
-        {team?.invites.map((i) => (
-          <li key={i.id}><span>{i.email}</span><span className="meta">Invited · {ROLE[i.role] ?? i.role}</span>
-            <button className="link" onClick={() => void remove(`/v1/account/orgs/${org!.id}/invites/${i.id}`)}>Cancel</button></li>
-        ))}
-      </ul>
-      <form className="invite" onSubmit={(e) => { e.preventDefault(); void invite(e.currentTarget); }}>
-        <label className="fld">Invite by email<input name="email" type="email" required placeholder="name@yourchurch.org" /></label>
-        <label className="fld">Role<select name="role" defaultValue="follow_up"><option value="follow_up">Follow-up</option><option value="youth">Youth leader</option><option value="admin">Admin</option></select></label>
-        <button className="btn btn-brand" type="submit">Send invite</button>
-      </form>
-      <p className="meta">Youth leaders see young people&rsquo;s details only once their Working With Children Check is recorded.</p>
-      <p className="status" role="status">{status}</p>
-    </section>
-  );
-}
-
-function Connect() {
-  const { org } = useOrg();
-  const [copied, setCopied] = useState(false);
-  const snippet = `<script type="module" src="https://cdn.alwaysfoundation.org/sdk/v0/widget.js"></script>\n<always-response accent="${org!.brand.accent || '#E8A577'}"></always-response>`;
-  const items: [string, string, string, boolean][] = [
-    ['Your website', 'Put your response page on your own site with the code below.', 'Live', true],
-    ['Church management', 'Welcomed people land in your own system with a follow-up task.', 'Elvanto and Planning Center: building', false],
-    ['Email and newsletters', 'Add people who ask for it to your newsletter list, with their consent.', 'Mailchimp and others: planned', false],
-    ['Zapier and webhooks', 'Connect anything else. Signed webhooks carry ids, never people\'s details.', 'Webhooks: live · Zapier: planned', true],
-  ];
-  return (
-    <section className="hsec" aria-labelledby="h-con">
-      <h2 id="h-con">Connect your systems</h2>
-      <div className="cons">
-        {items.map(([t, d, s, live]) => <div key={t} className="con"><h3>{t}</h3><p>{d}</p><span className={`badge${live ? ' ok' : ''}`}>{s}</span></div>)}
-      </div>
-      <div className="snip">
-        <code>{snippet}</code>
-        <button className="btn btn-line" type="button" onClick={() => { void navigator.clipboard?.writeText(snippet); setCopied(true); }}>{copied ? 'Copied' : 'Copy website code'}</button>
-      </div>
-      <p className="meta">Guides for each are in the <a href="https://alwaysfoundation.org/#/docs/integrations">docs</a>.</p>
-    </section>
-  );
-}
-
-function AlwaysAI() {
-  return (
-    <section className="hsec aiw" aria-labelledby="h-ai">
-      <div className="aiw-in">
-        <div>
-          <p className="aiw-k">Always AI</p>
-          <h2 id="h-ai">Prepare with AI that gets Scripture right</h2>
-          <p>Plan a series, work at a passage, write group questions or a welcome message. Scripture is looked up word for word, the Nicene Creed is the boundary, and it runs in your browser on this computer. Nothing you type reaches Always.</p>
-          <ul className="aiw-list">
-            <li>Free, with no limits</li><li>Works offline once set up</li><li>For adults, never for young people&rsquo;s information</li>
+      <section className="next" aria-labelledby="h-next">
+        <h2 id="h-next">Next steps</h2>
+        {items === null ? <p className="meta">Loading…</p> : (
+          <ul>
+            {steps.slice(0, 5).map((s) => (
+              <li key={s.title} data-tone={s.tone}>
+                <a href={s.href} onClick={(e) => { if (s.href.startsWith('/')) { e.preventDefault(); router.push(s.href); } }}>
+                  <i className="next-ic"><Icon name={s.icon} /></i>
+                  <span className="next-tx"><b>{s.title}</b><span>{s.detail}</span></span>
+                  <span className="next-go">{s.action}<Icon name="arrow" size={16} /></span>
+                </a>
+              </li>
+            ))}
           </ul>
-          <div className="row">
-            <Link className="btn btn-brand" href="/ai">Open Always AI</Link>
-            <a className="btn btn-ghost" href="https://alwaysfoundation.org/#/docs/always-ai-setup">Desktop version</a>
-          </div>
-          <p className="aiw-fine">Needs a recent laptop with Chrome or Edge. The first time, it downloads a model once.</p>
-        </div>
-        <div className="aiw-demo" aria-hidden="true">
-          <div className="aiw-q">Where does Paul describe love as patient?</div>
-          <div className="aiw-a">Paul describes love in 1 Corinthians 13. Verse 4 reads: <q>Love is patient, love is kind.</q><small>1 Corinthians 13:4 · checked</small></div>
-        </div>
-      </div>
-    </section>
+        )}
+      </section>
+
+      {report && (
+        <section className="glance" aria-labelledby="h-glance">
+          <div className="glance-head"><h2 id="h-glance">This quarter</h2><Link href="/reports">Full report</Link></div>
+          <dl>
+            <div><dt>Responded</dt><dd>{fig('responded')}</dd></div>
+            <div><dt>Introduced to a church</dt><dd>{fig('introduced')}</dd></div>
+            <div><dt>Connected</dt><dd>{fig('connected')}</dd></div>
+          </dl>
+        </section>
+      )}
+    </div>
   );
 }
