@@ -340,3 +340,6 @@ main { padding: 48px clamp(20px, 4vw, 56px); max-width: 1100px; }
 
 .aic-end { scroll-margin-bottom: 240px; height: 1px; }
 .demo-bar { max-width: 860px; margin-left: auto; margin-right: auto; }
+
+.soon { background: var(--paper); border-radius: 18px; padding: 18px; display: grid; gap: 14px; justify-items: start; }
+.soon p { margin: 0; color: var(--soft); }

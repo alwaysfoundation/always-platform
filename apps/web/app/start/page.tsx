@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { api, type Org } from '@/lib/api';
+import { API, api, type Org } from '@/lib/api';
 import { getAuth, setOrg } from '@/lib/auth';
 import { importSite, palette, toDataUrl } from '@/lib/brand-import';
 import { CREED } from '@/lib/creed';
@@ -29,6 +29,7 @@ export default function Start() {
   const [creed, setCreed] = useState(false);
   const [msg, setMsg] = useState('');
   const [signedIn, setSignedIn] = useState(false);
+  const [open, setOpen] = useState<boolean | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -37,6 +38,9 @@ export default function Start() {
   }, []);
   useEffect(() => { try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch { /* storage unavailable */ } }, [d]);
   useEffect(() => { heading.current?.focus(); }, [step]);
+  useEffect(() => {
+    fetch(`${API}/health`).then((r) => (r.ok ? r.json() : {})).then((h: { accounts?: boolean }) => setOpen(!!h.accounts)).catch(() => setOpen(false));
+  }, []);
 
   const set = (p: Partial<Draft>) => setD((x) => ({ ...x, ...p }));
 
@@ -160,7 +164,12 @@ export default function Start() {
                 <label className="agree"><input type="checkbox" checked={creed} onChange={(e) => setCreed(e.target.checked)} /><span>We affirm the Nicene Creed (AD 381), the faith Always partners share.</span></label>
                 <details><summary>Read the Creed</summary>{CREED.map((p) => <p key={p.slice(0, 20)}>{p}</p>)}</details>
               </div>
-              {signedIn ? (
+              {open === false ? (
+                <div className="soon">
+                  <p><b>Accounts open in the next few days.</b> Your setup is saved on this device, so it&rsquo;ll be waiting when you come back. In the meantime, you can try everything in the demo.</p>
+                  <Link className="btn btn-brand btn-big" href="/demo">Try the demo</Link>
+                </div>
+              ) : signedIn ? (
                 <button className="btn btn-brand btn-big" type="button" disabled={busy} onClick={() => void create()}>{busy ? 'Setting up…' : 'Create my account'}</button>
               ) : (
                 <EmailCode cta="Create my account" before={() => (creed ? null : 'Tick to affirm the Nicene Creed.')} onSignedIn={create} />
