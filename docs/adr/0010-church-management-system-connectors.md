@@ -25,6 +25,6 @@ Churches already keep their people in a church management system (Elvanto, Plann
 ## Consequences
 
 - Elvanto can go live once a pilot church supplies an API key and the API is deployed.
-- Planning Center needs a decision before it can run: either keep it off, or agree how a church's own offshore system is covered by the person's consent and the Privacy policy. Prolegis should review.
+- Planning Center needs a decision before it can run: either keep it off, or agree how a church's own offshore system is covered by the person's consent and the Privacy policy. A legal adviser should review.
 - 15 to 17 year olds sent to verified youth partners are not synced automatically. If youth partners need this, it needs its own rule and review.
 - Elvanto's `groups/addPerson` call needs checking against a test account before use.
