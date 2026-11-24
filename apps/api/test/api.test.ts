@@ -630,9 +630,9 @@ describe('church feed', () => {
   });
 
   it('can be called from any website', async () => {
-    const res = await app.request('/v1/feed/churches?postcode=2150', { headers: { origin: 'https://uen.example' } });
+    const res = await app.request('/v1/feed/churches?postcode=2150', { headers: { origin: 'https://youth-event.example' } });
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    const inbox = await app.request('/v1/inbox', { headers: { origin: 'https://uen.example' } });
+    const inbox = await app.request('/v1/inbox', { headers: { origin: 'https://youth-event.example' } });
     expect(inbox.headers.get('access-control-allow-origin')).toBeNull();
   });
 
@@ -655,7 +655,7 @@ describe('church feed', () => {
   });
 
   it('issues developer keys and refuses unknown ones', async () => {
-    const k = await call('POST', '/v1/ops/app-keys', { token: tokens.ops, org: ids.care, body: { name: 'UEN website', contactEmail: 'dev@example.org', kind: 'test' } });
+    const k = await call('POST', '/v1/ops/app-keys', { token: tokens.ops, org: ids.care, body: { name: 'Youth event website', contactEmail: 'dev@example.org', kind: 'test' } });
     expect(k.status).toBe(201);
     expect(k.body.key).toMatch(/^alk_test_/);
     let r = await call('GET', '/v1/feed/churches?postcode=2150', { headers: { 'x-always-key': k.body.key } });
