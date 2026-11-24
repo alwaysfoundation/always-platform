@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, explain } from '@/lib/api';
 import { Shell } from '@/lib/shell';
+import { Measures } from '@/lib/measures';
 
 type Queue = { claims: number; events: number; feedback: number; careTeam: number; acceptedNoContact: number };
 type Claim = { id: string; role: string; evidence?: string; email: string; display_name: string; suburb?: string; state?: string; created_at: string };
@@ -44,8 +45,9 @@ export default function Foundation() {
 
   return (
     <Shell>
-      <p className="kicker">Foundation</p>
-      <h1>What needs a person today</h1>
+      <h1>Foundation</h1>
+      <Measures />
+      <h2 className="fd-h">What needs a person today</h2>
       <p className="lead">Check church claims with their denomination or network, review suggested events, and read what people tell us.</p>
       <div className="tiles">{tiles.map(([l, n]) => <div className="tile" key={l}><b>{n}</b><span>{l}</span></div>)}</div>
       <div className="tabs" role="tablist" aria-label="Queues">

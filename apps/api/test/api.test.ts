@@ -547,6 +547,18 @@ describe('reports', () => {
     expect(ok.status).toBe(200);
     expect(ok.body.view).toBe('network');
   });
+
+  it('gives the foundation its measures as totals, withholding small counts of people', async () => {
+    expect((await call('GET', `/v1/ops/measures?from=${from}&to=${to}`, { token: tokens.a })).status).toBe(403);
+    const m = await call('GET', `/v1/ops/measures?from=${from}&to=${to}`, { token: tokens.ops, org: ids.care });
+    expect(m.status).toBe(200);
+    expect(m.body).toHaveProperty('funnel.accountsCreated');
+    expect(m.body).toHaveProperty('churchesWelcomingNow');
+    for (const v of [m.body.welcomed, m.body.care.careTeamCatches, m.body.care.consentWithdrawn, m.body.care.safetyFlags]) {
+      expect(v === null || v === 0 || v >= 5).toBe(true);
+    }
+    expect(JSON.stringify(m.body)).not.toMatch(/first_?name|email|mobile|suburb/i);
+  });
 });
 
 describe('no linking of people across organisations (ADR 0013)', () => {
