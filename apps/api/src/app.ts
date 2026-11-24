@@ -125,9 +125,11 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
     return c.json({ error: 'internal_error' }, 500);
   });
 
+  // accounts tells the website whether sign-in is open (set ACCOUNTS_OPEN once sign-in email is configured).
   app.get('/health', async (c) => {
     await sql`select 1`;
-    return c.json({ ok: true, region: process.env.REGION ?? 'local' });
+    c.header('access-control-allow-origin', '*');
+    return c.json({ ok: true, region: process.env.REGION ?? 'local', accounts: process.env.ACCOUNTS_OPEN === 'true' });
   });
 
   // ---------------------------------------------------------------- Directory (public)
