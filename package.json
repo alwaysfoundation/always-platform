@@ -20,7 +20,9 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "check": "npm run typecheck && npm test",
     "import:events": "tsx scripts/import-events.ts",
-    "build:api": "mkdir -p public && esbuild apps/api/src/vercel.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/api.mjs --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning"
+    "build:api": "mkdir -p public && esbuild apps/api/src/vercel.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/api.mjs --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning",
+    "ai:modelfile": "tsx packages/ai/src/write-modelfile.ts",
+    "ai:eval": "tsx packages/ai/src/run.ts"
   },
   "devDependencies": {
     "@types/node": "^20.19.43",
