@@ -1,6 +1,6 @@
 # RFC 0007: Always AI
 
-- **Status:** Draft, research prototype
+- **Status:** Draft, research prototype. The data rules below are superseded by ADR 0021: Always AI never processes people's details, locally or hosted, and no hosted mode is offered.
 - **Owner:** Technology Steering Committee, with Theology and Mission, and Safeguarding, Privacy and Ethics
 
 ## Summary

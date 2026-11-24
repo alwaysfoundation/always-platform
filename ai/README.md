@@ -2,10 +2,12 @@
 
 Faithful AI infrastructure for the Church: free, private, open source, and grounded in the Nicene Creed (AD 381). Built on [Jan](https://github.com/janhq/jan).
 
-Always AI has two parts:
+Always AI is the faithful AI layer of Always Platform ([ADR 0021](../docs/adr/0021-always-ai-in-the-always-account.md)). It has four parts:
 
-1. **Building blocks for any Christian app.** Always Scripture (exact Bible text, quote and reference checking, the Nicene Creed and its propositions), an assistant specification, recommended open models and, soon, an open evaluation. Use them in your own app so its AI quotes Scripture accurately and stays within the historic faith.
-2. **A study tool for pastors and leaders.** A reference implementation on Jan: an adult pastor or ministry leader asks questions while preparing a sermon or Bible study, with their own documents searched on their own computer.
+1. **Writing help in the Always account.** Inside Always Respond, Connect, Safety and Reports: drafts in the organisation's voice, translations and Scripture checks. An admin switches on the `ai` module. It runs in the browser or on the person's computer, works only on the organisation's own words (never a person's details, never anything about under-18s), and every result is a draft a person approves.
+2. **Agents.** Inside Always Connect and Always Safety: reminders, missing-detail checks and preparing the quarterly check-up, on fixed rules and approved templates, with a person deciding every step.
+3. **Building blocks for any Christian app.** Always Scripture (exact Bible text, quote and reference checking, the Nicene Creed and its propositions), an assistant specification, recommended open models and, soon, an open evaluation. Use them in your own app so its AI quotes Scripture accurately and stays within the historic faith.
+4. **A study tool for pastors and leaders.** A reference implementation on Jan, with an optional church library pack exported from the Always account: an adult pastor or ministry leader asks questions while preparing a sermon or Bible study, with their own documents searched on their own computer.
 
 **Status: preview (0.1).** The building blocks and the setup pack for Jan are implemented and tested. A branded desktop app is in development. Research and design: [Always AI](https://alwaysfoundation.org/#/always-ai) · [Implementing Always AI on Jan](https://alwaysfoundation.org/#/always-ai-on-jan) · [Christian AI alignment and the Nicene Creed](https://alwaysfoundation.org/#/nicene-alignment) · [Local AI and private sync](https://alwaysfoundation.org/#/private-ai-sync)
 
