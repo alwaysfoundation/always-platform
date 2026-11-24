@@ -8,6 +8,8 @@ import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
 import type { Report } from '@/lib/report';
 
+const TOTALS = { responded: 'Responded', introduced: 'Introduced', accepted: 'Welcomed', contacted: 'Contacted', connected: 'Connected' } as const;
+
 export default function HomePage() {
   return <Shell><Home /></Shell>;
 }
@@ -66,6 +68,7 @@ function Home() {
 
   const t = report?.totals ?? {};
   const fig = (k: string) => (typeof t[k] === 'number' ? (t[k] as number).toLocaleString() : '—');
+  const shown = (Object.keys(TOTALS) as (keyof typeof TOTALS)[]).filter((k) => typeof t[k] === 'number').slice(-3);
 
   return (
     <div className="today">
@@ -109,9 +112,7 @@ function Home() {
         <section className="glance" aria-labelledby="h-glance">
           <div className="glance-head"><h2 id="h-glance">This quarter</h2><Link href="/reports">Full report</Link></div>
           <dl>
-            <div><dt>Responded</dt><dd>{fig('responded')}</dd></div>
-            <div><dt>Introduced to a church</dt><dd>{fig('introduced')}</dd></div>
-            <div><dt>Connected</dt><dd>{fig('connected')}</dd></div>
+            {(shown.length ? shown : (['accepted', 'contacted', 'connected'] as const)).map((k) => <div key={k}><dt>{TOTALS[k]}</dt><dd>{fig(k)}</dd></div>)}
           </dl>
         </section>
       )}
