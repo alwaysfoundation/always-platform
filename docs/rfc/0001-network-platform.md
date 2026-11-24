@@ -10,7 +10,7 @@
 Always grows from one handoff service into a shared platform for the Church in Australia, in the way the YouVersion Platform opened Scripture to developers through an API, SDKs and sign-in. Five parts:
 
 1/ **Ready to welcome**: a shared, live list of churches and ministries ready to receive people, with clear readiness rules.
-2/ **One consented record**: a combined, private record of each person's journey that moves between ministries only with that person's consent.
+2/ **Consent that travels**: a person's next step moves to the church or ministry they choose, with their consent attached. Always does not link people across organisations (ADR 0013).
 3/ **Developer platform**: API, SDKs and an MCP server, so ministries' own apps and AI tools can use Always safely.
 4/ **Reporting and compliance**: reports for funders (built) plus the evidence ministries need for privacy, child safety and charity law.
 5/ **Age permissions**: one set of rules, enforced in code, for what can happen at each age.
@@ -27,7 +27,7 @@ The Always Foundation is **infrastructure, tools and training for evangelists**,
 
 ## Principles
 
-1/ The person owns the journey. Every movement of their data is covered by a consent they can see and withdraw.
+1/ The person owns their information. Every movement of their data is covered by a consent they can see and withdraw.
 2/ Minors rules run first and cannot be configured (CLAUDE.md).
 3/ Least data: share what the next step needs, nothing more.
 4/ Australia only for personal data.
@@ -72,29 +72,25 @@ What's shared, with whom:
 
 Readiness is a database view (`org_readiness`) recomputed on change, used by the matching engine (`packages/core/src/matching.ts`) instead of trust level alone.
 
-## 2. One consented record (the combined database)
+## 2. Consent that travels
 
-Ministries each hold fragments today: an event knows someone said yes, a church knows they came on Sunday. People get asked the same questions again, or fall through the gaps. The goal is one journey per person, held by Always, that the right people can see at the right time, with consent.
-
-**What it is**
-- A **person** record (already `response` plus `consent`, `handoff`, `activity`), linked across responses when the same person responds again, so a second ministry sees "already connected with Hope Church" instead of starting over.
-- Linking uses a keyed hash of the mobile number (`HASH_KEY`) inside the platform only. Names and numbers stay encrypted (`FIELD_KEY`).
+A person's details move only to the church or ministry they chose, for the next step they asked for. Always does not keep a combined record of a person across organisations, and does not link a person's responses to different ministries (ADR 0013).
 
 **What it isn't**
 - Not a shared CRM anyone can browse. No organisation can search for people.
+- Not a record of anyone's spiritual journey across ministries.
 - Not for marketing, fundraising lists or profiling. Ever.
 - Not sold, rented or exchanged.
 
 **Consent that travels**
-- Each consent names its purposes (`connect.church`, `notify.sender`, `share.journey`, `ai.assist`) and its recipients (`consent.recipients`), with `allowNextNearby` for the next church if the first passes.
-- New purpose `share.journey`: the person agrees that ministries who later help them may see their earlier steps (which church, which step, when), not notes.
+- Each consent names its purposes (`connect.church`, `notify.sender`, `ai.assist`) and its recipients (`consent.recipients`), with `allowNextNearby` for the next church if the first passes.
 - A person can see, download and withdraw everything from their link (`/me/:token`). Withdrawal reaches every recipient through webhooks (`consent.withdrawn`) and deletes or de-identifies within the retention rules.
 - Every read of a person's record by a ministry is written to the audit chain.
 
 **Interoperability**
 - The Always Handoff standard carries a person's next step between systems (Planning Center, Elvanto, ministry apps) with the consent receipt attached. A receiving system must honour the receipt's purposes and withdrawal.
 
-**Minors**: no cross-ministry linking for anyone under 18. Each response by a young person stands alone (see section 5).
+**Minors**: the age rules in section 5 run first. As for everyone, each response stands alone.
 
 ## 3. Developer platform (API, SDKs, MCP)
 
@@ -149,7 +145,6 @@ One rule table, in `packages/core/src/minors.ts`, applied before anything else. 
 | Who may receive | Verified youth partners | Verified youth partners | Verified youth partners | Any ready organisation |
 | Who at the organisation sees it | Youth access members with a current check | Same | Same | Team members with inbox access |
 | First contact | To the parent | Parent and young person together | Young person, two-adult practice | Person |
-| Cross-ministry journey link | Never | Never | Never | With `share.journey` consent |
 | AI (incl. MCP) | Never | Never | Never | Only with `ai.assist` |
 | Bulk views and exports | Never | Never | Never | Allowed for the receiving org |
 | Report minimum group | 20 | 20 | 20 | 10 |
@@ -189,7 +184,7 @@ Youth access is granted per person by an admin, requires a recorded check, and e
 1/ **Built (PR #18)**: church feed with opt-in, welcoming now, verification, Your listing page, MCP server v1, `llms.txt`, SDK feed methods and the church finder.
 2/ **Now**: child assent for under 15s and 12-month consent expiry for minors in `packages/core` (tests first); readiness view and badge; Working With Children Check records and youth access expiry; age table tests (fail-closed).
 3/ **Next**: developer portal with test keys; MCP v1 (read-only, no personal data); compliance tab with consent register, breach register and retention evidence.
-4/ **Then**: `share.journey` consent and cross-ministry linking for adults; React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
+4/ **Then**: React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
 
 Each step gets its own issue, tests first for consent, minors and access, and an ADR when a decision is made.
 

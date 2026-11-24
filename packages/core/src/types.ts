@@ -15,7 +15,7 @@ export type StepCategory =
   | 'help' // practical help
   | 'read'; // reading plan (always-available fallback)
 
-export type ConsentPurpose = 'connect.church' | 'notify.sender' | 'resources' | 'stats.anonymous' | 'share.journey';
+export type ConsentPurpose = 'connect.church' | 'notify.sender' | 'resources' | 'stats.anonymous';
 
 export type ConsentingParty = 'self' | 'parent';
 
