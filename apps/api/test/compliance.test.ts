@@ -28,7 +28,7 @@ let app: ReturnType<typeof import('../src/app.js').createApp>;
 let clock = new Date('2026-11-19T01:00:00Z');
 const ids: Record<string, string> = {};
 const tokens: Record<string, string> = {};
-const register = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/compliance/register.json', import.meta.url)), 'utf8'));
+const register = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url)), 'utf8'));
 
 const profile = {
   states: ['NSW'], collectsPersonalInfo: true, turnoverOver3m: false, providesHealthService: false, usesOverseasServices: false,
@@ -110,6 +110,26 @@ describe('the open register', () => {
 
   it('rejects a malformed check-up', async () => {
     expect((await call('POST', '/v1/compliance/check', { body: { profile: { states: [] } } })).status).toBe(422);
+  });
+});
+
+describe('Always Safety paths', () => {
+  it('serves the register and check-up under /v1/safety', async () => {
+    const r = await app.request('/v1/safety/register');
+    expect(r.status).toBe(200);
+    const c = await call('POST', '/v1/safety/check', { body: { profile: { countries: ['GB'], collectsPersonalInfo: true, providesHealthService: false, usesOverseasServices: false,
+      worksWithChildren: true, onlineServicesForChildren: false, sendsEmailOrSms: true, registeredCharity: true } } });
+    expect(c.status).toBe(200);
+    expect(c.body.items.map((i: any) => i.obligationId)).toEqual(expect.arrayContaining(['gb-breach', 'gb-annual-return']));
+  });
+  it('keeps the earlier /v1/compliance paths working, marked as deprecated', async () => {
+    const r = await app.request('/v1/compliance/register');
+    expect(r.status).toBe(200);
+    expect(r.headers.get('deprecation')).toBe('true');
+  });
+  it('asks for an Australian state when Australia is chosen', async () => {
+    const c = await call('POST', '/v1/safety/check', { body: { profile: { ...profile, countries: ['AU'], states: [] } } });
+    expect(c.status).toBe(422);
   });
 });
 

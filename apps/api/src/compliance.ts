@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { Hono } from 'hono';
+import type { Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { asApp, asService, type Sql } from '@always/db';
-import { assess, diffRegisters, quarterOf, validateRegister, JURISDICTIONS, type Answers, type ComplianceProfile, type PlatformSignals, type Register } from '@always/core';
+import { assess, diffRegisters, quarterOf, validateRegister, COUNTRIES, JURISDICTIONS, type Answers, type SafetyProfile, type PlatformSignals, type Register } from '@always/core';
 import { requirePrincipal, HttpError, type Env } from './auth.js';
 import { audit } from './audit.js';
 import { encrypt } from './crypto.js';
@@ -16,21 +16,24 @@ import { encrypt } from './crypto.js';
  * see it; every quarterly assessment is approved by a person at the ministry.
  */
 
-const BUNDLED = fileURLToPath(new URL('../../../spec/compliance/register.json', import.meta.url));
+const BUNDLED = fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url));
 
 export const Profile = z.object({
-  states: z.array(z.enum(JURISDICTIONS as unknown as [string, ...string[]])).min(1).max(8),
+  countries: z.array(z.enum(COUNTRIES as unknown as [string, ...string[]])).min(1).max(COUNTRIES.length).optional(),
+  states: z.array(z.enum(JURISDICTIONS as unknown as [string, ...string[]])).max(8).default([]),
   collectsPersonalInfo: z.boolean(),
-  turnoverOver3m: z.boolean(),
+  turnoverOver3m: z.boolean().default(false),
   providesHealthService: z.boolean(),
   usesOverseasServices: z.boolean(),
   worksWithChildren: z.boolean(),
   onlineServicesForChildren: z.boolean(),
   sendsEmailOrSms: z.boolean(),
-  acncRegistered: z.boolean(),
-  basicReligiousCharity: z.boolean(),
-  acncMediumOrLarge: z.boolean(),
-});
+  acncRegistered: z.boolean().default(false),
+  basicReligiousCharity: z.boolean().default(false),
+  acncMediumOrLarge: z.boolean().default(false),
+  registeredCharity: z.boolean().default(false),
+  isChurch: z.boolean().default(false),
+}).refine((p) => !(p.countries ?? ['AU']).includes('AU') || p.states.length > 0, { message: 'Choose at least one Australian state or territory', path: ['states'] });
 
 const AnswersBody = z.object({
   answers: z.array(z.object({
@@ -63,10 +66,14 @@ async function loadState(sql: Sql, orgId: string) {
   const [p] = await sql`select profile from compliance_profile where org_id = ${orgId}`;
   const rows = await sql`select evidence_id, answer from compliance_answer where org_id = ${orgId}`;
   const answers: Answers = Object.fromEntries(rows.map((r) => [r.evidence_id, r.answer]));
-  return { profile: (p?.profile ?? null) as ComplianceProfile | null, answers };
+  return { profile: (p?.profile ?? null) as SafetyProfile | null, answers };
 }
 
-export const COMPLIANCE_EVENTS = ['always.compliance.register.published', 'always.compliance.obligations.affected'] as const;
+export const SAFETY_EVENTS = ['always.safety.register.published', 'always.safety.obligations.affected'] as const;
+/** Earlier names for the same events, still delivered to endpoints that subscribed to them. */
+export const LEGACY_SAFETY_EVENTS = ['always.compliance.register.published', 'always.compliance.obligations.affected'] as const;
+/** @deprecated Use SAFETY_EVENTS. */
+export const COMPLIANCE_EVENTS = SAFETY_EVENTS;
 
 /** Queue change alerts for a newly published version, inside the publishing transaction. */
 export async function queueChangeAlerts(tx: Sql, reg: Register, summary: string | null, at: Date) {
@@ -74,16 +81,16 @@ export async function queueChangeAlerts(tx: Sql, reg: Register, summary: string 
   const changes = prev ? diffRegisters(prev.content as Register, reg) : [];
   const published = { version: reg.version, status: reg.status, summary, changes: changes.map((c) => ({ obligationId: c.obligationId, change: c.change, what: c.what })) };
   const subscribers = await tx`select distinct org_id from webhook_endpoint
-                               where active and (${COMPLIANCE_EVENTS[0]} = any(events) or '*' = any(events))`;
+                               where active and (${SAFETY_EVENTS[0]} = any(events) or ${LEGACY_SAFETY_EVENTS[0]} = any(events) or '*' = any(events))`;
   for (const s of subscribers) {
-    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${COMPLIANCE_EVENTS[0]}, ${s.org_id}, ${encrypt(JSON.stringify(published))}, ${at})`;
+    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${SAFETY_EVENTS[0]}, ${s.org_id}, ${encrypt(JSON.stringify(published))}, ${at})`;
   }
   if (!changes.length) return { subscribers: subscribers.length, affected: 0 };
   const changed = new Set(changes.map((c) => c.obligationId));
   const members = await tx`select org_id, profile from compliance_profile`;
   let affected = 0;
   for (const m of members) {
-    const applies = assess(reg, m.profile as ComplianceProfile, {}, {}, at);
+    const applies = assess(reg, m.profile as SafetyProfile, {}, {}, at);
     const ids = [...applies.items.map((i) => i.obligationId), ...applies.watching.map((w) => w.obligationId)].filter((id) => changed.has(id));
     const removed = changes.filter((c) => c.change === 'removed').map((c) => c.obligationId);
     const all = [...new Set([...ids, ...removed])];
@@ -91,20 +98,39 @@ export async function queueChangeAlerts(tx: Sql, reg: Register, summary: string 
     affected++;
     const data = encrypt(JSON.stringify({ version: reg.version, obligationIds: all }));
     await tx`insert into outbox (channel, template, org_id, not_before) values ('email', 'compliance.changed', ${m.org_id}, ${at})`;
-    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${COMPLIANCE_EVENTS[1]}, ${m.org_id}, ${data}, ${at})`;
+    await tx`insert into outbox (channel, template, org_id, params_ct, not_before) values ('webhook', ${SAFETY_EVENTS[1]}, ${m.org_id}, ${data}, ${at})`;
   }
   return { subscribers: subscribers.length, affected };
 }
 
-export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Date) {
+/** Members need the safety scope; tokens issued with the earlier compliance scope still work. Admins always pass. */
+function requireSafety(c: Context<Env>) {
+  const p = requirePrincipal(c);
+  if (!p.scopes.includes('safety') && !p.scopes.includes('compliance') && !p.roles.includes('admin')) throw new HttpError(403, 'missing_scope');
+  return p;
+}
+
+export function registerSafetyRoutes(app: Hono<Env>, sql: Sql, now: () => Date) {
+  // The earlier /v1/compliance paths are kept as aliases so existing integrations keep working.
+  for (const [from, to] of [['/v1/compliance/', '/v1/safety/'], ['/v1/ops/compliance/', '/v1/ops/safety/']] as const) {
+    app.all(`${from}*`, async (c) => {
+      const url = new URL(c.req.url);
+      url.pathname = url.pathname.replace(from, to);
+      const res = await app.fetch(new Request(url, c.req.raw), c.env);
+      const out = new Response(res.body, res);
+      out.headers.set('deprecation', 'true');
+      out.headers.set('link', `<${url.pathname}>; rel="successor-version"`);
+      return out;
+    });
+  }
   // Public open data: anyone may read and embed it, from any site. No credentials, nothing stored.
   const open = cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'], maxAge: 86_400 });
-  app.use('/v1/compliance/register', open);
-  app.use('/v1/compliance/register/*', open);
-  app.use('/v1/compliance/changes', open);
-  app.use('/v1/compliance/check', open);
+  app.use('/v1/safety/register', open);
+  app.use('/v1/safety/register/*', open);
+  app.use('/v1/safety/changes', open);
+  app.use('/v1/safety/check', open);
 
-  app.get('/v1/compliance/register', async (c) => {
+  app.get('/v1/safety/register', async (c) => {
     const reg = await currentRegister(sql);
     const etag = `"${reg.version}"`;
     c.header('etag', etag);
@@ -113,19 +139,19 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
     return c.json(reg);
   });
 
-  app.get('/v1/compliance/register/versions', async (c) => {
+  app.get('/v1/safety/register/versions', async (c) => {
     const rows = await sql`select version, status, published_at, change_summary from compliance_register order by published_at desc`;
     return c.json({ versions: rows.map((r) => ({ version: r.version, status: r.status, publishedAt: r.published_at, summary: r.change_summary })) });
   });
 
-  app.get('/v1/compliance/register/:version', async (c) => {
+  app.get('/v1/safety/register/:version', async (c) => {
     const [row] = await sql`select content from compliance_register where version = ${c.req.param('version')}`;
     if (!row) throw new HttpError(404, 'not_found');
     c.header('cache-control', 'public, max-age=86400, immutable');
     return c.json(row.content);
   });
 
-  app.get('/v1/compliance/changes', async (c) => {
+  app.get('/v1/safety/changes', async (c) => {
     const versions = await sql`select version, content, published_at, change_summary from compliance_register order by published_at`;
     const feed = [];
     for (let i = 1; i < versions.length; i++) {
@@ -136,22 +162,22 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
   });
 
   // Public, stateless check-up: nothing is stored. Powers the website onboarding.
-  app.post('/v1/compliance/check', async (c) => {
+  app.post('/v1/safety/check', async (c) => {
     const body = z.object({ profile: Profile, answers: z.record(z.string().max(60), z.enum(['yes', 'no', 'unsure', 'not_applicable'])).default({}) }).safeParse(await c.req.json().catch(() => null));
     if (!body.success) throw new HttpError(422, 'invalid_body');
     const register = await currentRegister(sql);
-    return c.json(assess(register, body.data.profile as ComplianceProfile, body.data.answers as Answers, {}, now()));
+    return c.json(assess(register, body.data.profile as SafetyProfile, body.data.answers as Answers, {}, now()));
   });
 
-  // Members (admins, or tokens with the compliance scope).
-  app.get('/v1/compliance/profile', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  // Members (admins, or tokens with the safety scope).
+  app.get('/v1/safety/profile', async (c) => {
+    const p = requireSafety(c);
     const state = await asApp(sql, { orgId: p.orgId, userId: p.userId }, (tx) => loadState(tx as unknown as Sql, p.orgId));
     return c.json(state);
   });
 
-  app.put('/v1/compliance/profile', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.put('/v1/safety/profile', async (c) => {
+    const p = requireSafety(c);
     const parsed = Profile.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) throw new HttpError(422, 'invalid_body');
     await asApp(sql, { orgId: p.orgId, userId: p.userId }, async (tx) => {
@@ -161,8 +187,8 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
     return c.json({ ok: true });
   });
 
-  app.put('/v1/compliance/answers', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.put('/v1/safety/answers', async (c) => {
+    const p = requireSafety(c);
     const parsed = AnswersBody.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) throw new HttpError(422, 'invalid_body');
     const known = new Set((await currentRegister(sql)).obligations.flatMap((o) => o.evidence.map((e) => e.id)));
@@ -178,22 +204,22 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
   });
 
   /** The live assessment, from the latest register and today's answers. */
-  app.get('/v1/compliance/assessment', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.get('/v1/safety/assessment', async (c) => {
+    const p = requireSafety(c);
     const { profile, answers } = await asApp(sql, { orgId: p.orgId, userId: p.userId }, (tx) => loadState(tx as unknown as Sql, p.orgId));
     if (!profile) throw new HttpError(409, 'profile_needed');
     return c.json(assess(await currentRegister(sql), profile, answers, platformSignals(), now()));
   });
 
-  app.get('/v1/compliance/assessments', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.get('/v1/safety/assessments', async (c) => {
+    const p = requireSafety(c);
     const rows = await asApp(sql, { orgId: p.orgId, userId: p.userId }, (tx) =>
       tx`select id, quarter, register_version, created_at, approved_at, result->'summary' as summary from compliance_assessment order by quarter desc`);
     return c.json({ assessments: rows });
   });
 
-  app.get('/v1/compliance/assessments/:id', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.get('/v1/safety/assessments/:id', async (c) => {
+    const p = requireSafety(c);
     const [row] = await asApp(sql, { orgId: p.orgId, userId: p.userId }, (tx) =>
       tx`select id, quarter, register_version, created_at, approved_at, result from compliance_assessment where id = ${c.req.param('id')}`);
     if (!row) throw new HttpError(404, 'not_found');
@@ -201,8 +227,8 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
   });
 
   /** A person at the ministry approves the quarterly draft. Then it goes to their notify address. */
-  app.post('/v1/compliance/assessments/:id/approve', async (c) => {
-    const p = requirePrincipal(c, 'compliance');
+  app.post('/v1/safety/assessments/:id/approve', async (c) => {
+    const p = requireSafety(c);
     if (!p.userId) throw new HttpError(403, 'person_required'); // tokens and agents can't approve
     await asApp(sql, { orgId: p.orgId, userId: p.userId }, async (tx) => {
       const [row] = await tx`update compliance_assessment set approved_at = ${now()}, approved_by = ${p.userId!}
@@ -217,7 +243,7 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
   });
 
   // The foundation team: review what the watcher found, and publish register versions.
-  app.get('/v1/ops/compliance/changes', async (c) => {
+  app.get('/v1/ops/safety/changes', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam) throw new HttpError(403, 'care_team_only');
     const rows = await sql`select c.id, c.detected_at, c.draft_summary, c.status, s.name, s.url, s.jurisdiction
@@ -226,7 +252,7 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
     return c.json({ changes: rows });
   });
 
-  app.post('/v1/ops/compliance/changes/:id/decide', async (c) => {
+  app.post('/v1/ops/safety/changes/:id/decide', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam || !p.userId) throw new HttpError(403, 'care_team_only');
     const b = z.object({ decision: z.enum(['approved', 'dismissed']), note: z.string().max(2000).optional() }).safeParse(await c.req.json().catch(() => null));
@@ -241,7 +267,7 @@ export function registerComplianceRoutes(app: Hono<Env>, sql: Sql, now: () => Da
   });
 
   /** Publish a register version. A named reviewer is required; the register must validate. */
-  app.post('/v1/ops/compliance/register', async (c) => {
+  app.post('/v1/ops/safety/register', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam || !p.userId) throw new HttpError(403, 'care_team_only');
     const b = z.object({ register: z.record(z.string(), z.unknown()), approvedBy: z.string().min(3).max(120), changeSummary: z.string().max(4000).optional() }).safeParse(await c.req.json().catch(() => null));
@@ -312,7 +338,7 @@ export async function runComplianceQuarterly(sql: Sql, at: Date) {
   let drafted = 0;
   for (const row of due) {
     const answers = await sql`select evidence_id, answer from compliance_answer where org_id = ${row.org_id}`;
-    const result = assess(register, row.profile as ComplianceProfile, Object.fromEntries(answers.map((a) => [a.evidence_id, a.answer])), platformSignals(), at);
+    const result = assess(register, row.profile as SafetyProfile, Object.fromEntries(answers.map((a) => [a.evidence_id, a.answer])), platformSignals(), at);
     await sql.begin(async (tx) => {
       const [ins] = await tx`insert into compliance_assessment (org_id, quarter, register_version, result) values (${row.org_id}, ${quarter}, ${register.version}, ${tx.json(result as never)})
                              on conflict (org_id, quarter) do nothing returning id`;

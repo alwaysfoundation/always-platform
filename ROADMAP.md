@@ -21,7 +21,7 @@ Always Platform is built in the open, together with our members, to equip, suppo
 ## Support: shared tools for everyday ministry
 
 - [ ] Reporting: a monthly report for boards and funders, totals only, small numbers hidden
-- [ ] Compliance: consent records, privacy requests and exports
+- [ ] Safety: consent records, privacy requests and exports
 - [ ] Safeguarding: child safety checklists and Working With Children Check reminders
 - [ ] Governance: shared policies, templates and member records
 

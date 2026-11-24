@@ -25,7 +25,8 @@ tags:
   - name: Profile
   - name: Person
   - name: Operations
-  - name: Compliance
+  - name: Safety
+    description: Always Safety, the shared source of truth for ministry safety rules. The earlier /v1/compliance paths still work and return a Deprecation header.
   - name: Webhooks
 paths:
   /v1/feed/churches:
@@ -78,45 +79,45 @@ paths:
       responses:
         '200': { description: JSON-RPC response }
         '202': { description: Notification accepted }
-  /v1/compliance/register:
+  /v1/safety/register:
     get:
-      tags: [Compliance]
+      tags: [Safety]
       security: []
-      summary: The latest published compliance register (open data, CC BY 4.0). CORS open; send If-None-Match with the ETag.
+      summary: The latest published Always Safety register (open data, CC BY 4.0). CORS open; send If-None-Match with the ETag.
       responses: { '200': { description: Register }, '304': { description: Not modified } }
-  /v1/compliance/register/versions:
+  /v1/safety/register/versions:
     get:
-      tags: [Compliance]
+      tags: [Safety]
       security: []
       summary: Every published register version, newest first
       responses: { '200': { description: Versions } }
-  /v1/compliance/register/{version}:
+  /v1/safety/register/{version}:
     get:
-      tags: [Compliance]
+      tags: [Safety]
       security: []
       summary: One published register version. Immutable.
       parameters: [{ name: version, in: path, required: true, schema: { type: string } }]
       responses: { '200': { description: Register }, '404': { description: Not found } }
-  /v1/compliance/changes:
+  /v1/safety/changes:
     get:
-      tags: [Compliance]
+      tags: [Safety]
       security: []
       summary: What changed between published register versions, newest first
       responses: { '200': { description: Change feed } }
-  /v1/compliance/check:
+  /v1/safety/check:
     post:
-      tags: [Compliance]
+      tags: [Safety]
       security: []
       summary: A free check-up. Nothing is stored.
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [profile], properties: { profile: { $ref: '#/components/schemas/ComplianceProfile' }, answers: { type: object, additionalProperties: { enum: [yes, no, unsure, not_applicable] } } } } } } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [profile], properties: { profile: { $ref: '#/components/schemas/SafetyProfile' }, answers: { type: object, additionalProperties: { enum: [yes, no, unsure, not_applicable] } } } } } } }
       responses: { '200': { description: Assessment }, '422': { description: Invalid body } }
   /v1/webhooks:
     get: { tags: [Webhooks], summary: Your webhook endpoints (admin or webhooks scope). Secrets are never returned., responses: { '200': { description: Endpoints } } }
     post:
       tags: [Webhooks]
       summary: Add an endpoint. Returns the signing secret once. Public https hosts only, ten at most.
-      description: Deliveries are CloudEvents 1.0, signed with HMAC-SHA256 (always-timestamp, always-signature). Compliance events are always.compliance.register.published and always.compliance.obligations.affected; their data carries register facts, never people.
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [url, events], properties: { url: { type: string, format: uri }, events: { type: array, items: { type: string, example: always.compliance.obligations.affected } } } } } } }
+      description: Deliveries are CloudEvents 1.0, signed with HMAC-SHA256 (always-timestamp, always-signature). Always Safety events are always.safety.register.published and always.safety.obligations.affected (the earlier always.compliance.* names are still delivered to endpoints that subscribed with them); their data carries register facts, never people.
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [url, events], properties: { url: { type: string, format: uri }, events: { type: array, items: { type: string, example: always.safety.obligations.affected } } } } } } }
       responses: { '201': { description: Created, with secret }, '409': { description: Too many endpoints }, '422': { description: Invalid body } }
   /v1/webhooks/{id}:
     delete:
@@ -124,32 +125,32 @@ paths:
       summary: Remove an endpoint
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Removed }, '404': { description: Not found } }
-  /v1/compliance/profile:
-    get: { tags: [Compliance], summary: Your organisation's profile and answers (admin or compliance scope), responses: { '200': { description: Profile and answers } } }
+  /v1/safety/profile:
+    get: { tags: [Safety], summary: Your organisation's profile and answers (admin or safety scope), responses: { '200': { description: Profile and answers } } }
     put:
-      tags: [Compliance]
+      tags: [Safety]
       summary: Save your organisation's profile
-      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ComplianceProfile' } } } }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SafetyProfile' } } } }
       responses: { '200': { description: Saved } }
-  /v1/compliance/answers:
+  /v1/safety/answers:
     put:
-      tags: [Compliance]
+      tags: [Safety]
       summary: Save answers to evidence questions
       requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { answers: { type: array, items: { type: object, required: [evidenceId, answer], properties: { evidenceId: { type: string }, answer: { enum: [yes, no, unsure, not_applicable] }, note: { type: string, maxLength: 1000 } } } } } } } } }
       responses: { '200': { description: Saved }, '422': { description: Unknown evidence } }
-  /v1/compliance/assessment:
-    get: { tags: [Compliance], summary: Your live assessment, responses: { '200': { description: Assessment }, '409': { description: Profile needed } } }
-  /v1/compliance/assessments:
-    get: { tags: [Compliance], summary: Your quarterly assessments, responses: { '200': { description: List } } }
-  /v1/compliance/assessments/{id}:
+  /v1/safety/assessment:
+    get: { tags: [Safety], summary: Your live assessment, responses: { '200': { description: Assessment }, '409': { description: Profile needed } } }
+  /v1/safety/assessments:
+    get: { tags: [Safety], summary: Your quarterly assessments, responses: { '200': { description: List } } }
+  /v1/safety/assessments/{id}:
     get:
-      tags: [Compliance]
+      tags: [Safety]
       summary: One quarterly assessment
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Assessment }, '404': { description: Not found } }
-  /v1/compliance/assessments/{id}/approve:
+  /v1/safety/assessments/{id}/approve:
     post:
-      tags: [Compliance]
+      tags: [Safety]
       summary: Approve the quarterly assessment (a signed-in person only)
       parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
       responses: { '200': { description: Approved }, '403': { description: A person must approve }, '404': { description: Not found or already approved } }
@@ -346,21 +347,25 @@ components:
     HandoffId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     PersonToken: { name: token, in: path, required: true, schema: { type: string } }
   schemas:
-    ComplianceProfile:
+    SafetyProfile:
       type: object
-      required: [states, collectsPersonalInfo, turnoverOver3m, providesHealthService, usesOverseasServices, worksWithChildren, onlineServicesForChildren, sendsEmailOrSms, acncRegistered, basicReligiousCharity, acncMediumOrLarge]
+      description: Organisation facts only, never people's details. Questions that don't apply may be left out and read as false. Missing countries means Australia.
+      required: [collectsPersonalInfo, providesHealthService, usesOverseasServices, worksWithChildren, onlineServicesForChildren, sendsEmailOrSms]
       properties:
-        states: { type: array, items: { $ref: '#/components/schemas/State' }, minItems: 1 }
+        countries: { type: array, items: { enum: [AU, US, CA, GB, EU, NZ] }, minItems: 1 }
+        states: { type: array, items: { $ref: '#/components/schemas/State' }, description: Australian states; at least one when AU is chosen }
         collectsPersonalInfo: { type: boolean }
-        turnoverOver3m: { type: boolean }
         providesHealthService: { type: boolean }
         usesOverseasServices: { type: boolean }
         worksWithChildren: { type: boolean }
         onlineServicesForChildren: { type: boolean }
         sendsEmailOrSms: { type: boolean }
+        turnoverOver3m: { type: boolean }
         acncRegistered: { type: boolean }
         basicReligiousCharity: { type: boolean }
         acncMediumOrLarge: { type: boolean }
+        registeredCharity: { type: boolean, description: Registered charity or recognised tax-exempt nonprofit outside Australia }
+        isChurch: { type: boolean, description: A church or association of churches (US filing rules) }
     NewEvent:
       type: object
       required: [title, startsAt, state]

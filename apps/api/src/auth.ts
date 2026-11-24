@@ -77,7 +77,7 @@ export function authenticate(): MiddlewareHandler<Env> {
       userId: payload.sub,
       orgId,
       roles: rows.map((r) => r.role),
-      scopes: ['inbox', 'profile', 'activity', 'events', 'reports', 'compliance'],
+      scopes: ['inbox', 'profile', 'activity', 'events', 'reports', 'safety'],
       youthAccess: rows.some((r) => r.youth_access),
       careTeam: rows.some((r) => r.is_care_team),
     });

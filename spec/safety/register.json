@@ -1,0 +1,2189 @@
+{
+  "name": "Always Safety register",
+  "version": "2026.11.1",
+  "status": "draft",
+  "asOf": "2026-11-24",
+  "notice": "Draft. A plain-English guide to common safety obligations for churches and Christian ministries in Australia, the United States, Canada, the United Kingdom, the European Union and New Zealand. It is not legal advice. Each ministry remains responsible for its own legal advice and decisions.",
+  "licence": "CC-BY-4.0",
+  "profileQuestions": [
+    {
+      "id": "countries",
+      "type": "countries",
+      "label": "Where do you operate?",
+      "help": "Choose every country or region where you meet, run programs or have staff. The European Union covers EU-wide law."
+    },
+    {
+      "id": "states",
+      "type": "states",
+      "label": "Where in Australia do you run activities?",
+      "help": "Choose every state or territory where you meet, run programs or have staff.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "AU"
+        ]
+      }
+    },
+    {
+      "id": "collectsPersonalInfo",
+      "type": "boolean",
+      "label": "Do you keep people's names or contact details?",
+      "help": "For example a members list, newsletter list, rosters or response cards."
+    },
+    {
+      "id": "providesHealthService",
+      "type": "boolean",
+      "label": "Do you provide counselling or other health services?",
+      "help": "For example counselling, pastoral care that includes health support, or a clinic."
+    },
+    {
+      "id": "usesOverseasServices",
+      "type": "boolean",
+      "label": "Do you store or send people's details outside the country where you operate?",
+      "help": "For example an email or database service hosted in another country."
+    },
+    {
+      "id": "worksWithChildren",
+      "type": "boolean",
+      "label": "Do you run programs for under-18s, or do adults in your ministry have contact with children?",
+      "help": "Kids church, youth groups, camps, school ministry or family events."
+    },
+    {
+      "id": "onlineServicesForChildren",
+      "type": "boolean",
+      "label": "Do young people use any of your apps, websites or online groups?",
+      "help": "For example a youth group chat, sign-up page or app."
+    },
+    {
+      "id": "sendsEmailOrSms",
+      "type": "boolean",
+      "label": "Do you send emails or texts about your events, programs or appeals?",
+      "help": "Newsletters, event invitations and giving appeals all count."
+    },
+    {
+      "id": "turnoverOver3m",
+      "type": "boolean",
+      "label": "Is your annual turnover more than A$3 million?",
+      "help": "This is the Australian Privacy Act threshold.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "AU"
+        ]
+      }
+    },
+    {
+      "id": "acncRegistered",
+      "type": "boolean",
+      "label": "Are you a registered charity with the ACNC?",
+      "help": "Check the ACNC Charity Register if unsure.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "AU"
+        ]
+      }
+    },
+    {
+      "id": "basicReligiousCharity",
+      "type": "boolean",
+      "label": "Are you a Basic Religious Charity?",
+      "help": "A charity whose only purpose is advancing religion, that is not incorporated and does not have DGR status. Your ACNC record says if you are one.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "AU"
+        ]
+      }
+    },
+    {
+      "id": "acncMediumOrLarge",
+      "type": "boolean",
+      "label": "Is your annual revenue A$500,000 or more?",
+      "help": "Charities with revenue of $500,000 or more are medium or large under ACNC rules.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "AU"
+        ]
+      }
+    },
+    {
+      "id": "registeredCharity",
+      "type": "boolean",
+      "label": "Outside Australia, are you a registered charity or a recognised tax-exempt nonprofit?",
+      "help": "For example a US 501(c)(3), a charity registered with the Charity Commission, the CRA or Charities Services.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "US",
+          "CA",
+          "GB",
+          "EU",
+          "NZ"
+        ]
+      }
+    },
+    {
+      "id": "isChurch",
+      "type": "boolean",
+      "label": "In the United States, are you a church or an association of churches?",
+      "help": "US filing rules are different for churches.",
+      "onlyWhen": {
+        "field": "countries",
+        "includesAny": [
+          "US"
+        ]
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "id": "privacy-policy",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Have a clear, up-to-date privacy policy",
+      "summary": "Explain in plain words what personal information you collect, why, how you keep it safe, and how people can access it or complain.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principle 1",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "pp-published",
+          "kind": "document",
+          "prompt": "Your privacy policy is published where people can find it, such as your website."
+        },
+        {
+          "id": "pp-reviewed",
+          "kind": "question",
+          "prompt": "Someone has reviewed the privacy policy in the last 12 months."
+        }
+      ],
+      "guidance": "Start from the Always template, adjust it to what you actually collect, and publish it on your website.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "collection-notice",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Tell people why you're collecting their details",
+      "summary": "When you collect someone's details, tell them who you are, why you need them, and who you might share them with.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principle 5",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cn-forms",
+          "kind": "question",
+          "prompt": "Your forms and response cards say why you collect details and who sees them."
+        },
+        {
+          "id": "cn-consent-records",
+          "kind": "platform",
+          "check": "consent_records",
+          "prompt": "Consent is recorded with what the person agreed to and when."
+        }
+      ],
+      "guidance": "Add a short notice to every form. Always response pages include one by default.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "use-and-disclosure",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Only use details for the reason you collected them",
+      "summary": "Use and share personal information only for the purpose people expected, unless they agree to something else.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principle 6",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "ud-sharing-rule",
+          "kind": "question",
+          "prompt": "Your team knows not to share people's details with others without permission."
+        },
+        {
+          "id": "ud-access",
+          "kind": "platform",
+          "check": "access_controls",
+          "prompt": "Only the right people in your team can see each person's details."
+        }
+      ],
+      "guidance": "Agree a simple sharing rule with your team and limit who can see contact lists.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "data-security",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Keep personal information safe, and delete it when it's no longer needed",
+      "summary": "Take reasonable steps to protect details from misuse, loss and unauthorised access, and destroy or de-identify them when you no longer need them.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principle 11",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "ds-mfa",
+          "kind": "question",
+          "prompt": "Accounts that hold people's details use strong passwords and two-step sign-in."
+        },
+        {
+          "id": "ds-retention",
+          "kind": "platform",
+          "check": "retention_schedule",
+          "prompt": "Details are deleted on a set schedule."
+        },
+        {
+          "id": "ds-old-lists",
+          "kind": "question",
+          "prompt": "Old spreadsheets and paper lists are deleted or shredded when no longer needed."
+        }
+      ],
+      "guidance": "Turn on two-step sign-in, move lists out of personal spreadsheets, and set a deletion schedule.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "access-and-correction",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Let people see and correct their details",
+      "summary": "When someone asks, give them access to the information you hold about them and correct it if it's wrong, within a reasonable time.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principles 12 and 13",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "ac-contact",
+          "kind": "question",
+          "prompt": "People know who to contact to see or correct their details."
+        }
+      ],
+      "guidance": "Name a privacy contact in your privacy policy and reply to requests promptly.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "overseas-disclosure",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Take care when details go overseas",
+      "summary": "Before personal information is sent or stored outside Australia, take reasonable steps to make sure it is protected to Australian standards.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Australian Privacy Principle 8",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "collectsPersonalInfo",
+            "is": true
+          },
+          {
+            "field": "usesOverseasServices",
+            "is": true
+          }
+        ]
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "od-list",
+          "kind": "question",
+          "prompt": "You know which of your services store people's details overseas."
+        },
+        {
+          "id": "od-australia",
+          "kind": "platform",
+          "check": "data_in_australia",
+          "prompt": "Details held in Always stay in Australia."
+        }
+      ],
+      "guidance": "List the services you use, prefer Australian hosting, and mention any overseas storage in your privacy policy.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "data-breach-response",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Be ready for a data breach",
+      "summary": "If personal information is lost or accessed without permission, assess it quickly. If serious harm is likely, tell the people affected and the OAIC.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Part IIIC (Notifiable Data Breaches)",
+          "url": "https://www.oaic.gov.au/privacy/notifiable-data-breaches"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "db-plan",
+          "kind": "document",
+          "prompt": "You have a written data breach response plan and know who leads it."
+        }
+      ],
+      "guidance": "Use the Always one-page breach plan: who to call, how to assess, and when to notify.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "serious-invasion-of-privacy",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Respect people's privacy, whatever your size",
+      "summary": "People can take legal action for a serious invasion of their privacy, even against organisations the Privacy Act doesn't otherwise cover.",
+      "law": [
+        {
+          "name": "Privacy Act 1988 (Cth), Schedule 2 (statutory tort, from 10 June 2025)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "sip-photos",
+          "kind": "question",
+          "prompt": "You ask before sharing photos, stories or prayer requests that identify someone."
+        }
+      ],
+      "guidance": "Ask before you share. Take extra care with prayer requests, testimonies and photos of children.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "childrens-online-privacy-code",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Get ready for the Children's Online Privacy Code",
+      "summary": "Australia's Children's Online Privacy Code is due to be registered by 10 December 2026. It will set stricter rules for online services likely to be used by children, such as privacy-by-default settings, data minimisation and clearer consent.",
+      "law": [
+        {
+          "name": "Privacy (Children's Online Privacy) Code 2026, to be registered by 10 December 2026",
+          "url": "https://www.oaic.gov.au/privacy/privacy-registers/privacy-codes/childrens-online-privacy-code"
+        }
+      ],
+      "status": "upcoming",
+      "commences": "2026-12-10",
+      "appliesWhen": {
+        "field": "onlineServicesForChildren",
+        "is": true
+      },
+      "requiredWhen": {
+        "any": [
+          {
+            "field": "turnoverOver3m",
+            "is": true
+          },
+          {
+            "field": "providesHealthService",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "copc-inventory",
+          "kind": "question",
+          "prompt": "You have listed the apps, sites and groups young people use with you."
+        },
+        {
+          "id": "copc-minors",
+          "kind": "platform",
+          "check": "minors_rules",
+          "prompt": "Age rules are enforced before anything else, with parent confirmation where needed."
+        }
+      ],
+      "guidance": "List your online spaces for young people, collect as little as possible, and set privacy to the highest setting by default.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "privacy-reform-tranche-2",
+      "area": "privacy",
+      "jurisdiction": "CTH",
+      "title": "Watch: second round of Privacy Act reform",
+      "summary": "The Government released an exposure draft of the Privacy Amendment (Personal Data Protection) Bill 2026 on 31 August 2026. It may change core privacy obligations.",
+      "law": [
+        {
+          "name": "Privacy Amendment (Personal Data Protection) Bill 2026 (exposure draft)",
+          "url": "https://www.ag.gov.au/rights-and-protections/privacy"
+        }
+      ],
+      "status": "watch",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [],
+      "guidance": "No action yet. We'll tell you if it becomes law and what changes.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "spam-identify-sender",
+      "area": "messages",
+      "jurisdiction": "CTH",
+      "title": "Say who you are in every email and text",
+      "summary": "Marketing emails and texts must identify your organisation and include contact details. Registered charities and religious organisations have some exemptions, but must still identify themselves.",
+      "law": [
+        {
+          "name": "Spam Act 2003 (Cth), section 17",
+          "url": "https://www.acma.gov.au/avoid-sending-spam"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "spam-sender",
+          "kind": "question",
+          "prompt": "Every email and text names your ministry and how to contact you."
+        }
+      ],
+      "guidance": "Add your ministry's name and contact details to your email footer and text templates.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "spam-consent-unsubscribe",
+      "area": "messages",
+      "jurisdiction": "CTH",
+      "title": "Ask permission, and make it easy to unsubscribe",
+      "summary": "Commercial messages need consent and a working unsubscribe that is honoured within 5 working days. Charities and religious organisations may be exempt for some messages about their own work, but it remains good practice.",
+      "law": [
+        {
+          "name": "Spam Act 2003 (Cth), sections 16 and 18",
+          "url": "https://www.acma.gov.au/avoid-sending-spam"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "requiredWhen": {
+        "field": "acncRegistered",
+        "is": false
+      },
+      "evidence": [
+        {
+          "id": "spam-optin",
+          "kind": "question",
+          "prompt": "People choose to join your email and text lists."
+        },
+        {
+          "id": "spam-unsub",
+          "kind": "question",
+          "prompt": "Every message has an unsubscribe link, and requests are actioned within 5 working days."
+        }
+      ],
+      "guidance": "Use an email tool with built-in unsubscribe and keep a record of when people signed up.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "acnc-annual-reporting",
+      "area": "charity",
+      "jurisdiction": "CTH",
+      "title": "Submit your Annual Information Statement",
+      "summary": "Registered charities submit an Annual Information Statement each year, within six months after the end of their reporting period (31 December for a 30 June year). Medium and large charities also submit a financial report, unless they are a Basic Religious Charity.",
+      "law": [
+        {
+          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), Part 3-2",
+          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc/reporting-annually-acnc"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "acncRegistered",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "acnc-ais",
+          "kind": "question",
+          "prompt": "Your last Annual Information Statement was submitted on time."
+        },
+        {
+          "id": "acnc-financial",
+          "kind": "question",
+          "prompt": "If you're medium or large and not a Basic Religious Charity, your financial report was submitted with it.",
+          "onlyWhen": {
+            "all": [
+              {
+                "field": "acncMediumOrLarge",
+                "is": true
+              },
+              {
+                "field": "basicReligiousCharity",
+                "is": false
+              }
+            ]
+          }
+        }
+      ],
+      "guidance": "Put the due date in your board calendar and start three months early.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "acnc-duty-to-notify",
+      "area": "charity",
+      "jurisdiction": "CTH",
+      "title": "Tell the ACNC about changes",
+      "summary": "Tell the ACNC when your name, address, responsible people or governing document change.",
+      "law": [
+        {
+          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), Division 65",
+          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "acncRegistered",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "acnc-details-current",
+          "kind": "question",
+          "prompt": "Your ACNC record lists your current board members and address."
+        }
+      ],
+      "guidance": "Check your ACNC record after every board change.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "acnc-governance-standards",
+      "area": "charity",
+      "jurisdiction": "CTH",
+      "title": "Meet the ACNC Governance Standards",
+      "summary": "Charities must run for their charitable purpose, be accountable to members, comply with Australian laws, have suitable responsible people who meet their duties, and manage conflicts. Basic Religious Charities are exempt.",
+      "law": [
+        {
+          "name": "Australian Charities and Not-for-profits Commission Regulations, Governance Standards",
+          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/governance-hub/governance-standards"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "acncRegistered",
+            "is": true
+          },
+          {
+            "field": "basicReligiousCharity",
+            "is": false
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "gs-conflicts",
+          "kind": "question",
+          "prompt": "Board members declare conflicts of interest and these are recorded."
+        },
+        {
+          "id": "gs-duties",
+          "kind": "question",
+          "prompt": "Board members understand their duties and have checked they're not disqualified."
+        },
+        {
+          "id": "gs-minutes",
+          "kind": "document",
+          "prompt": "Board minutes are kept."
+        }
+      ],
+      "guidance": "Use the Always board pack: conflicts register, duties checklist and minutes template.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "acnc-records",
+      "area": "charity",
+      "jurisdiction": "CTH",
+      "title": "Keep financial and operational records for 7 years",
+      "summary": "Keep written records that explain your finances and activities, for 7 years.",
+      "law": [
+        {
+          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), section 55-5",
+          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "acncRegistered",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "rec-kept",
+          "kind": "question",
+          "prompt": "Financial and operational records are kept for 7 years."
+        }
+      ],
+      "guidance": "Keep records in a shared, backed-up folder your treasurer and secretary can both reach.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "working-with-children-checks",
+      "area": "child_safety",
+      "jurisdiction": "STATES",
+      "title": "Working with children checks for staff and volunteers",
+      "summary": "People in child-related work or volunteering need the check for the state or territory where they serve. Checks don't transfer between states.",
+      "law": [
+        {
+          "name": "NSW Working with Children Check",
+          "url": "https://ocg.nsw.gov.au/working-children-check",
+          "jurisdiction": "NSW"
+        },
+        {
+          "name": "Victoria Working with Children Check",
+          "url": "https://www.workingwithchildren.vic.gov.au",
+          "jurisdiction": "VIC"
+        },
+        {
+          "name": "Queensland blue card",
+          "url": "https://www.bluecard.qld.gov.au",
+          "jurisdiction": "QLD"
+        },
+        {
+          "name": "SA Working with Children Check",
+          "url": "https://www.sa.gov.au/topics/rights-and-law/rights-and-responsibilities/screening-checks",
+          "jurisdiction": "SA"
+        },
+        {
+          "name": "WA Working with Children Check",
+          "url": "https://workingwithchildren.wa.gov.au",
+          "jurisdiction": "WA"
+        },
+        {
+          "name": "Tasmania Registration to Work with Vulnerable People",
+          "url": "https://www.justice.tas.gov.au",
+          "jurisdiction": "TAS"
+        },
+        {
+          "name": "ACT Working with Vulnerable People registration",
+          "url": "https://www.accesscanberra.act.gov.au/business-and-work/working-with-vulnerable-people",
+          "jurisdiction": "ACT"
+        },
+        {
+          "name": "NT Working with Children Clearance (Ochre Card)",
+          "url": "https://nt.gov.au/emergency/child-safety/apply-for-a-working-with-children-clearance",
+          "jurisdiction": "NT"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "wwcc-register",
+          "kind": "question",
+          "prompt": "You keep a register of everyone in child-related roles, with their check number and expiry date."
+        },
+        {
+          "id": "wwcc-verified",
+          "kind": "question",
+          "prompt": "Each check is verified with the state screening unit before the person starts."
+        }
+      ],
+      "guidance": "Keep one register for all states, verify each check online, and set reminders before expiry.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-standards-nsw",
+      "area": "child_safety",
+      "jurisdiction": "NSW",
+      "title": "NSW Child Safe Standards",
+      "summary": "Religious bodies in NSW that provide services to children, or where adults have contact with children, must implement the 10 Child Safe Standards under the Child Safe Scheme.",
+      "law": [
+        {
+          "name": "Children's Guardian Act 2019 (NSW), Child Safe Scheme",
+          "url": "https://ocg.nsw.gov.au/child-safe-scheme/sector-specific/faith-based-organisations"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "NSW"
+            ]
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cs-nsw-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "cs-nsw-selfassess",
+          "kind": "question",
+          "prompt": "You've assessed yourself against the 10 Child Safe Standards in the last 12 months."
+        },
+        {
+          "id": "cs-nsw-rcs",
+          "kind": "question",
+          "prompt": "Your leaders know how to report under the Reportable Conduct Scheme."
+        }
+      ],
+      "guidance": "Use the Office of the Children's Guardian guide for faith-based organisations and keep your self-assessment on file.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-standards-vic",
+      "area": "child_safety",
+      "jurisdiction": "VIC",
+      "title": "Victorian Child Safe Standards",
+      "summary": "Religious bodies in Victoria must implement the Child Safe Standards, in force since 1 July 2022.",
+      "law": [
+        {
+          "name": "Child Wellbeing and Safety Act 2005 (Vic), Child Safe Standards",
+          "url": "https://ccyp.vic.gov.au/child-safe-standards/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "VIC"
+            ]
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cs-vic-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "cs-vic-selfassess",
+          "kind": "question",
+          "prompt": "You've assessed yourself against the Child Safe Standards in the last 12 months."
+        }
+      ],
+      "guidance": "Follow the Commission for Children and Young People's guide to the standards.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-standards-qld",
+      "area": "child_safety",
+      "jurisdiction": "QLD",
+      "title": "Queensland Child Safe Standards",
+      "summary": "Religious bodies are in scope of Queensland's Child Safe Standards, which began on 1 October 2025, along with a Reportable Conduct Scheme.",
+      "law": [
+        {
+          "name": "Child Safe Organisations Act 2024 (Qld)",
+          "url": "https://www.legislation.qld.gov.au/view/whole/html/inforce/current/act-2024-049"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "QLD"
+            ]
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cs-qld-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "cs-qld-selfassess",
+          "kind": "question",
+          "prompt": "You've assessed yourself against the 10 Child Safe Standards and the Universal Principle."
+        },
+        {
+          "id": "cs-qld-rcs",
+          "kind": "question",
+          "prompt": "Your leaders know how to report under the Queensland Reportable Conduct Scheme."
+        }
+      ],
+      "guidance": "Use the Queensland Family and Child Commission's guidelines for implementing the standards.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-standards-act",
+      "area": "child_safety",
+      "jurisdiction": "ACT",
+      "title": "ACT Child Safe Standards",
+      "summary": "Since 1 August 2024, organisations in the ACT that provide services for children and young people, including religious bodies, must implement the ACT Child Safe Standards.",
+      "law": [
+        {
+          "name": "Human Rights Commission Act 2005 (ACT), Part 5A",
+          "url": "https://hrc.act.gov.au/childrenyoungpeople/act-child-safe-standards"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "ACT"
+            ]
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cs-act-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "cs-act-selfassess",
+          "kind": "question",
+          "prompt": "You've assessed yourself against the ACT Child Safe Standards."
+        }
+      ],
+      "guidance": "Use the ACT Human Rights Commission's implementation resources.",
+      "confidence": "draft",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-standards-tas",
+      "area": "child_safety",
+      "jurisdiction": "TAS",
+      "title": "Tasmanian Child and Youth Safe Standards",
+      "summary": "Tasmania has legislated Child and Youth Safe Standards as part of its Child and Youth Safe Organisations Framework.",
+      "law": [
+        {
+          "name": "Child and Youth Safe Organisations Act 2023 (Tas)",
+          "url": "https://www.justice.tas.gov.au/carcru/child-and-youth-safe-organisations-framework/child-and-youth-safe-standards"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "TAS"
+            ]
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "cs-tas-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "cs-tas-selfassess",
+          "kind": "question",
+          "prompt": "You've assessed yourself against the Child and Youth Safe Standards."
+        }
+      ],
+      "guidance": "Check the Tasmanian framework for when your type of organisation must comply.",
+      "confidence": "verify",
+      "country": "AU"
+    },
+    {
+      "id": "child-safe-national-principles",
+      "area": "child_safety",
+      "jurisdiction": "STATES",
+      "title": "National Principles for Child Safe Organisations",
+      "summary": "Every state and territory has endorsed the 10 National Principles. In SA, WA and the NT, follow them alongside your local requirements.",
+      "law": [
+        {
+          "name": "National Principles for Child Safe Organisations",
+          "url": "https://www.humanrights.gov.au/national-principles-child-safe-organisations"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "worksWithChildren",
+            "is": true
+          },
+          {
+            "field": "states",
+            "includesAny": [
+              "SA",
+              "WA",
+              "NT"
+            ]
+          }
+        ]
+      },
+      "recommendedOnly": true,
+      "evidence": [
+        {
+          "id": "np-policy",
+          "kind": "document",
+          "prompt": "You have a child safe policy and code of conduct."
+        },
+        {
+          "id": "np-selfassess",
+          "kind": "question",
+          "prompt": "You've used the Australian Human Rights Commission's self-assessment tool."
+        }
+      ],
+      "guidance": "Start with the Australian Human Rights Commission's free self-assessment tool and code of conduct template.",
+      "confidence": "verify",
+      "country": "AU"
+    },
+    {
+      "id": "us-privacy-notice",
+      "country": "US",
+      "area": "privacy",
+      "jurisdiction": "US",
+      "title": "Tell people how you use their information",
+      "summary": "There is no general US federal privacy law for nonprofits, and some state laws apply to nonprofits. Telling people what you collect, why and who sees it is good practice everywhere.",
+      "law": [
+        {
+          "name": "FTC, Protecting Personal Information: A Guide for Business",
+          "url": "https://www.ftc.gov/business-guidance/resources/protecting-personal-information-guide-business"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-pn-published",
+          "kind": "document",
+          "prompt": "A privacy notice is published where people can find it."
+        }
+      ],
+      "guidance": "Publish a short notice in plain words. State privacy laws are being added to this register.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "us-data-security",
+      "country": "US",
+      "area": "privacy",
+      "jurisdiction": "US",
+      "title": "Keep personal information safe, and plan for a breach",
+      "summary": "Every US state has data breach notification laws, and the rules differ. Keep only what you need, protect it, and know what you'd do if it leaked.",
+      "law": [
+        {
+          "name": "FTC, Data Breach Response: A Guide for Business",
+          "url": "https://www.ftc.gov/business-guidance/resources/data-breach-response-guide-business"
+        },
+        {
+          "name": "FTC, Protecting Personal Information: A Guide for Business",
+          "url": "https://www.ftc.gov/business-guidance/resources/protecting-personal-information-guide-business"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-ds-access",
+          "kind": "question",
+          "prompt": "Only people who need personal information can open it, and accounts use multi-factor sign-in."
+        },
+        {
+          "id": "us-ds-plan",
+          "kind": "document",
+          "prompt": "You have a written plan for responding to a data breach."
+        }
+      ],
+      "guidance": "Use the FTC guides as a starting point, and check the breach law of each state you operate in.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "us-childrens-online-privacy",
+      "country": "US",
+      "area": "privacy",
+      "jurisdiction": "US",
+      "title": "Get a parent's consent before collecting children's information online",
+      "summary": "COPPA generally doesn't apply to nonprofits, but its rule of getting a parent's verifiable consent before collecting personal information from children under 13 is good practice.",
+      "law": [
+        {
+          "name": "FTC, Complying with COPPA: Frequently Asked Questions",
+          "url": "https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "onlineServicesForChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-coppa-consent",
+          "kind": "question",
+          "prompt": "A parent agrees before anyone collects a child's personal information online."
+        }
+      ],
+      "guidance": "Collect as little as possible from under-13s, and only with a parent's agreement.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "us-email-honest-unsubscribe",
+      "country": "US",
+      "area": "messages",
+      "jurisdiction": "US",
+      "title": "Make emails honest and easy to opt out of",
+      "summary": "The CAN-SPAM Act covers commercial email, so many nonprofit messages fall outside it. Its rules are good practice for every list: an honest subject line, your name and postal address, and a working opt-out honoured within 10 business days.",
+      "law": [
+        {
+          "name": "FTC, CAN-SPAM Act: A Compliance Guide for Business",
+          "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-email-address",
+          "kind": "question",
+          "prompt": "Every email shows who sent it and a valid postal address."
+        },
+        {
+          "id": "us-email-optout",
+          "kind": "question",
+          "prompt": "Opt-out requests are honoured within 10 business days."
+        }
+      ],
+      "guidance": "Use a mailing tool with a working unsubscribe link and your postal address in the footer.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "us-text-consent",
+      "country": "US",
+      "area": "messages",
+      "jurisdiction": "US",
+      "title": "Get consent before sending automated texts",
+      "summary": "The Telephone Consumer Protection Act restricts automated calls and texts to mobile phones. Get clear consent before texting people, and stop when they ask.",
+      "law": [
+        {
+          "name": "Federal Communications Commission, Telemarketing and Robocalls",
+          "url": "https://www.fcc.gov/general/telemarketing-and-robocalls"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-text-consent-recorded",
+          "kind": "question",
+          "prompt": "You have a record of each person's consent before texting them."
+        },
+        {
+          "id": "us-text-stop",
+          "kind": "question",
+          "prompt": "Replies such as STOP end further texts."
+        }
+      ],
+      "guidance": "Ask for consent on your sign-up form, and keep a record of it.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-annual-return",
+      "country": "US",
+      "area": "charity",
+      "jurisdiction": "US",
+      "title": "File the IRS annual return",
+      "summary": "Most tax-exempt organisations must file Form 990, 990-EZ or 990-N each year. Churches and some church-affiliated organisations are excepted.",
+      "law": [
+        {
+          "name": "IRS, Filing requirements for churches and religious organizations",
+          "url": "https://www.irs.gov/charities-non-profits/churches-religious-organizations/filing-requirements"
+        },
+        {
+          "name": "IRS, Annual exempt organization return: Who must file",
+          "url": "https://www.irs.gov/charities-non-profits/annual-exempt-organization-return-who-must-file"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "registeredCharity",
+            "is": true
+          },
+          {
+            "field": "isChurch",
+            "is": false
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "us-990-filed",
+          "kind": "question",
+          "prompt": "Your last annual return (Form 990, 990-EZ or 990-N) was filed on time."
+        }
+      ],
+      "guidance": "Returns are due by the 15th day of the fifth month after your year ends. Check which form fits your size.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-child-safety-screening",
+      "country": "US",
+      "area": "child_safety",
+      "jurisdiction": "US",
+      "title": "Screen and train people who work with children",
+      "summary": "There's no single US federal rule, and state laws differ. Background checks, references, training and two-adult rules are widely expected, and every state has mandatory reporting duties.",
+      "law": [
+        {
+          "name": "U.S. Department of Justice, National Sex Offender Public Website",
+          "url": "https://www.nsopw.gov/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "us-cs-checks",
+          "kind": "question",
+          "prompt": "Everyone who works with children has had a background check and reference check."
+        },
+        {
+          "id": "us-cs-policy",
+          "kind": "document",
+          "prompt": "You have a written child safety policy, including how to report concerns."
+        }
+      ],
+      "guidance": "Check your state's background check and mandatory reporting laws. State rules are being added to this register.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "us-state-laws",
+      "country": "US",
+      "area": "privacy",
+      "jurisdiction": "US",
+      "title": "US state laws are being added",
+      "summary": "US coverage is in progress, state by state. Some state privacy, breach and child safety laws apply to nonprofits.",
+      "law": [
+        {
+          "name": "FTC, Data Breach Response: A Guide for Business",
+          "url": "https://www.ftc.gov/business-guidance/resources/data-breach-response-guide-business"
+        }
+      ],
+      "status": "watch",
+      "appliesWhen": {
+        "all": []
+      },
+      "evidence": [],
+      "guidance": "Check the laws of each state you operate in.",
+      "confidence": "verify"
+    },
+    {
+      "id": "ca-privacy",
+      "country": "CA",
+      "area": "privacy",
+      "jurisdiction": "CA",
+      "title": "Know which privacy law covers you, and follow its principles",
+      "summary": "Most charities aren't covered by PIPEDA because their activities aren't commercial, but non-profit status alone doesn't exempt you. Quebec, British Columbia and Alberta have their own laws that can apply. Their principles are good practice for every ministry.",
+      "law": [
+        {
+          "name": "Office of the Privacy Commissioner of Canada, How PIPEDA applies to charitable and non-profit organizations",
+          "url": "https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/the-personal-information-protection-and-electronic-documents-act-pipeda/r_o_p/02_05_d_19/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "ca-pv-officer",
+          "kind": "question",
+          "prompt": "Someone is named as responsible for personal information."
+        },
+        {
+          "id": "ca-pv-notice",
+          "kind": "document",
+          "prompt": "A privacy notice explains what you collect and why."
+        }
+      ],
+      "guidance": "Check whether PIPEDA or a provincial law applies to your activities.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "ca-breach",
+      "country": "CA",
+      "area": "privacy",
+      "jurisdiction": "CA",
+      "title": "Record breaches and report serious ones",
+      "summary": "Where PIPEDA applies, a breach that creates a real risk of significant harm must be reported to the Privacy Commissioner and the people affected, and every breach must be recorded.",
+      "law": [
+        {
+          "name": "Office of the Privacy Commissioner of Canada, What you need to know about mandatory reporting of breaches of security safeguards",
+          "url": "https://www.priv.gc.ca/en/privacy-topics/business-privacy/breaches-and-safeguards/privacy-breaches/respond-to-a-privacy-breach-at-your-business/gd_pb_201810/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "ca-br-log",
+          "kind": "document",
+          "prompt": "You keep a record of privacy breaches."
+        }
+      ],
+      "guidance": "Keep a simple breach log and know who decides whether to report.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "ca-electronic-messages",
+      "country": "CA",
+      "area": "messages",
+      "jurisdiction": "CA",
+      "title": "Follow anti-spam rules for promotional messages",
+      "summary": "Canada's Anti-Spam Legislation covers commercial electronic messages. Messages from a registered charity whose primary purpose is raising funds for the charity are exempt, but promoting a sponsor or selling something is not.",
+      "law": [
+        {
+          "name": "Government of Canada, Canada’s anti-spam legislation",
+          "url": "https://ised-isde.canada.ca/site/canada-anti-spam-legislation/en"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "ca-casl-consent",
+          "kind": "question",
+          "prompt": "You have consent for promotional messages that are not fundraising."
+        },
+        {
+          "id": "ca-casl-unsub",
+          "kind": "question",
+          "prompt": "Every message identifies you and has a working unsubscribe."
+        }
+      ],
+      "guidance": "Treat consent, identification and unsubscribe as the default for every list.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "ca-annual-return",
+      "country": "CA",
+      "area": "charity",
+      "jurisdiction": "CA",
+      "title": "File the T3010 return",
+      "summary": "Registered charities must file a complete Registered Charity Information Return (T3010) within six months of the end of their fiscal period.",
+      "law": [
+        {
+          "name": "Canada Revenue Agency, When to file the T3010",
+          "url": "https://www.canada.ca/en/revenue-agency/services/charities-giving/charities/operating-a-registered-charity/filing-t3010-charity-return/when-file.html"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "registeredCharity",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "ca-t3010-filed",
+          "kind": "question",
+          "prompt": "Your last T3010 was filed within six months of your year end."
+        }
+      ],
+      "guidance": "Diarise the due date six months after your fiscal year end.",
+      "confidence": "verify"
+    },
+    {
+      "id": "ca-child-safety-screening",
+      "country": "CA",
+      "area": "child_safety",
+      "jurisdiction": "CA",
+      "title": "Screen people who work with children",
+      "summary": "Screening rules differ by province. Vulnerable sector checks, references and training for anyone working with children are widely expected.",
+      "law": [
+        {
+          "name": "Royal Canadian Mounted Police, Vulnerable sector checks",
+          "url": "https://rcmp.ca/en/criminal-records/criminal-record-checks/vulnerable-sector-checks"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "ca-cs-checks",
+          "kind": "question",
+          "prompt": "Everyone working with children has had a vulnerable sector check where available."
+        },
+        {
+          "id": "ca-cs-policy",
+          "kind": "document",
+          "prompt": "You have a written child safety policy."
+        }
+      ],
+      "guidance": "Check your province's rules for vulnerable sector checks.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "gb-privacy-information",
+      "country": "GB",
+      "area": "privacy",
+      "jurisdiction": "GB",
+      "title": "Tell people how you use their information",
+      "summary": "Under UK GDPR, people must be told who you are, why you use their information, your lawful basis, how long you keep it and their rights.",
+      "law": [
+        {
+          "name": "Information Commissioner’s Office, Right to be informed",
+          "url": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/the-right-to-be-informed/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-pi-notice",
+          "kind": "document",
+          "prompt": "A privacy notice is published and given when you collect information."
+        }
+      ],
+      "guidance": "Use the ICO guidance to check your notice covers everything required.",
+      "confidence": "verify"
+    },
+    {
+      "id": "gb-special-category",
+      "country": "GB",
+      "area": "privacy",
+      "jurisdiction": "GB",
+      "title": "Take extra care with information about faith",
+      "summary": "Information that reveals religious belief is special category data. You need a lawful basis and an extra condition, such as the one for not-for-profit bodies with a religious aim processing information about members and regular contacts.",
+      "law": [
+        {
+          "name": "Information Commissioner’s Office, Special category data",
+          "url": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/lawful-basis/special-category-data/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-sc-basis",
+          "kind": "document",
+          "prompt": "You have recorded your lawful basis and condition for faith-related information."
+        }
+      ],
+      "guidance": "Record why you hold faith-related information and who can see it.",
+      "confidence": "verify"
+    },
+    {
+      "id": "gb-breach",
+      "country": "GB",
+      "area": "privacy",
+      "jurisdiction": "GB",
+      "title": "Report serious data breaches within 72 hours",
+      "summary": "If a personal data breach is likely to put people's rights at risk, report it to the ICO without undue delay and within 72 hours, and tell the people affected if the risk is high.",
+      "law": [
+        {
+          "name": "Information Commissioner’s Office, Personal data breaches: a guide",
+          "url": "https://ico.org.uk/for-organisations/report-a-breach/personal-data-breach/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-br-process",
+          "kind": "document",
+          "prompt": "You have a process to assess and report breaches within 72 hours."
+        }
+      ],
+      "guidance": "Keep a breach log and know who reports to the ICO.",
+      "confidence": "verify"
+    },
+    {
+      "id": "gb-electronic-marketing",
+      "country": "GB",
+      "area": "messages",
+      "jurisdiction": "GB",
+      "title": "Get permission before sending marketing emails and texts",
+      "summary": "PECR generally requires consent for marketing by email and text. Charities can also use a soft opt-in in limited cases. Every message must say who you are and offer a simple way to opt out.",
+      "law": [
+        {
+          "name": "Information Commissioner’s Office, Guidance on direct marketing using electronic mail",
+          "url": "https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/guidance-on-direct-marketing-using-electronic-mail/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-em-consent",
+          "kind": "question",
+          "prompt": "You have consent, or meet a soft opt-in, for every marketing email or text."
+        },
+        {
+          "id": "gb-em-optout",
+          "kind": "question",
+          "prompt": "Every message identifies you and has a simple opt-out."
+        }
+      ],
+      "guidance": "Check the ICO's charity guidance before relying on a soft opt-in.",
+      "confidence": "verify"
+    },
+    {
+      "id": "gb-childrens-code",
+      "country": "GB",
+      "area": "privacy",
+      "jurisdiction": "GB",
+      "title": "Design online services with children's privacy in mind",
+      "summary": "The Age Appropriate Design Code sets standards for online services likely to be used by children, such as high privacy settings by default and collecting as little as possible.",
+      "law": [
+        {
+          "name": "Information Commissioner’s Office, Children’s code guidance and resources",
+          "url": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/childrens-information/childrens-code-guidance-and-resources/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "onlineServicesForChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-cc-defaults",
+          "kind": "question",
+          "prompt": "Young people's accounts and groups use high privacy settings by default."
+        }
+      ],
+      "guidance": "Check whether the code applies to your service, and follow its standards either way.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "gb-safeguarding",
+      "country": "GB",
+      "area": "child_safety",
+      "jurisdiction": "GB",
+      "title": "Safeguarding checks and policies",
+      "summary": "Use the right criminal record checks for roles with children: DBS in England and Wales, PVG in Scotland and AccessNI in Northern Ireland. Charity trustees must take reasonable steps to protect people from harm.",
+      "law": [
+        {
+          "name": "GOV.UK, Safeguarding and protecting people for charities and trustees",
+          "url": "https://www.gov.uk/guidance/safeguarding-and-protecting-people-for-charities-and-trustees"
+        },
+        {
+          "name": "GOV.UK, Disclosure and Barring Service",
+          "url": "https://www.gov.uk/government/organisations/disclosure-and-barring-service"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-sg-checks",
+          "kind": "question",
+          "prompt": "Everyone in an eligible role has the right level of check."
+        },
+        {
+          "id": "gb-sg-policy",
+          "kind": "document",
+          "prompt": "You have a safeguarding policy, reviewed in the last year."
+        }
+      ],
+      "guidance": "Check which roles are eligible for which level of check.",
+      "confidence": "verify"
+    },
+    {
+      "id": "gb-annual-return",
+      "country": "GB",
+      "area": "charity",
+      "jurisdiction": "GB",
+      "title": "File your charity annual return",
+      "summary": "Charities registered in England and Wales report income and spending every year, and send a full annual return within 10 months of year end if income is over £10,000. Scotland and Northern Ireland have their own regulators.",
+      "law": [
+        {
+          "name": "GOV.UK, Prepare a charity annual return",
+          "url": "https://www.gov.uk/guidance/prepare-a-charity-annual-return"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "registeredCharity",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "gb-ar-filed",
+          "kind": "question",
+          "prompt": "Your last annual return was filed within 10 months of your year end."
+        }
+      ],
+      "guidance": "Diarise the deadline 10 months after your financial year end.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-transparency",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Tell people how you use their information",
+      "summary": "Under the GDPR, people must be told who you are, why and on what basis you use their information, how long you keep it and their rights.",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Articles 12 to 14",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-tr-notice",
+          "kind": "document",
+          "prompt": "A privacy notice is published and given when you collect information."
+        }
+      ],
+      "guidance": "Check your notice against Articles 13 and 14, and your national supervisory authority’s guidance.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-special-category",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Take extra care with information about faith",
+      "summary": "Information revealing religious belief is a special category. Article 9 lets not-for-profit bodies with a religious aim process it about members and regular contacts, with safeguards, and not share it outside without consent.",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Article 9",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-sc-basis",
+          "kind": "document",
+          "prompt": "You have recorded your lawful basis and Article 9 condition for faith-related information."
+        }
+      ],
+      "guidance": "Record why you hold faith-related information and who can see it.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-rights",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Answer people's requests about their information",
+      "summary": "People can ask to see, correct, delete or move their information, and object to its use. Respond without undue delay and within one month.",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Articles 12 and 15 to 22",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-rt-process",
+          "kind": "document",
+          "prompt": "You have a way to handle requests within one month."
+        }
+      ],
+      "guidance": "Name who handles requests, and keep a record of them.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-breach",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Report serious data breaches within 72 hours",
+      "summary": "Notify your supervisory authority within 72 hours of becoming aware of a breach that is likely to put people at risk, and tell the people affected when the risk is high.",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Articles 32 to 34",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-br-process",
+          "kind": "document",
+          "prompt": "You have a process to assess and report breaches within 72 hours."
+        }
+      ],
+      "guidance": "Keep a breach log and know which authority you report to.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-transfers",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Protect information sent outside the EEA",
+      "summary": "Personal information can only go outside the European Economic Area with protections such as an adequacy decision or standard contractual clauses.",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Chapter V",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "field": "collectsPersonalInfo",
+            "is": true
+          },
+          {
+            "field": "usesOverseasServices",
+            "is": true
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "id": "eu-tf-safeguards",
+          "kind": "document",
+          "prompt": "Every service outside the EEA has a recognised safeguard in place."
+        }
+      ],
+      "guidance": "List your services hosted outside the EEA and check the safeguard for each.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-child-consent",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "Get a parent's consent for young children online",
+      "summary": "Where an online service offered directly to a child relies on consent, a parent must consent for children under 16, or a lower age set by the member state (not below 13).",
+      "law": [
+        {
+          "name": "Regulation (EU) 2016/679 (GDPR), Article 8",
+          "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "onlineServicesForChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-cc-parent",
+          "kind": "question",
+          "prompt": "A parent consents for children under your country's age."
+        }
+      ],
+      "guidance": "Check the age set in each member state you operate in.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-electronic-marketing",
+      "country": "EU",
+      "area": "messages",
+      "jurisdiction": "EU",
+      "title": "Get consent before sending marketing emails and texts",
+      "summary": "The ePrivacy Directive requires prior consent for marketing by email and text, with a limited soft opt-in for existing customers. National laws implement the detail.",
+      "law": [
+        {
+          "name": "Directive 2002/58/EC (ePrivacy Directive), Article 13",
+          "url": "https://eur-lex.europa.eu/eli/dir/2002/58/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-em-consent",
+          "kind": "question",
+          "prompt": "You have consent for every marketing email or text."
+        },
+        {
+          "id": "eu-em-optout",
+          "kind": "question",
+          "prompt": "Every message has a simple way to opt out."
+        }
+      ],
+      "guidance": "Check your country's national rules.",
+      "confidence": "verify"
+    },
+    {
+      "id": "eu-child-safety-checks",
+      "country": "EU",
+      "area": "child_safety",
+      "jurisdiction": "EU",
+      "title": "Check criminal records for roles with children",
+      "summary": "EU law requires member states to let organisations request criminal records when recruiting for professional or organised voluntary work with children. National rules set how.",
+      "law": [
+        {
+          "name": "Directive 2011/93/EU, Article 10",
+          "url": "https://eur-lex.europa.eu/eli/dir/2011/93/oj"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "eu-cs-checks",
+          "kind": "question",
+          "prompt": "You request criminal record information for roles with children, where national law allows."
+        }
+      ],
+      "guidance": "Check your country's process for criminal record certificates.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "eu-national-laws",
+      "country": "EU",
+      "area": "privacy",
+      "jurisdiction": "EU",
+      "title": "National laws are being added",
+      "summary": "Each EU country adds its own rules, for example on charity reporting, child protection and the age of consent online.",
+      "law": [
+        {
+          "name": "European Commission, Data protection",
+          "url": "https://commission.europa.eu/law/law-topic/data-protection_en"
+        }
+      ],
+      "status": "watch",
+      "appliesWhen": {
+        "all": []
+      },
+      "evidence": [],
+      "guidance": "Check the national laws of each country you operate in.",
+      "confidence": "verify"
+    },
+    {
+      "id": "nz-privacy-officer",
+      "country": "NZ",
+      "area": "privacy",
+      "jurisdiction": "NZ",
+      "title": "Appoint a privacy officer",
+      "summary": "Every organisation covered by the Privacy Act 2020 must have a privacy officer to help it comply and deal with requests and complaints.",
+      "law": [
+        {
+          "name": "Office of the Privacy Commissioner, Privacy officers",
+          "url": "https://www.privacy.org.nz/responsibilities/privacy-officers/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-po-named",
+          "kind": "question",
+          "prompt": "A privacy officer is named."
+        }
+      ],
+      "guidance": "Name someone, and tell your team who it is.",
+      "confidence": "verify"
+    },
+    {
+      "id": "nz-privacy-principles",
+      "country": "NZ",
+      "area": "privacy",
+      "jurisdiction": "NZ",
+      "title": "Follow the information privacy principles",
+      "summary": "Collect only what you need, tell people why, keep it safe, let people see and correct it, and only use it for the reason you collected it. Since 1 May 2026 you must also tell people when you collect their information from someone else.",
+      "law": [
+        {
+          "name": "Privacy Act 2020",
+          "url": "https://www.legislation.govt.nz/act/public/2020/31/en/latest/"
+        },
+        {
+          "name": "Ministry of Justice, Enhancing the Privacy Act (IPP 3A)",
+          "url": "https://www.justice.govt.nz/justice-sector-policy/key-initiatives/enhancing-the-privacy-act/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-pp-notice",
+          "kind": "document",
+          "prompt": "A privacy statement explains what you collect and why."
+        },
+        {
+          "id": "nz-pp-indirect",
+          "kind": "question",
+          "prompt": "You tell people when you collect their information from someone else."
+        }
+      ],
+      "guidance": "Check your privacy statement covers information you get from other people.",
+      "confidence": "verify"
+    },
+    {
+      "id": "nz-breach",
+      "country": "NZ",
+      "area": "privacy",
+      "jurisdiction": "NZ",
+      "title": "Notify serious privacy breaches",
+      "summary": "If a privacy breach has caused or is likely to cause serious harm, notify the Privacy Commissioner and the people affected as soon as practicable.",
+      "law": [
+        {
+          "name": "Office of the Privacy Commissioner, Privacy breaches",
+          "url": "https://www.privacy.org.nz/responsibilities/privacy-breaches/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "collectsPersonalInfo",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-br-process",
+          "kind": "document",
+          "prompt": "You have a process to assess and notify breaches."
+        }
+      ],
+      "guidance": "Use the Commissioner's NotifyUs tool to assess a breach.",
+      "confidence": "verify"
+    },
+    {
+      "id": "nz-electronic-messages",
+      "country": "NZ",
+      "area": "messages",
+      "jurisdiction": "NZ",
+      "title": "Follow the rules for promotional messages",
+      "summary": "The Unsolicited Electronic Messages Act 2007 covers commercial electronic messages: send them only with consent, say who sent them, and include a working unsubscribe.",
+      "law": [
+        {
+          "name": "Department of Internal Affairs, New Zealand spam law",
+          "url": "https://www.dia.govt.nz/SPAM-NZ-SPAM-Law"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "sendsEmailOrSms",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-em-consent",
+          "kind": "question",
+          "prompt": "You have consent for promotional messages."
+        },
+        {
+          "id": "nz-em-unsub",
+          "kind": "question",
+          "prompt": "Every message identifies you and has a working unsubscribe."
+        }
+      ],
+      "guidance": "Treat consent, identification and unsubscribe as the default for every list.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "nz-safety-checking",
+      "country": "NZ",
+      "area": "child_safety",
+      "jurisdiction": "NZ",
+      "title": "Safety check people who work with children",
+      "summary": "The Children's Act 2014 requires safety checks for children's workers in government-funded services. For everyone else, police vetting, references and a child protection policy are good practice.",
+      "law": [
+        {
+          "name": "Children’s Act 2014",
+          "url": "https://www.legislation.govt.nz/act/public/2014/40/en/latest/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "worksWithChildren",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-sc-vetting",
+          "kind": "question",
+          "prompt": "Everyone working with children has been police vetted and reference checked."
+        },
+        {
+          "id": "nz-sc-policy",
+          "kind": "document",
+          "prompt": "You have a child protection policy."
+        }
+      ],
+      "guidance": "Check whether you receive government funding that brings the Act into play.",
+      "confidence": "verify",
+      "recommendedOnly": true
+    },
+    {
+      "id": "nz-annual-return",
+      "country": "NZ",
+      "area": "charity",
+      "jurisdiction": "NZ",
+      "title": "File the charity annual return",
+      "summary": "Registered charities must file an annual return within six months of their balance date.",
+      "law": [
+        {
+          "name": "Charities Services, Annual returns",
+          "url": "https://www.charities.govt.nz/annual-reporting/annual-return"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "field": "registeredCharity",
+        "is": true
+      },
+      "evidence": [
+        {
+          "id": "nz-ar-filed",
+          "kind": "question",
+          "prompt": "Your last annual return was filed within six months of your balance date."
+        }
+      ],
+      "guidance": "Diarise the deadline six months after your balance date.",
+      "confidence": "verify"
+    }
+  ]
+}
