@@ -1,6 +1,6 @@
 # ADR 0008: Send email through Amazon SES in Sydney
 
-Status: Proposed
+Status: Proposed. Residency superseded by ADR 0020.
 Date: 2026-11-18
 
 ## Context

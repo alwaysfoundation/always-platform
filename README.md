@@ -8,7 +8,7 @@ Always Platform is the open-source technology of the Always Foundation, an indep
 - **Support:** shared tools for governance, safety, safeguarding and reporting.
 - **Connect:** the church and ministry directory, common standards, and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
 
-It is built together and shared freely: free for churches, open source, and every person's details stay theirs, in Australia.
+It is built together and shared freely: free for churches, open source, and every person's details stay theirs.
 
 See [ROADMAP.md](ROADMAP.md) for what we're building next.
 
@@ -41,7 +41,7 @@ make check                            # types and 68 tests against real Postgres
 
 - Consent travels with the person and every data movement checks it, failing closed.
 - Minors rules run first and can't be configured away.
-- Personal data stays in Australia, is encrypted before it reaches the database, and never appears in logs, emails or webhooks.
+- Personal data is encrypted before it reaches the database, kept in the person's region where practical (ADR 0020), and never appears in logs, emails or webhooks.
 - Each introduction has one clear owner at a time, so no one is dropped; if no one can help, the care team does.
 - Only the person can say they are connected.
 

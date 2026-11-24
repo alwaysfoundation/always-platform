@@ -1,6 +1,6 @@
 # ADR 0011: Ministry sign-in and onboarding from the website
 
-Status: Proposed
+Status: Proposed. Residency superseded by ADR 0020.
 Date: 2026-11-19
 
 ## Context
