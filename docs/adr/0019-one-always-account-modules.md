@@ -15,6 +15,8 @@ Churches and ministries should be able to start with as little as possible: no s
 4. A module is on as soon as it is switched on, except Connect, which hands people to a church: it shows `awaiting_check` until the organisation passes the partner check, then turns on by itself.
 5. Nothing else is required to start: no Google, Microsoft or other third-party account, and no payment details. Always is free.
 6. Always AI needs no account. It runs on the person's own computer (ADR 0015).
+7. Admins invite their team by email, as admin, follow-up or youth team. An invite works once, for that email address, for 7 days. The last admin cannot be removed.
+8. The organisation's look (main colour, highlight, heading style and logo) is saved with it and used on everything it publishes.
 
 ## Consequences
 

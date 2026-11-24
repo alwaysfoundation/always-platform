@@ -411,6 +411,66 @@ describe('first sign-in for a new ministry', () => {
     expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on' });
   });
 
+  it('saves the brand for admins only, and returns it with the organisation', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const logo = 'data:image/png;base64,iVBORw0KGgo=';
+    const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/brand`, { token: t, body: { primary: '#5b2a86', accent: '#F2C14E', heading: 'classic', logo } });
+    expect(r.status).toBe(200);
+    expect(r.body.brand).toEqual({ primary: '#5B2A86', accent: '#F2C14E', heading: 'classic', logo });
+    const list = await call('GET', '/v1/account/orgs', { token: t });
+    expect(list.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).brand.primary).toBe('#5B2A86');
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/brand`, { token: await jwtWithEmail(stranger, 'someone@else.example'), body: { primary: '#000000', accent: '#FFFFFF' } })).status).toBe(403);
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/brand`, { token: t, body: { primary: 'red', accent: '#FFFFFF' } })).status).toBe(422);
+    expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/brand`, { token: t, body: { primary: '#000000', accent: '#FFFFFF', logo: 'javascript:alert(1)' } })).status).toBe(422);
+  });
+
+  it('invites a team member, who joins with the emailed link', async () => {
+    const admin = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const r = await call('POST', `/v1/account/orgs/${ids.newcomer}/invites`, { token: admin, body: { email: 'Helper@NewChurch.example', role: 'follow_up' } });
+    expect(r.status).toBe(201);
+    const [mail] = await sql`select params_ct from outbox where template = 'team.invite' order by id desc limit 1`;
+    const { decrypt } = await import('../src/crypto.js');
+    const params = JSON.parse(decrypt(mail.params_ct)!);
+    expect(params).toMatchObject({ to: 'helper@newchurch.example', org: 'New Test Church' });
+    const helper = '6f1d2c3b-0000-4000-8000-000000000010';
+    expect((await call('POST', '/v1/account/invites/accept', { token: await jwtWithEmail(helper, 'other@newchurch.example'), body: { token: params.invite } })).status).toBe(403);
+    const ok = await call('POST', '/v1/account/invites/accept', { token: await jwtWithEmail(helper, 'helper@newchurch.example'), body: { token: params.invite } });
+    expect(ok.status).toBe(200);
+    expect(ok.body).toMatchObject({ orgId: ids.newcomer, role: 'follow_up' });
+    expect((await call('POST', '/v1/account/invites/accept', { token: await jwtWithEmail(helper, 'helper@newchurch.example'), body: { token: params.invite } })).status).toBe(404);
+    const team = await call('GET', `/v1/account/orgs/${ids.newcomer}/team`, { token: admin });
+    expect(team.body.members.map((m: { role: string }) => m.role).sort()).toEqual(['admin', 'follow_up']);
+    expect((await call('POST', `/v1/account/orgs/${ids.newcomer}/invites`, { token: admin, body: { email: 'helper@newchurch.example', role: 'admin' } })).status).toBe(409);
+    ids.helper = helper;
+  });
+
+  it('keeps team management to admins of that organisation', async () => {
+    const helper = await jwtWithEmail(ids.helper!, 'helper@newchurch.example');
+    expect((await call('GET', `/v1/account/orgs/${ids.newcomer}/team`, { token: helper })).status).toBe(403);
+    expect((await call('POST', `/v1/account/orgs/${ids.newcomer}/invites`, { token: helper, body: { email: 'x@y.example', role: 'admin' } })).status).toBe(403);
+    expect((await call('GET', `/v1/account/orgs/${ids.newcomer}/team`, { token: await jwtWithEmail(stranger, 'someone@else.example') })).status).toBe(403);
+  });
+
+  it('removes a member but never the last admin, and revokes invites', async () => {
+    const admin = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    expect((await call('DELETE', `/v1/account/orgs/${ids.newcomer}/members/${newcomer}`, { token: admin })).status).toBe(409);
+    expect((await call('DELETE', `/v1/account/orgs/${ids.newcomer}/members/${ids.helper}`, { token: admin })).status).toBe(200);
+    const inv = await call('POST', `/v1/account/orgs/${ids.newcomer}/invites`, { token: admin, body: { email: 'later@newchurch.example', role: 'youth' } });
+    expect((await call('DELETE', `/v1/account/orgs/${ids.newcomer}/invites/${inv.body.id}`, { token: admin })).status).toBe(200);
+    const team = await call('GET', `/v1/account/orgs/${ids.newcomer}/team`, { token: admin });
+    expect(team.body.invites).toEqual([]);
+    expect(team.body.members).toHaveLength(1);
+  });
+
+  it('shows invites only to their own organisation under row-level security', async () => {
+    const rows = await sql.begin(async (tx: any) => {
+      await tx`set local role app_user`;
+      await tx`select set_config('app.org_id', ${'00000000-0000-4000-8000-000000000000'}, true)`;
+      return tx`select id from org_invite`;
+    });
+    expect(rows).toHaveLength(0);
+  });
+
   it('keeps modules to admins of that organisation', async () => {
     const t = await jwtWithEmail(stranger, 'someone@else.example');
     expect((await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['respond'] } })).status).toBe(403);
