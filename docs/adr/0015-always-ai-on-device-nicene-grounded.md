@@ -1,6 +1,6 @@
 # ADR 0015: Always AI, on-device Christian AI grounded in the Nicene Creed
 
-Status: Proposed
+Status: Proposed (points 3 and 4 amended by ADR 0017)
 Date: 2026-11-24
 
 ## Context
@@ -17,8 +17,8 @@ Always Foundation will build Always AI as open, shared infrastructure with these
 2. **Open to any model; Gemma as the tested default.** Any open-weight GGUF model from Hugging Face or elsewhere (Gemma, Qwen, Llama, Mistral, Phi, regional models), or a model already running in a local runtime such as Ollama or LM Studio. Defaults: Gemma 4 E2B for the browser and phones, E4B for ordinary laptops, 12B for stronger machines. Recommendations per language and device follow the evaluation, and the public scorecard covers every model tested.
    - **Cloud providers by choice only.** Any OpenAI-compatible provider (OpenRouter, Hugging Face Inference Providers and similar) can be connected by a person or developer. Off by default, clearly marked while in use, with zero-retention, no-training providers recommended. Licensed Scripture text is never sent to them. Always still runs no inference servers.
 2a. **A layer that routes, not a model.** Always AI does not present itself as a model. A router chooses the model for each request by device capability, language, task and the person's choice, using the public scorecard. The Creed layer, Scripture lookup and checks wrap every model. Free routing is local-first; cloud routing uses the person's own account, because free hosted tiers are not dependable and some keep or train on prompts.
-3. **One core, three surfaces.** A browser app (wllama, WebGPU with CPU fallback), a thin desktop app (llama.cpp), and the Always AI SDK. All use the same GGUF model files.
-4. **Our own small app.** We do not rebrand or redistribute third-party desktop apps whose terms forbid it. An interim setup pack may configure existing open-source local AI apps that people install from their official sources.
+3. **One core, several surfaces.** The desktop app (built on Jan, ADR 0017), the Always AI SDK and the Always Scripture MCP server share the same assistant, Creed layer and GGUF model files. Phones and a browser build are decided under ADR 0017.
+4. **Built on Jan.** Superseded in detail by ADR 0017: Always AI is a distribution of Jan (Apache-2.0), starting as a setup pack for standard Jan and then a fork. Third-party apps whose terms forbid redistribution or rebranding are not used.
 5. **Nicene Creed (381) as the only theological boundary.** The 381 text is carried in every request, with a note that many Western churches add the filioque. Answers are checked against a published set of propositions drawn from the Creed. Beyond the Creed, the tool presents the range of orthodox views.
 6. **Scripture retrieved, never generated.** Bundled public-domain and openly licensed Bibles; the model cites references and the app inserts exact text; invalid references are removed. Translations whose terms forbid AI processing are not imported.
 7. **YouVersion Platform for licensed verse text, display only.** Where its terms allow, licensed text is fetched and shown word for word with attribution. Nothing about the person is sent. Licensed text is not passed to the model without the rights holder's approval.
