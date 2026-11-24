@@ -72,10 +72,13 @@ export default function Reports() {
 
   return (
     <Shell>
-      <p className="kicker">Reports</p>
-      <h1>Your reports</h1>
-      <p className="lead">The same five steps every ministry counts, ready for your board and funders. Totals only, so no one can be identified. <Link href="/reports/examples">See example reports</Link>.</p>
+      <div className="page-wrap">
+      <header className="page-head">
+        <h1>Reports</h1>
+        <p className="lead">Ready for your board and funders. Totals only, so no one can be identified. <Link href="/reports/examples">See example reports</Link>.</p>
+      </header>
 
+      <div className="rp-bar">
       <div className="controls">
         <label>Period
           <select value={period} onChange={(e) => setPeriod(e.target.value)}>{ps.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}</select>
@@ -86,8 +89,11 @@ export default function Reports() {
             <option value="receiver">People we welcomed</option>
           </select>
         </label>
-        <button className="btn btn-green" onClick={() => window.print()}>Download as PDF</button>
-        <button className="btn btn-line" onClick={csv}>Download spreadsheet</button>
+      </div>
+      <div className="rp-dl">
+        <button className="btn" onClick={() => window.print()}>Download PDF</button>
+        <button className="btn" onClick={csv}>Spreadsheet</button>
+      </div>
       </div>
       <p className="status" role="status" aria-live="polite">{status}</p>
 
@@ -99,11 +105,12 @@ export default function Reports() {
         <div className="row"><input className="field" name="label" placeholder="Who it's for, like “Board, Q1”" aria-label="Who the link is for" style={{ flex: 1, minWidth: 220 }} /><button className="btn btn-peach" type="submit">Create link</button></div>
         {link && <p style={{ margin: 0 }}>Copy this link now, it won&apos;t be shown again: <code style={{ wordBreak: 'break-all' }}>{link}</code></p>}
         {shares.length > 0 && (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <ul className="rp-shares">
             {shares.map((s) => (
-              <li key={s.id} className="meta">
-                {s.label} · {s.from_day.slice(0, 10)} to {s.to_day.slice(0, 10)} · viewed {s.views} times · {s.revoked_at ? 'switched off' : `until ${new Date(s.expires_at).toLocaleDateString('en-AU')}`}
-                {!s.revoked_at && <> · <button type="button" className="btn btn-line" style={{ minHeight: 32, padding: '0 10px', fontSize: 13 }} onClick={async () => { await api(`/v1/org/report-shares/${s.id}/revoke`, { method: 'POST', body: {} }).catch(() => {}); load(); }}>Switch off</button></>}
+              <li key={s.id}>
+                <b>{s.label}</b>
+                <span>Viewed {s.views} {s.views === 1 ? 'time' : 'times'} · {s.revoked_at ? 'Switched off' : `Open until ${new Date(s.expires_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`}</span>
+                {!s.revoked_at && <button type="button" className="link" onClick={async () => { await api(`/v1/org/report-shares/${s.id}/revoke`, { method: 'POST', body: {} }).catch(() => {}); load(); }}>Switch off</button>}
               </li>
             ))}
           </ul>
@@ -118,6 +125,7 @@ export default function Reports() {
         <textarea name="intro" placeholder="A short introduction" defaultValue={report?.profile?.intro ?? ''} aria-label="Introduction" />
         <div><button className="btn btn-green" type="submit">Save</button></div>
       </form>
+      </div>
     </Shell>
   );
 }

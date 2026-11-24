@@ -32,7 +32,7 @@ const fresh = (): State => ({
   inbox: [
     { handoffId: 'h1', state: 'offered', offer: 'pending', suburb: 'Parramatta', ageBand: '25-34', step: 'church', language: 'en' },
     { handoffId: 'h2', state: 'accepted', offer: 'accepted', firstName: 'Alex (example)', suburb: 'Westmead', ageBand: '35-44', step: 'group',
-      contact: { kind: 'sms', value: '0400 000 000' }, note: 'Made-up person for the demo.' },
+      contact: { kind: 'mobile', value: '0400 000 000' }, note: 'Made-up person for the demo.' },
     { handoffId: 'h3', state: 'offered', offer: 'pending', suburb: 'Harris Park', ageBand: '18-24', step: 'explore', language: 'en' },
   ],
   feedOptIn: true,

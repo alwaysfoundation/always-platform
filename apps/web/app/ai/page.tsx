@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MLCEngineInterface } from '@mlc-ai/web-llm';
 import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
+import { Icon } from '@/lib/icons';
 import { guard } from '@/lib/ai/guard';
 import { system } from '@/lib/ai/prompt';
 import { detect, MODELS, route, type Choice, type Device } from '@/lib/ai/router';
@@ -126,7 +127,7 @@ function Chat() {
     <div className="aic">
       <header className="aic-top">
         <div>
-          <h1>Always AI</h1>
+          <h1><Icon name="ai" size={18} />Always AI</h1>
           <p className="aic-sub"><i className={`aic-dot ${load.state === 'ready' ? 'on' : ''}`} aria-hidden="true" />
             {noGpu ? 'Scripture lookup only on this browser' : load.state === 'ready' ? `Running on this computer with ${choice?.name}` : 'Runs privately on this computer'}</p>
         </div>
