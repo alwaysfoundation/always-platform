@@ -1,0 +1,32 @@
+{
+  "name": "@alwaysfoundation/always-ai",
+  "version": "0.1.0",
+  "description": "Always AI: free, private Christian AI grounded in the Nicene Creed, built on Jan. Includes the Always Scripture MCP server.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "always-scripture": "scripture-mcp/src/server.js"
+  },
+  "files": [
+    "scripture-mcp/src",
+    "scripture-mcp/data",
+    "creed",
+    "assistant",
+    "models",
+    "NOTICE",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test scripture-mcp/test/*.test.js",
+    "start": "node scripture-mcp/src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alwaysfoundation/always-platform",
+    "directory": "ai"
+  },
+  "homepage": "https://alwaysfoundation.org/#/always-ai"
+}

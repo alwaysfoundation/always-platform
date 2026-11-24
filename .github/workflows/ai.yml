@@ -1,0 +1,24 @@
+name: always-ai
+on:
+  push:
+    branches: [main]
+    paths: ['ai/**', '.github/workflows/ai.yml']
+  pull_request:
+    paths: ['ai/**', '.github/workflows/ai.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22]
+    defaults:
+      run:
+        working-directory: ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test

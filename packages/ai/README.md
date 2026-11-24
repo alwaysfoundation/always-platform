@@ -1,5 +1,7 @@
 # Always AI (research prototype)
 
+Superseded by [`ai/`](../../ai), which builds on Jan (ADR 0017). Kept for its prompt-checker cases in `evals/cases.json`.
+
 An open-weights assistant for churches and ministries: an open model, the Always instructions with the Nicene Creed (AD 381), and a prompt checker. Status and decisions: [RFC 0007](../../docs/rfc/0007-always-ai.md).
 
 This is a prototype. It has not been evaluated against a model yet, and it may not prove good enough to offer.
