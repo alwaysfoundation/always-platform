@@ -28,6 +28,8 @@ const NewOrg = z.object({
   state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']),
   postcode: z.string().regex(/^\d{4}$/).optional(),
   modules: z.array(z.enum(['respond', 'connect', 'safety', 'reports'])).max(4).optional(),
+  // Partners affirm the Nicene Creed (AD 381), Always's statement of faith.
+  affirmsCreed: z.literal(true),
 });
 
 export function slugify(name: string): string {
@@ -70,8 +72,8 @@ export function registerAccountRoutes(app: Hono<Env>, sql: Sql) {
       const [count] = await tx`select count(*)::int as n from membership where user_id = ${id.sub} and role = 'admin'`;
       if ((count?.n ?? 0) >= MAX_ORGS_PER_PERSON) throw new HttpError(429, 'too_many_orgs');
       const modules = [...new Set(body.data.modules ?? [])];
-      const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash, modules)
-                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules})
+      const [o] = await tx`insert into organisation (kind, display_name, slug, state, postcode, trust_level, notify_email_ct, notify_email_hash, modules, creed_affirmed_at)
+                           values (${body.data.kind}, ${body.data.displayName}, ${slugify(body.data.displayName)}, ${body.data.state}, ${body.data.postcode ?? null}, 'listed', ${encrypt(email)}, ${lookupHash(email)}, ${modules}, now())
                            returning id, display_name, kind, modules`;
       await tx`insert into membership (user_id, org_id, role) values (${id.sub}, ${o!.id}, 'admin')`;
       await audit(tx, { actor: id.sub, orgId: o!.id, action: 'org.create', subject: `org:${o!.id}` });

@@ -332,7 +332,7 @@ describe('first sign-in for a new ministry', () => {
   });
 
   it('creates a church on the map, with the person as admin', async () => {
-    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'Admin@NewChurch.example'), body: { kind: 'church', displayName: 'New Test Church', state: 'VIC', postcode: '3000' } });
+    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'Admin@NewChurch.example'), body: { kind: 'church', displayName: 'New Test Church', state: 'VIC', postcode: '3000', affirmsCreed: true } });
     expect(r.status).toBe(201);
     expect(r.body).toMatchObject({ name: 'New Test Church', partner: false, role: 'admin' });
     ids.newcomer = r.body.id;
@@ -353,19 +353,29 @@ describe('first sign-in for a new ministry', () => {
   });
 
   it('refuses an email already linked to a different account', async () => {
-    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 'admin@newchurch.example'), body: { kind: 'ministry', displayName: 'Other', state: 'NSW' } });
+    const r = await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 'admin@newchurch.example'), body: { kind: 'ministry', displayName: 'Other', state: 'NSW', affirmsCreed: true } });
     expect(r.status).toBe(409);
   });
 
   it('needs an email on the session and a valid body', async () => {
-    expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger), body: { kind: 'church', displayName: 'X Church', state: 'NSW' } })).status).toBe(422);
+    expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger), body: { kind: 'church', displayName: 'X Church', state: 'NSW', affirmsCreed: true } })).status).toBe(422);
     expect((await call('POST', '/v1/account/orgs', { token: await jwtWithEmail(stranger, 's@else.example'), body: { kind: 'network', displayName: 'X', state: 'NSW' } })).status).toBe(422);
+  });
+
+  it('needs the Nicene Creed affirmed', async () => {
+    const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000008', 'admin@creed.example');
+    expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Creed Church', state: 'NSW' } })).status).toBe(422);
+    expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Creed Church', state: 'NSW', affirmsCreed: false } })).status).toBe(422);
+    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Creed Church', state: 'NSW', affirmsCreed: true } });
+    expect(r.status).toBe(201);
+    const [o] = await sql`select creed_affirmed_at is not null as affirmed from organisation where id = ${r.body.id}`;
+    expect(o.affirmed).toBe(true);
   });
 
   it('caps how many organisations one person can create', async () => {
     const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
-    for (let i = 0; i < 4; i++) expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: `Test Ministry ${i}`, state: 'NSW' } })).status).toBe(201);
-    expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: 'One too many', state: 'NSW' } })).status).toBe(429);
+    for (let i = 0; i < 4; i++) expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: `Test Ministry ${i}`, state: 'NSW', affirmsCreed: true } })).status).toBe(201);
+    expect((await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'ministry', displayName: 'One too many', state: 'NSW', affirmsCreed: true } })).status).toBe(429);
   });
 
   it('starts with every module off', async () => {
@@ -396,7 +406,7 @@ describe('first sign-in for a new ministry', () => {
 
   it('lets a church choose modules when it is created', async () => {
     const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000009', 'admin@modules.example');
-    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'reports'] } });
+    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'reports'], affirmsCreed: true } });
     expect(r.status).toBe(201);
     expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on' });
   });
