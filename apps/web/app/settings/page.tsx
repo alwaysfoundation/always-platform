@@ -6,6 +6,7 @@ import { toDataUrl } from '@/lib/brand-import';
 import { Icon } from '@/lib/icons';
 import { Shell } from '@/lib/shell';
 import { useOrg } from '@/lib/org';
+import { useTheme, type Theme } from '@/lib/theme';
 
 export default function SettingsPage() {
   return <Shell><Settings /></Shell>;
@@ -33,6 +34,7 @@ function Settings() {
         <h2 id="h-listing">Your listing</h2>
         <Link className="row-link" href="/listing"><Icon name="globe" /><span><b>How people find you</b><span>Choose whether {org.name} appears in the church feed and on maps.</span></span><Icon name="arrow" /></Link>
       </section>
+      <Appearance />
       <Connect />
     </div>
   );
@@ -179,6 +181,19 @@ function Connect() {
         </div>
       </div>
       <p className="meta">Guides are in the <a href="https://alwaysfoundation.org/#/docs/integrations">docs</a>.</p>
+    </section>
+  );
+}
+
+function Appearance() {
+  const [theme, choose] = useTheme();
+  const opts: [Theme, string][] = [['system', 'Match my device'], ['light', 'Light'], ['dark', 'Dark']];
+  return (
+    <section className="hsec" aria-labelledby="h-appear">
+      <h2 id="h-appear">Appearance</h2>
+      <div className="seg" role="radiogroup" aria-labelledby="h-appear">
+        {opts.map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={theme === v} onClick={() => choose(v)}>{label}</button>)}
+      </div>
     </section>
   );
 }

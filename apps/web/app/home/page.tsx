@@ -81,7 +81,7 @@ function Home() {
         <form className="ask" onSubmit={(e) => { e.preventDefault(); if (ask.trim()) go(ask.trim()); }}>
           <label className="sr-only" htmlFor="ask">Ask Always AI</label>
           <Icon name="ai" size={22} />
-          <input id="ask" value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="What are you preparing this week?" autoComplete="off" />
+          <input id="ask" value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="What are you preparing?" autoComplete="off" />
           <button type="submit" aria-label="Ask" disabled={!ask.trim()}><Icon name="arrow" /></button>
         </form>
       )}

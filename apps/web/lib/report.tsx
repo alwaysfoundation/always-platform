@@ -18,7 +18,7 @@ export type Report = {
 };
 
 export const LABELS: Record<string, string> = {
-  responded: 'Responded', introduced: 'Introduced nearby', accepted: 'Accepted',
+  responded: 'Responded', introduced: 'Introduced nearby', accepted: 'Welcomed',
   contacted: 'Contacted', connected: 'Connected', care_team: 'Helped by the care team',
 };
 export const STEPS: Record<string, string> = {

@@ -64,14 +64,13 @@ export default function Inbox() {
           ) : (
             <ul className="ib-list">
               {waiting.map((i) => (
-                <li className="ib-card" key={i.handoffId} data-new>
+                <li className="ib-card" key={i.handoffId}>
                   <div className="ib-top">
                     <span className="ib-av" aria-hidden="true"><Icon name="person" /></span>
                     <div className="ib-who">
-                      <b>{ASKED[i.step] ?? i.step}</b>
+                      <b><i className="ib-new" aria-hidden="true" /><span className="sr">New: </span>{ASKED[i.step] ?? i.step}</b>
                       <span>{[i.suburb, i.ageBand.replace('-', '–'), language(i.language)].filter(Boolean).join(' · ')}</span>
                     </div>
-                    <span className="ib-tag">New</span>
                   </div>
                   {passing === i.handoffId ? (
                     <div className="ib-pass" role="group" aria-label="Why are you passing?">
