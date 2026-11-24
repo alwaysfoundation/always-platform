@@ -10,6 +10,8 @@ import { detect, MODELS, route, type Choice, type Device } from '@/lib/ai/router
 import { checkAnswer, isReference, lookUp, TRANSLATION, type Check, type Passage } from '@/lib/ai/scripture';
 import { TEMPLATES } from '@/lib/ai/templates';
 
+const LITE = ['Psalm 23', 'John 3:16-21', 'Romans 8:28-39', 'Philippians 2:5-11', 'Matthew 5:1-12', '1 Corinthians 13'];
+
 export default function AlwaysAIPage() {
   return <Shell><Chat /></Shell>;
 }
@@ -91,6 +93,13 @@ function Chat() {
       setBusy(false); return;
     }
 
+    if (noGpu) {
+      const ps = await lookUp(text);
+      push(ps.length ? { role: 'assistant', text: '', passages: ps, note: 'Looked up exactly. Writing and planning need a laptop with Chrome or Edge.' }
+        : { role: 'assistant', text: 'On this device Always AI can look up Scripture. Try a reference like Romans 8:28, or open Always AI on a laptop with Chrome or Edge to plan, draft and explain.' });
+      setBusy(false); return;
+    }
+
     const eng = engine.current ?? (await start());
     if (!eng) { setBusy(false); return; }
     const passages = await lookUp(text);
@@ -129,7 +138,7 @@ function Chat() {
         <div>
           <h1><Icon name="ai" size={18} />Always AI</h1>
           <p className="aic-sub"><i className={`aic-dot ${load.state === 'ready' ? 'on' : ''}`} aria-hidden="true" />
-            {noGpu ? 'Scripture lookup only on this browser' : load.state === 'ready' ? `Running on this computer with ${choice?.name}` : 'Runs privately on this computer'}</p>
+            {noGpu ? 'Scripture on this device' : load.state === 'ready' ? `Running on this computer with ${choice?.name}` : 'Runs privately on this computer'}</p>
         </div>
         {!empty && <button className="btn btn-line" onClick={() => setMsgs([])}>New conversation</button>}
       </header>
@@ -138,9 +147,17 @@ function Chat() {
         {empty && (
           <div className="aic-welcome">
             <h2>What are you preparing?</h2>
-            <p>Ask about a passage, plan a series, or start from one of these. Scripture is looked up word for word, and nothing you type leaves this computer.</p>
-            {noGpu && <p className="aic-warn">This browser can&rsquo;t run Always AI&rsquo;s model. Use Chrome or Edge on a recent laptop for the full assistant. You can still look up any passage, like <button className="link" onClick={() => setDraft('Philippians 2:5-11')}>Philippians 2:5-11</button>.</p>}
-            {(['Prepare', 'Welcome', 'Lead'] as const).map((g) => (
+            <p>{noGpu ? 'Type any reference, like John 3:16 or Psalm 23, and read it exactly as written. Nothing you type leaves this device.' : 'Ask about a passage, plan a series, or start from one of these. Scripture is looked up word for word, and nothing you type leaves this computer.'}</p>
+            {noGpu && (
+              <section className="aic-lite" aria-labelledby="aic-lite-h">
+                <h3 id="aic-lite-h">Read a passage</h3>
+                <div className="aic-refs">
+                  {LITE.map((r) => <button key={r} type="button" onClick={() => void send(null, r)}>{r}</button>)}
+                </div>
+                <p className="aic-lite-note"><Icon name="ai" size={16} />On this device Always AI looks up Scripture word for word. To plan a series, draft or explain, open it on a laptop with Chrome or Edge.</p>
+              </section>
+            )}
+            {!noGpu && (['Prepare', 'Welcome', 'Lead'] as const).map((g) => (
               <section key={g} className="aic-group" aria-label={g}>
                 <h3>{g === 'Prepare' ? 'Prepare to preach and teach' : g === 'Welcome' ? 'Welcome people' : 'Lead your team'}</h3>
                 <div className="aic-tpl">
@@ -196,14 +213,14 @@ function Chat() {
         )}
         <form className="aic-compose" onSubmit={send}>
           <label className="sr-only" htmlFor="aic-input">Ask Always AI</label>
-          <textarea id="aic-input" ref={box} rows={1} value={draft} placeholder="Ask about a passage, or plan your next series…"
+          <textarea id="aic-input" ref={box} rows={1} value={draft} placeholder={noGpu ? 'Look up a passage, like Romans 8:28' : 'Ask about a passage, or plan your next series…'}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }} />
           <button className="aic-send" type="submit" disabled={busy || !draft.trim()} aria-label="Send">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" /></svg>
           </button>
         </form>
-        <p className="aic-fine">Private: nothing you type leaves this computer, and the conversation disappears when you close the tab. Check what it says against Scripture. Not for counselling or anyone under 18.</p>
+        <p className="aic-fine">Private: nothing you type leaves this device, and the conversation disappears when you close the tab. Check what it says against Scripture. Not for counselling or anyone under 18.</p>
       </div>
     </div>
   );

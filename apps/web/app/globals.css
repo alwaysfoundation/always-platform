@@ -625,3 +625,18 @@ main { padding: 48px clamp(20px, 4vw, 56px); max-width: 1100px; }
 :root:not([data-theme="light"]) .aic-send { background: var(--brand-fg); color: #0F1614; }
 }
 .btn-peach, .btn-brand { color: #1E2A26; }
+
+/* Always AI, Scripture-only devices */
+.aic-lite { display: grid; gap: 14px; margin-top: 6px; }
+.aic-lite h3 { font: 700 15px var(--head); color: var(--muted); letter-spacing: 0; }
+.aic-refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.aic-refs button { text-align: left; min-height: 56px; padding: 0 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); font: 600 16px 'Newsreader', Georgia, serif; color: var(--ink); cursor: pointer; transition: border-color .15s, transform .15s; }
+.aic-refs button:hover { border-color: color-mix(in srgb, var(--brand-fg) 50%, var(--line)); transform: translateY(-1px); }
+.aic-lite-note { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 0; color: var(--muted); font-size: 14px; max-width: 60ch; }
+.aic-lite-note .ic { flex: none; margin-top: 2px; color: var(--brand-accent, var(--peach)); }
+@media (prefers-reduced-motion: reduce) { .aic-refs button { transition: none; } }
+
+/* Home, quiet states */
+.today-calm { display: inline-flex; align-items: center; gap: 8px; margin: 10px 0 0; color: var(--muted); font-size: 15px; }
+.today-calm .ic { color: var(--good-ink); }
+.glance-empty { margin: 0; padding: 20px 22px; border-radius: 18px; border: 1px dashed var(--line); color: var(--muted); font-size: 15px; }
