@@ -1,37 +1,49 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { setSession } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { getAuth, setOrg } from '@/lib/auth';
+import { EmailCode } from '@/lib/email-code';
 import { Wordmark } from '@/lib/logo';
 
-/**
- * Pilot sign-in: a staff session token and the organisation it acts for.
- * Passkey sign-in through Supabase Auth replaces this before launch (see ROADMAP.md).
- */
+/** Sign in with an emailed code. An invitation link lands here too, and is accepted once signed in. */
 export default function SignIn() {
   const router = useRouter();
+  const [invite, setInvite] = useState<string | null>(null);
   const [status, setStatus] = useState('');
+
+  useEffect(() => {
+    const t = new URLSearchParams(location.search).get('invite');
+    setInvite(t && /^alw_inv_[A-Za-z0-9_-]{20,}$/.test(t) ? t : null);
+  }, []);
+
+  async function done() {
+    if (invite) {
+      try {
+        const r = await api<{ orgId: string; name: string }>('/v1/account/invites/accept', { method: 'POST', body: { token: invite } });
+        setOrg(r.orgId);
+      } catch (e) {
+        const code = (e as { code?: string }).code;
+        setStatus(code === 'invite_for_another_email' ? 'This invitation was sent to a different email. Sign in with that one.' : 'This invitation has expired. Ask your team for a new one.');
+        return;
+      }
+    }
+    router.replace('/home');
+  }
+
+  useEffect(() => { if (getAuth() && !invite) router.replace('/home'); }, [invite, router]);
+
   return (
-    <div className="signin">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const f = new FormData(e.currentTarget);
-          const token = String(f.get('token') ?? '').trim();
-          const org = String(f.get('org') ?? '').trim();
-          if (!token || !org) return setStatus('Add your session token and organisation ID.');
-          setSession({ token, org });
-          router.replace('/inbox');
-        }}
-      >
-        <Wordmark height={30} />
-        <h1 style={{ fontSize: 28 }}>Sign in</h1>
-        <p className="meta" style={{ margin: 0 }}>For pilot partners. Your session stays in this tab and ends when you close it.</p>
-        <label>Session token<input name="token" type="password" autoComplete="off" required /></label>
-        <label>Organisation ID<input name="org" autoComplete="off" required /></label>
-        <button className="btn btn-green" type="submit">Sign in</button>
-        <p className="status" role="status">{status}</p>
-      </form>
+    <div className="gate">
+      <div className="gate-card">
+        <Wordmark height={28} />
+        <h1>{invite ? 'Join your team' : 'Sign in'}</h1>
+        <p className="meta">{invite ? 'Sign in with the email your invitation was sent to.' : 'We\'ll email you a code. No password needed.'}</p>
+        <EmailCode cta="Email me a code" onSignedIn={done} />
+        {status && <p className="status" role="alert">{status}</p>}
+        {!invite && <p className="gate-alt">New to Always? <Link href="/start">Set up your church</Link></p>}
+      </div>
     </div>
   );
 }

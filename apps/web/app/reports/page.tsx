@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, explain, getSession } from '@/lib/api';
+import { api, explain } from '@/lib/api';
+import { getOrg, token } from '@/lib/auth';
 import { ReportView, type Report } from '@/lib/report';
 import { Shell } from '@/lib/shell';
 
@@ -44,8 +45,9 @@ export default function Reports() {
   useEffect(load, [load]);
 
   async function csv() {
-    const s = getSession();
-    const res = await fetch(`/api/v1/org/report.csv?${qs}`, { headers: s ? { authorization: `Bearer ${s.token}`, 'x-always-org': s.org } : {} });
+    const t = await token();
+    const org = getOrg();
+    const res = await fetch(`/api/v1/org/report.csv?${qs}`, { headers: t && org ? { authorization: `Bearer ${t}`, 'x-always-org': org } : {} });
     if (!res.ok) return setStatus('The spreadsheet could not be made. Please try again.');
     const url = URL.createObjectURL(await res.blob());
     const a = document.createElement('a'); a.href = url; a.download = `always-report-${p.from}-to-${p.to}.csv`; a.click(); URL.revokeObjectURL(url);
