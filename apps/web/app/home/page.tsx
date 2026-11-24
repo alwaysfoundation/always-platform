@@ -9,11 +9,12 @@ export default function HomePage() {
   return <Shell><Home /></Shell>;
 }
 
-const MODULES: { key: keyof Org['modules']; name: string; does: string }[] = [
-  { key: 'respond', name: 'Respond', does: 'Response pages, QR codes and cards, so anyone can ask for a next step.' },
-  { key: 'connect', name: 'Connect', does: 'Receive people near you who said yes to Jesus, and welcome them.' },
-  { key: 'safety', name: 'Safety', does: 'Your rules register, quarterly check-up and board summary.' },
-  { key: 'reports', name: 'Reports', does: 'A monthly report for your board, written from what happened.' },
+const MODULES: { key: keyof Org['modules']; name: string; does: string; ai: string }[] = [
+  { key: 'respond', name: 'Respond', does: 'Response pages, QR codes and cards, so anyone can ask for a next step.', ai: 'Checks every Bible verse on your pages, word for word' },
+  { key: 'connect', name: 'Connect', does: 'Receive people near you who said yes to Jesus, and welcome them.', ai: 'Drafts welcome messages your team approves once; names are filled in only when you send' },
+  { key: 'safety', name: 'Safety', does: 'Your rules register, quarterly check-up and board summary.', ai: 'Answers questions about a rule, citing the register' },
+  { key: 'reports', name: 'Reports', does: 'A monthly report for your board, written from what happened.', ai: 'Writes the story behind the numbers, from totals only' },
+  { key: 'ai', name: 'Always AI', does: 'Private AI for sermon and study preparation, on your own computer. Nothing you ask reaches us.', ai: '' },
 ];
 
 function Home() {
@@ -28,6 +29,7 @@ function Home() {
       <h1>{welcome ? `Welcome, ${org.name}.` : org.name}</h1>
       <p className="lead">{welcome ? 'Your account is ready. Here\'s everything in one place: switch tools on, tune your look and bring in your team.' : 'Everything for your ' + org.kind + ', in one place.'}</p>
       <Modules />
+      {org.modules.ai !== 'off' && <AlwaysAI />}
       {admin && <Look />}
       {admin && <Team />}
       <Connect />
@@ -55,8 +57,9 @@ function Modules() {
         {MODULES.map((m) => {
           const s = org.modules[m.key];
           return (
-            <div key={m.key} className="mod" data-on={on(s) || undefined}>
-              <div><h3>{m.name}</h3><p>{m.does}</p>{s === 'awaiting_check' && <p className="badge">On once we&rsquo;ve checked your details with your network</p>}</div>
+            <div key={m.key} className="mod" data-k={m.key} data-on={on(s) || undefined}>
+              <div><h3>{m.name}</h3><p>{m.does}</p>{s === 'awaiting_check' && <p className="badge">On once we&rsquo;ve checked your details with your network</p>}
+                {m.ai && on(s) && on(org.modules.ai) && <p className="mod-ai"><span aria-hidden="true">✦</span> With Always AI: {m.ai} <em>Coming</em></p>}</div>
               <button type="button" role="switch" aria-checked={on(s)} aria-label={`${m.name}`} disabled={org.role !== 'admin'} onClick={() => void toggle(m.key)}><i /></button>
             </div>
           );
@@ -165,6 +168,32 @@ function Connect() {
         <button className="btn btn-line" type="button" onClick={() => { void navigator.clipboard?.writeText(snippet); setCopied(true); }}>{copied ? 'Copied' : 'Copy website code'}</button>
       </div>
       <p className="meta">Guides for each are in the <a href="https://alwaysfoundation.org/#/docs/integrations">docs</a>.</p>
+    </section>
+  );
+}
+
+function AlwaysAI() {
+  return (
+    <section className="hsec aiw" aria-labelledby="h-ai">
+      <div className="aiw-in">
+        <div>
+          <p className="aiw-k">Always AI</p>
+          <h2 id="h-ai">Your private AI for study and preparation</h2>
+          <p>Ask about a passage, plan a series or search your own sermons and notes. Scripture is looked up word for word, the Nicene Creed is the boundary, and it runs on your own computer. Nothing you ask or add reaches Always.</p>
+          <ul className="aiw-list">
+            <li>Free, with no account limits</li><li>Works offline once set up</li><li>For adults: not for young people&rsquo;s information</li>
+          </ul>
+          <div className="row">
+            <a className="btn btn-brand" href="https://alwaysfoundation.org/#/docs/always-ai-setup">Set it up on this computer</a>
+            <a className="btn btn-ghost" href="https://alwaysfoundation.org/#/ai">What it can do</a>
+          </div>
+          <p className="aiw-fine">Today it runs in Jan, the open-source desktop app, with the Always AI pack. A one-step Always AI app is in development.</p>
+        </div>
+        <div className="aiw-demo" aria-hidden="true">
+          <div className="aiw-q">Where does Paul describe love as patient?</div>
+          <div className="aiw-a">Paul describes love in 1 Corinthians 13. Verse 4 reads: <q>Love is patient, love is kind.</q><small>1 Corinthians 13:4 · checked</small></div>
+        </div>
+      </div>
     </section>
   );
 }
