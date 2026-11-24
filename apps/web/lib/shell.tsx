@@ -75,7 +75,7 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
       </header>
 
       <main id="main">
-        {demo && <p className="demo-bar">This is the demo account. Everything here is made up and stays in this browser.</p>}
+        {demo && <p className="demo-bar"><b>Demo</b> Everything here is made up and stays in this browser.</p>}
         {children}
       </main>
 
