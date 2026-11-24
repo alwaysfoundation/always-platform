@@ -18,4 +18,5 @@ Always Foundation is a global organisation, operating through a US 501(c)(3). Re
 ## Consequences
 
 - Sign-in email can use any reputable provider; Amazon SES in Sydney is no longer required.
-- The privacy policy needs a global version that names providers and regions. That needs legal review before it is published.
+- The privacy policy names each provider and region: Supabase (Sydney) stores data, Railway (Singapore) runs the API, Resend (Tokyo) sends email, Cloudflare serves the website.
+- `REGION` names where the API runs. The safety check-up says data stays in Australia only when the API runs there, so with the API in Singapore it does not.
