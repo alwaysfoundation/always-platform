@@ -9,6 +9,10 @@ Always AI has two parts:
 
 **Status: preview (0.1).** The building blocks and the setup pack for Jan are implemented and tested. A branded desktop app is in development. Research and design: [Always AI](https://alwaysfoundation.org/#/always-ai) · [Implementing Always AI on Jan](https://alwaysfoundation.org/#/always-ai-on-jan) · [Christian AI alignment and the Nicene Creed](https://alwaysfoundation.org/#/nicene-alignment) · [Local AI and private sync](https://alwaysfoundation.org/#/private-ai-sync)
 
+## In the Always account
+
+Churches and ministries switch Always AI on from their Always account at [my.alwaysfoundation.org](https://my.alwaysfoundation.org), beside Respond, Connect, Safety and Reports. Switching it on records only that it is on: the study tool runs on each person's own computer, and nothing they ask or add reaches Always. Helpers inside the other tools (checking Scripture on response pages, drafting a first message, a report's story from totals, questions about a safety rule) follow the same rules and are marked as coming until they are built. See [ADR 0021](../docs/adr/0021-always-ai-in-the-account.md).
+
 ## What Always AI is not
 
 Always AI is a tool. Always Foundation does not build, and will not build:
