@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Icon } from '@/lib/icons';
 import { Shell } from '../../lib/shell';
 import { api, explain } from '../../lib/api';
 
@@ -26,15 +28,19 @@ export default function Listing() {
   const rate = c?.onTimeRate == null ? 'No introductions yet' : `${Math.round(c.onTimeRate * 100)}% of your last ${c.recentOffers} on time`;
   return (
     <Shell>
-      <h1>Your listing</h1>
-      <p className="lede">Choose whether your church appears in the Always church feed, so ministries and apps can point people to you.</p>
+      <div className="page-wrap">
+      <Link className="back" href="/settings"><Icon name="arrow" size={16} />Settings</Link>
+      <header className="page-head">
+        <h1>Your listing</h1>
+        <p className="lead">Choose whether your church appears in the Always church feed, so ministries and apps can point people to you.</p>
+      </header>
       {error && <p className="error" role="alert">{error}</p>}
       {feed && (
         <>
           <section className="card">
             <h2>{feed.optedIn ? 'You’re in the church feed' : 'You’re not in the church feed yet'}</h2>
-            <p>The feed shares your church’s name, suburb, denomination, service times and the next steps you offer. Never anyone’s personal details.</p>
-            <button className="btn btn-green" disabled={saving} onClick={() => toggle(!feed.optedIn)}>
+            <p>The feed shares your church’s name, area, denomination, service times and the next steps you offer. Never anyone’s personal details.</p>
+            <button className={`btn ${feed.optedIn ? 'btn-line' : 'btn-green'}`} style={{ justifySelf: 'start' }} disabled={saving} onClick={() => toggle(!feed.optedIn)}>
               {feed.optedIn ? 'Leave the church feed' : 'Join the church feed'}
             </button>
           </section>
@@ -50,6 +56,7 @@ export default function Listing() {
           </section>
         </>
       )}
+      </div>
     </Shell>
   );
 }

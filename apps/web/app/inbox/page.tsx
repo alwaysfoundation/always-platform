@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, explain } from '@/lib/api';
 import { Shell } from '@/lib/shell';
+import { Icon } from '@/lib/icons';
 
 type Item = {
   handoffId: string; state: string; offer: 'pending' | 'accepted';
@@ -9,22 +10,28 @@ type Item = {
   contact?: { kind: string; value: string }; note?: string;
 };
 
-const STEPS: Record<string, string> = {
-  church: 'Find a church', explore: 'Explore faith', talk: 'Talk with someone', youth: 'Youth group',
-  group: 'Join a small group', help: 'Practical help', read: 'Start reading the Bible',
+const ASKED: Record<string, string> = {
+  church: 'Wants to find a church', explore: 'Wants to explore faith', talk: 'Wants to talk with someone', youth: 'Looking for a youth group',
+  group: 'Wants to join a small group', help: 'Needs practical help', read: 'Wants to start reading the Bible',
 };
 const PASS = [
-  { value: 'capacity', label: "We're full this month" },
+  { value: 'capacity', label: 'We’re full this month' },
   { value: 'language', label: 'Language' },
-  { value: 'fit', label: "Not the right fit" },
+  { value: 'fit', label: 'Not the right fit' },
   { value: 'safeguarding', label: 'Safeguarding concern' },
   { value: 'other', label: 'Something else' },
 ];
+
+function language(code?: string) {
+  if (!code) return null;
+  try { return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) ?? code; } catch { return code; }
+}
 
 export default function Inbox() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState('');
+  const [passing, setPassing] = useState('');
 
   const load = useCallback(() => {
     api<{ items: Item[] }>('/v1/inbox').then((r) => setItems(r.items)).catch((e) => { setItems([]); setStatus(explain(e)); });
@@ -33,7 +40,7 @@ export default function Inbox() {
 
   async function act(id: string, path: string, body?: unknown, done?: string) {
     setBusy(id); setStatus('');
-    try { await api(`/v1/handoffs/${id}/${path}`, { method: 'POST', body: body ?? {} }); setStatus(done ?? ''); load(); }
+    try { await api(`/v1/handoffs/${id}/${path}`, { method: 'POST', body: body ?? {} }); setStatus(done ?? ''); setPassing(''); load(); }
     catch (e) { setStatus(explain(e)); }
     finally { setBusy(''); }
   }
@@ -43,54 +50,80 @@ export default function Inbox() {
 
   return (
     <Shell>
-      <p className="kicker">Inbox</p>
-      <h1>People near you</h1>
-      <p className="lead">Accept to see their number and welcome them, or pass so the next church nearby is offered. Passing is always OK.</p>
-      <p className="status" role="status" aria-live="polite">{status}</p>
+      <div className="page-wrap">
+        <header className="page-head">
+          <h1>Inbox</h1>
+          <p className="lead">People near you who asked for a next step. Accept to see how to reach them, or pass and the next church nearby is offered.</p>
+        </header>
+        <p className="status" role="status" aria-live="polite">{status}</p>
 
-      <h2 style={{ fontSize: 22, margin: '28px 0 14px' }}>Waiting for you</h2>
-      {items === null ? <p className="meta">Loading…</p> : waiting.length === 0 ? (
-        <div className="empty">No one is waiting right now. We'll email you when someone nearby asks for a next step.</div>
-      ) : (
-        <div className="list">
-          {waiting.map((i) => (
-            <article className="card" key={i.handoffId}>
-              <div className="row"><h3>{i.firstName ?? 'Someone'}</h3><span className="badge">New</span></div>
-              <p className="meta">{i.suburb} · {STEPS[i.step] ?? i.step} · {i.ageBand}{i.language ? ` · ${i.language}` : ''}</p>
-              <div className="row">
-                <button className="btn btn-green" disabled={busy === i.handoffId} onClick={() => act(i.handoffId, 'accept', undefined, 'Accepted. Their number is now shown below.')}>Accept</button>
-                <label className="row" style={{ gap: 8 }}>
-                  <span className="meta">Pass:</span>
-                  <select aria-label={`Pass ${i.firstName ?? 'this introduction'}`} defaultValue="" disabled={busy === i.handoffId}
-                    onChange={(e) => e.target.value && act(i.handoffId, 'pass', { reason: e.target.value }, 'Passed. The next church nearby has been offered.')}
-                    style={{ minHeight: 44, borderRadius: 12, border: '1px solid var(--line)', padding: '0 12px', background: 'var(--paper)', font: 'inherit' }}>
-                    <option value="" disabled>Choose a reason</option>
-                    {PASS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </select>
-                </label>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+        <section className="ib-sec" aria-labelledby="ib-wait">
+          <h2 id="ib-wait">Waiting for you {waiting.length > 0 && <span className="ib-count">{waiting.length}</span>}</h2>
+          {items === null ? <p className="meta">Loading…</p> : waiting.length === 0 ? (
+            <div className="ib-empty"><Icon name="inbox" size={28} /><p>No one is waiting right now. We’ll email you when someone nearby asks for a next step.</p></div>
+          ) : (
+            <ul className="ib-list">
+              {waiting.map((i) => (
+                <li className="ib-card" key={i.handoffId} data-new>
+                  <div className="ib-top">
+                    <span className="ib-av" aria-hidden="true"><Icon name="person" /></span>
+                    <div className="ib-who">
+                      <b>{ASKED[i.step] ?? i.step}</b>
+                      <span>{[i.suburb, i.ageBand.replace('-', '–'), language(i.language)].filter(Boolean).join(' · ')}</span>
+                    </div>
+                    <span className="ib-tag">New</span>
+                  </div>
+                  {passing === i.handoffId ? (
+                    <div className="ib-pass" role="group" aria-label="Why are you passing?">
+                      <p>Passing is always OK. Why are you passing?</p>
+                      <div className="ib-chips">
+                        {PASS.map((p) => <button key={p.value} type="button" disabled={busy === i.handoffId} onClick={() => act(i.handoffId, 'pass', { reason: p.value }, 'Passed. The next church nearby has been offered.')}>{p.label}</button>)}
+                        <button type="button" className="ib-cancel" onClick={() => setPassing('')}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="ib-acts">
+                      <button className="btn btn-green" disabled={busy === i.handoffId} onClick={() => act(i.handoffId, 'accept', undefined, 'Accepted. You can reach them now.')}><Icon name="check" size={18} />Accept</button>
+                      <button className="btn ib-quiet" disabled={busy === i.handoffId} onClick={() => setPassing(i.handoffId)}>Pass</button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <h2 style={{ fontSize: 22, margin: '36px 0 14px' }}>Walking with</h2>
-      {walking.length === 0 ? <div className="empty">When you accept someone, they'll appear here with their number.</div> : (
-        <div className="list">
-          {walking.map((i) => (
-            <article className="card" key={i.handoffId}>
-              <div className="row"><h3>{i.firstName ?? 'Someone'}</h3><span className="badge ok">{i.state === 'contacted' ? 'In touch' : 'Accepted'}</span></div>
-              <p className="meta">{i.suburb} · {STEPS[i.step] ?? i.step}</p>
-              {i.contact && <p style={{ margin: 0 }}><a href={i.contact.kind === 'mobile' ? `sms:${i.contact.value}` : `mailto:${i.contact.value}`}>{i.contact.value}</a></p>}
-              {i.state !== 'contacted' && (
-                <div className="row">
-                  <button className="btn btn-line" disabled={busy === i.handoffId} onClick={() => act(i.handoffId, 'contacted', undefined, "Thanks. We've noted that you got in touch.")}>We've been in touch</button>
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
+        <section className="ib-sec" aria-labelledby="ib-walk">
+          <h2 id="ib-walk">Walking with</h2>
+          {walking.length === 0 ? <div className="ib-empty"><Icon name="team" size={28} /><p>When you accept someone, they’ll appear here with how to reach them.</p></div> : (
+            <ul className="ib-list">
+              {walking.map((i) => {
+                const touched = i.state === 'contacted';
+                return (
+                  <li className="ib-card" key={i.handoffId}>
+                    <div className="ib-top">
+                      <span className="ib-av on" aria-hidden="true">{(i.firstName ?? '?').slice(0, 1)}</span>
+                      <div className="ib-who">
+                        <b>{i.firstName ?? 'Someone'}</b>
+                        <span>{[ASKED[i.step] ?? i.step, i.suburb].join(' · ')}</span>
+                      </div>
+                      <span className={`ib-tag ${touched ? 'ok' : 'wait'}`}>{touched ? 'In touch' : 'Say hello'}</span>
+                    </div>
+                    <div className="ib-acts">
+                      {i.contact && (
+                        <a className="btn btn-line" href={i.contact.kind === 'mobile' ? `sms:${i.contact.value}` : `mailto:${i.contact.value}`}>
+                          <Icon name="chat" size={18} />{i.contact.kind === 'mobile' ? 'Text' : 'Email'} {i.contact.value}
+                        </a>
+                      )}
+                      {!touched && <button className="btn ib-quiet" disabled={busy === i.handoffId} onClick={() => act(i.handoffId, 'contacted', undefined, 'Thanks. We’ve noted that you got in touch.')}>We’ve been in touch</button>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </div>
     </Shell>
   );
 }
