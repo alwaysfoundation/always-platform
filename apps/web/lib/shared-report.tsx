@@ -1,13 +1,16 @@
 'use client';
-import { use, useEffect, useState } from 'react';
-import { ReportView, type Report } from '@/lib/report';
+import { useEffect, useState } from 'react';
+import { API } from './api';
+import { ReportView, type Report } from './report';
 
 /** What a funder sees from a share link: a frozen, de-identified report. No sign-in. */
-export default function Shared({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params);
+export function SharedReport() {
+  const [token, setToken] = useState('');
+  useEffect(() => { setToken(decodeURIComponent(location.pathname.split('/').filter(Boolean)[1] ?? '')); }, []);
   const [r, setR] = useState<Report | null | undefined>(undefined);
   useEffect(() => {
-    fetch(`/api/v1/reports/shared/${encodeURIComponent(token)}`).then((x) => (x.ok ? x.json() : null)).then(setR).catch(() => setR(null));
+    if (!token) return;
+    fetch(`${API}/v1/reports/shared/${encodeURIComponent(token)}`).then((x) => (x.ok ? x.json() : null)).then(setR).catch(() => setR(null));
   }, [token]);
   return (
     <div className="public">

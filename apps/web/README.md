@@ -18,6 +18,19 @@ Email and a one-time code, through Supabase Auth. No passwords. The session toke
 
 Starting an account (`/start`) asks for the church's name, an optional website (read by the brand import at brand.alwaysfoundation.org for its logo and colours), the look, then an email code and the Nicene Creed affirmation. It creates the organisation with Respond, Safety and Reports switched on.
 
+## Always AI
+
+`/ai` is Always AI in the browser: an open model runs on the person's device through WebLLM, picked by `lib/ai/router.ts` from `ai/models/recommended.json`'s tiers. Before any model, `lib/ai/guard.ts` answers crisis and under-18 messages with a fixed reply, and a bare Bible reference is looked up without a model. Passages mentioned are looked up exactly (`lib/ai/scripture.ts`, the same parser and Berean Standard Bible text as Always Scripture, copied in by `scripts/copy-scripture.mjs`) and every reference in an answer is checked. Nothing is sent to Always; the conversation lives only in the tab.
+
+## Demo account
+
+`/demo` opens Hope Church (demo): a made-up church that lives in the browser (`lib/demo.ts`). Every person in it is invented and nothing is sent to Always.
+
+## Builds
+
+- `npm run build`: server build with `/api` proxied to the API.
+- `npm run build:static`: static files for my.alwaysfoundation.org, served from `sites/my/` in always-website, calling `https://api.alwaysfoundation.org` directly.
+
 ## Principles
 
 - Contact details appear only after a church accepts, as the API enforces.

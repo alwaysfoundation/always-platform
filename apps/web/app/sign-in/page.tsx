@@ -42,7 +42,7 @@ export default function SignIn() {
         <p className="meta">{invite ? 'Sign in with the email your invitation was sent to.' : 'We\'ll email you a code. No password needed.'}</p>
         <EmailCode cta="Email me a code" onSignedIn={done} />
         {status && <p className="status" role="alert">{status}</p>}
-        {!invite && <p className="gate-alt">New to Always? <Link href="/start">Set up your church</Link></p>}
+        {!invite && <p className="gate-alt">New to Always? <Link href="/start">Set up your church</Link>, or <Link href="/demo">try the demo</Link>.</p>}
       </div>
     </div>
   );

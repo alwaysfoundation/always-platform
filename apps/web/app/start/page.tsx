@@ -94,7 +94,7 @@ export default function Start() {
     <div className="start">
       <header className="start-bar">
         <a href="https://alwaysfoundation.org" aria-label="Always Foundation home"><Wordmark height={24} /></a>
-        <Link href="/sign-in" className="link">Sign in</Link>
+        <span className="start-links"><Link href="/demo" className="link">Try the demo</Link><Link href="/sign-in" className="link">Sign in</Link></span>
       </header>
 
       <div className="start-grid">

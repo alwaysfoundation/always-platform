@@ -1,6 +1,10 @@
 'use client';
 /** A tiny client for the Always API, through this app's /api proxy. */
 import { getOrg, token } from './auth';
+import { demoApi, isDemo } from './demo';
+
+/** Where the API is: this app's /api proxy on a server build, the API itself on the static build. */
+export const API = process.env.NEXT_PUBLIC_API_URL ?? '/api';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string) {
@@ -9,9 +13,10 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+  if (isDemo()) return (await demoApi(path, init.method ?? 'GET', init.body)) as T;
   const t = await token();
   const org = getOrg();
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API}${path}`, {
     method: init.method ?? 'GET',
     headers: {
       'content-type': 'application/json',

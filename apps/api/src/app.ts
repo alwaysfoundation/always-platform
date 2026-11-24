@@ -114,8 +114,8 @@ export function createApp(sql: Sql, opts: { adapters: Adapters; now?: () => Date
   // Only https origins under alwaysfoundation.org may call these, and no cookies or credentials are used.
   const FOUNDATION_ORIGIN = /^https:\/\/([a-z0-9-]+\.)?alwaysfoundation\.org$/;
   app.use('/v1/pages/*', cors({ origin: (o) => (FOUNDATION_ORIGIN.test(o) ? o : null), allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'], maxAge: 86400 }));
-  // The website's signed-in pages call these with a bearer token, never cookies, so only foundation origins are allowed.
-  for (const path of ['/v1/account/*', '/v1/safety/profile', '/v1/safety/answers', '/v1/safety/assessment', '/v1/safety/assessments', '/v1/safety/assessments/*']) app.use(path, cors({ origin: (o) => (FOUNDATION_ORIGIN.test(o) ? o : null), allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowHeaders: ['content-type', 'authorization', 'x-always-org'], maxAge: 86400 }));
+  // The app (my.alwaysfoundation.org) and the website call these with a bearer token, never cookies, so only foundation origins are allowed.
+  for (const path of ['/v1/account/*', '/v1/inbox', '/v1/handoffs/*', '/v1/org/*', '/v1/ops/*', '/v1/reports/shared/*', '/v1/safety/profile', '/v1/safety/answers', '/v1/safety/assessment', '/v1/safety/assessments', '/v1/safety/assessments/*']) app.use(path, cors({ origin: (o) => (FOUNDATION_ORIGIN.test(o) ? o : null), allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowHeaders: ['content-type', 'authorization', 'x-always-org'], maxAge: 86400 }));
   app.use('*', rateLimit({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_PER_MIN ?? 120) }));
   app.use('/v1/*', authenticate());
 

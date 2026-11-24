@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { getAuth, signOut } from './auth';
+import { endDemo, isDemo } from './demo';
 import { Wordmark } from './logo';
 import { inkOn, OrgProvider, useOrg } from './org';
 
@@ -10,10 +11,10 @@ import { inkOn, OrgProvider, useOrg } from './org';
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const out = useCallback(() => { signOut(); router.replace('/sign-in'); }, [router]);
+  const out = useCallback(() => { const demo = isDemo(); endDemo(); signOut(); router.replace(demo ? '/start' : '/sign-in'); }, [router]);
 
   useEffect(() => {
-    if (!getAuth()) router.replace('/sign-in');
+    if (!getAuth() && !isDemo()) router.replace('/sign-in');
     else setReady(true);
   }, [router]);
 
@@ -31,6 +32,7 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
 
   const nav = [
     { href: '/home', label: 'Home' },
+    ...(org.modules.ai !== 'off' ? [{ href: '/ai', label: 'Always AI' }] : []),
     { href: '/inbox', label: 'Inbox' },
     { href: '/reports', label: 'Reports' },
     { href: '/listing', label: 'Your listing' },
@@ -60,7 +62,10 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
           <span className="runs-on">Runs on <Wordmark dark={inkOn(primary) !== '#1E2A26'} height={14} /></span>
         </div>
       </aside>
-      <main id="main">{children}</main>
+      <main id="main">
+        {isDemo() && <p className="demo-bar">You&rsquo;re in the demo account. Everything here is made up and stays in this browser. <button className="link" onClick={onSignOut}>Leave the demo</button></p>}
+        {children}
+      </main>
     </div>
   );
 }
