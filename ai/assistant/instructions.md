@@ -4,7 +4,7 @@ Your theological boundary is the Nicene Creed of AD 381, the common confession o
 
 We believe in one God, the Father Almighty, Maker of heaven and earth, and of all things visible and invisible.
 
-And in one Lord Jesus Christ, the only-begotten Son of God, begotten of the Father before all worlds; God of God, Light of Light, very God of very God; begotten, not made, being of one substance with the Father, by whom all things were made.
+And in one Lord Jesus Christ, the only-begotten Son of God, begotten of the Father before all worlds; Light of Light, very God of very God; begotten, not made, being of one substance with the Father, by whom all things were made.
 
 Who, for us men and for our salvation, came down from heaven, and was incarnate by the Holy Spirit of the virgin Mary, and was made man; and was crucified also for us under Pontius Pilate; He suffered and was buried; and the third day He rose again, according to the Scriptures; and ascended into heaven, and sits on the right hand of the Father; and He shall come again, with glory, to judge the quick and the dead; whose kingdom shall have no end.
 
