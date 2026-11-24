@@ -1,6 +1,6 @@
 # ADR 0019: One Always account, modules switched on
 
-Status: Accepted
+Status: Accepted (point 6 amended by ADR 0021)
 Date: 2026-11-24
 
 ## Context
@@ -11,10 +11,10 @@ Churches and ministries should be able to start with as little as possible: no s
 
 1. One Always account per person, signed in by email link (ADR 0011). One organisation can be run by several people; one person can run up to five organisations.
 2. Anyone can create an account straight away; no enquiry or call is needed. Creating an organisation affirms the Nicene Creed (AD 381), Always's statement of faith, and records when.
-3. Each organisation switches modules on and off itself: `respond`, `connect`, `safety`, `reports`. Admins only. Every change is audited.
+3. Each organisation switches modules on and off itself: `respond`, `connect`, `safety`, `reports` and, since ADR 0021, `ai`. Admins only. Every change is audited.
 4. A module is on as soon as it is switched on, except Connect, which hands people to a church: it shows `awaiting_check` until the organisation passes the partner check, then turns on by itself.
 5. Nothing else is required to start: no Google, Microsoft or other third-party account, and no payment details. Always is free.
-6. Always AI needs no account. It runs on the person's own computer (ADR 0015).
+6. The Always AI study tool needs no account. It runs on the person's own computer (ADR 0015). Always AI writing help and agents are the `ai` module, switched on in the account (ADR 0021).
 7. Admins invite their team by email, as admin, follow-up or youth team. An invite works once, for that email address, for 7 days. The last admin cannot be removed.
 8. The organisation's look (main colour, highlight, heading style and logo) is saved with it and used on everything it publishes.
 

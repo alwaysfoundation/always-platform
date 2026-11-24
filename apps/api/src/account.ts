@@ -8,7 +8,9 @@ import { audit } from './audit.js';
 
 const MAX_ORGS_PER_PERSON = 5;
 
-export const MODULES = ['respond', 'connect', 'safety', 'reports'] as const;
+// `ai` is Always AI (ADR 0021): writing help and agents. It runs on the device and never handles people who respond,
+// so it needs no partner check, and the API stores only that it is on.
+export const MODULES = ['respond', 'connect', 'safety', 'reports', 'ai'] as const;
 type Module = (typeof MODULES)[number];
 
 // Connect hands people to a church, so it waits for the partner check (verified trust level).
@@ -48,7 +50,7 @@ const NewOrg = z.object({
   // Australian state, when there is one; organisations elsewhere leave it out (ADR 0020).
   state: z.enum(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']).optional(),
   postcode: z.string().regex(/^\d{4}$/).optional(),
-  modules: z.array(z.enum(['respond', 'connect', 'safety', 'reports'])).max(4).optional(),
+  modules: z.array(z.enum(MODULES)).max(MODULES.length).optional(),
   brand: Brand.optional(),
   // Partners affirm the Nicene Creed (AD 381), Always's statement of faith.
   affirmsCreed: z.literal(true),

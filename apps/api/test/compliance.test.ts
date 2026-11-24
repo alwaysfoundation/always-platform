@@ -392,18 +392,26 @@ describe('first sign-in for a new ministry', () => {
 
   it('starts with every module off', async () => {
     const r = await call('GET', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'admin@newchurch.example') });
-    expect(r.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules).toEqual({ respond: 'off', connect: 'off', safety: 'off', reports: 'off' });
+    expect(r.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules).toEqual({ respond: 'off', connect: 'off', safety: 'off', reports: 'off', ai: 'off' });
   });
 
   it('switches modules on and off for the admin, and records it', async () => {
     const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
     const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['respond', 'safety', 'safety'] } });
     expect(r.status).toBe(200);
-    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on', reports: 'off' });
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on', reports: 'off', ai: 'off' });
     const off = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['safety'] } });
     expect(off.body.modules.respond).toBe('off');
     const [a] = await sql`select count(*)::int as n from audit_event where org_id = ${ids.newcomer} and action = 'org.modules'`;
     expect(a.n).toBe(2);
+  });
+
+  it('turns Always AI on straight away, with no partner check (ADR 0021)', async () => {
+    const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
+    const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['ai'] } });
+    expect(r.status).toBe(200);
+    expect(r.body.modules.ai).toBe('on');
+    expect(r.body.modules.connect).toBe('off');
   });
 
   it('holds Connect until the partner check is done', async () => {
@@ -420,7 +428,7 @@ describe('first sign-in for a new ministry', () => {
     const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000009', 'admin@modules.example');
     const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'reports'], affirmsCreed: true } });
     expect(r.status).toBe(201);
-    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on' });
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on', ai: 'off' });
   });
 
   it('saves the brand for admins only, and returns it with the organisation', async () => {
