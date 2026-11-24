@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, explain, type Brand, type ModuleState, type Org } from '@/lib/api';
 import { toDataUrl } from '@/lib/brand-import';
@@ -178,16 +179,16 @@ function AlwaysAI() {
       <div className="aiw-in">
         <div>
           <p className="aiw-k">Always AI</p>
-          <h2 id="h-ai">Your private AI for study and preparation</h2>
-          <p>Ask about a passage, plan a series or search your own sermons and notes. Scripture is looked up word for word, the Nicene Creed is the boundary, and it runs on your own computer. Nothing you ask or add reaches Always.</p>
+          <h2 id="h-ai">Prepare with AI that gets Scripture right</h2>
+          <p>Plan a series, work at a passage, write group questions or a welcome message. Scripture is looked up word for word, the Nicene Creed is the boundary, and it runs in your browser on this computer. Nothing you type reaches Always.</p>
           <ul className="aiw-list">
-            <li>Free, with no account limits</li><li>Works offline once set up</li><li>For adults: not for young people&rsquo;s information</li>
+            <li>Free, with no limits</li><li>Works offline once set up</li><li>For adults, never for young people&rsquo;s information</li>
           </ul>
           <div className="row">
-            <a className="btn btn-brand" href="https://alwaysfoundation.org/#/docs/always-ai-setup">Set it up on this computer</a>
-            <a className="btn btn-ghost" href="https://alwaysfoundation.org/#/ai">What it can do</a>
+            <Link className="btn btn-brand" href="/ai">Open Always AI</Link>
+            <a className="btn btn-ghost" href="https://alwaysfoundation.org/#/docs/always-ai-setup">Desktop version</a>
           </div>
-          <p className="aiw-fine">Today it runs in Jan, the open-source desktop app, with the Always AI pack. A one-step Always AI app is in development.</p>
+          <p className="aiw-fine">Needs a recent laptop with Chrome or Edge. The first time, it downloads a model once.</p>
         </div>
         <div className="aiw-demo" aria-hidden="true">
           <div className="aiw-q">Where does Paul describe love as patient?</div>
