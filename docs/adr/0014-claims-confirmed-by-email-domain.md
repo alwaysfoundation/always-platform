@@ -1,4 +1,4 @@
-# ADR 0013: Claims confirmed by the church's own email domain
+# ADR 0014: Claims confirmed by the church's own email domain
 
 Status: Proposed
 Date: 2026-11-23
