@@ -64,10 +64,13 @@ function Home() {
   if (welcome || !org.brand.logo) steps.push({ icon: 'paint', title: 'Make it look like you', detail: 'Add your logo and colours. They appear on everything people see.', href: '/settings#h-look', action: 'Add your look' });
   if (org.role === 'admin') steps.push(invites ? { icon: 'team', title: `${invites} ${invites === 1 ? 'invitation is' : 'invitations are'} waiting`, detail: 'Remind them to check their email, or send a new one.', href: '/settings#h-team', action: 'See team' } : { icon: 'team', title: 'Bring in your team', detail: 'Invite your follow-up and youth leaders by email. Each sees only what their role needs.', href: '/settings#h-team', action: 'Invite' });
   if (report) steps.push({ icon: 'reports', title: 'This quarter’s report is ready', detail: 'Share it with your board or funders in one link. Totals only, never names.', href: '/reports', action: 'View report' });
+  if (items && items.length === 0 && org.modules.connect !== 'off') steps.push({ icon: 'globe', title: 'Check how people find you', detail: 'Choose whether you appear in the church feed, so ministries nearby can introduce people to you.', href: '/listing', action: 'Your listing' });
   if (org.modules.safety !== 'off') steps.push({ icon: 'shield', title: 'Your quarterly safety check-up', detail: 'Ten minutes to check your rules are current, with a summary for your board.', href: 'https://alwaysfoundation.org/#/mysafety', action: 'Start check-up' });
 
   const t = report?.totals ?? {};
   const fig = (k: string) => (typeof t[k] === 'number' ? (t[k] as number).toLocaleString() : '—');
+  const quiet = items !== null && waiting.length === 0 && toContact.length === 0;
+  const empty = !report || Object.values(t).every((v) => !v);
   const shown = (Object.keys(TOTALS) as (keyof typeof TOTALS)[]).filter((k) => typeof t[k] === 'number').slice(-3);
 
   return (
@@ -75,6 +78,7 @@ function Home() {
       <header className="today-head">
         <p className="today-date">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <h1>{welcome ? `Welcome to Always, ${org.name}.` : `${greeting()}.`}</h1>
+        {quiet && org.modules.connect !== 'off' && <p className="today-calm"><Icon name="check" size={16} />No one is waiting for you right now.</p>}
       </header>
 
       {ai && (
@@ -108,7 +112,13 @@ function Home() {
         )}
       </section>
 
-      {report && (
+      {org.modules.reports !== 'off' && empty && items !== null && (
+        <section className="glance" aria-labelledby="h-glance">
+          <div className="glance-head"><h2 id="h-glance">This quarter</h2></div>
+          <p className="glance-empty">Your figures appear here after your first welcome. Totals only, never names.</p>
+        </section>
+      )}
+      {report && !empty && (
         <section className="glance" aria-labelledby="h-glance">
           <div className="glance-head"><h2 id="h-glance">This quarter</h2><Link href="/reports">Full report</Link></div>
           <dl>
