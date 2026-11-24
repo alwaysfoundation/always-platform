@@ -24,6 +24,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `spec/` | The Always Handoff standard, JSON Schema, CC BY 4.0: v0.2 for any country (`handoff-standard-v0.2.schema.json`, with a synthetic example) and v0.1, the Australian profile. Also the Always Safety register. |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
 | `spec/safety/` | The Always Safety register: open obligations for ministries in Australia, the US, Canada, the UK, the EU and New Zealand (draft, CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. Not legal advice. See `docs/safety.md`. |
+| `ai/` | **Always AI**: faithful AI infrastructure (preview). Always Scripture, an offline MCP server for exact Bible text and reference checking, seven openly licensed Bibles, the Nicene Creed (AD 381) and its propositions, and a study tool for adult pastors and leaders built on Jan. Never a companion or chat product for the public (ADR 0018). See `ai/README.md`. |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
 ## Run it locally

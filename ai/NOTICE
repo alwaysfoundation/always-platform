@@ -1,0 +1,21 @@
+Always AI
+Copyright 2026 Always Foundation
+
+This product is built on Jan (https://jan.ai, https://github.com/janhq/jan),
+Copyright 2025 Menlo Research, licensed under the Apache License, Version 2.0.
+Jan is a trademark of its owner; Always AI is not affiliated with or endorsed by Menlo Research.
+
+Bundled Bible texts (scripture-mcp/data), sourced from scrollmapper/bible_databases:
+- Berean Standard Bible (BSB): dedicated to the public domain (CC0) on 30 April 2023. https://berean.bible
+- Reina-Valera 1909: public domain.
+- Biblia Livre: Creative Commons Attribution 3.0 Brazil.
+- Russian Synodal Translation: public domain.
+- Chinese Union Version (Traditional): public domain.
+- Ang Biblia (1905): public domain.
+- Kinh Thanh Tieng Viet (1934): public domain.
+
+The Nicene Creed (creed/): English translation in the public domain, from onthewing.org via
+the Creeds.json dataset (github.com/NonlinearFruit/Creeds.json), presented in its AD 381 form.
+
+Model weights are not included. Recommended models (models/recommended.json) are downloaded by the
+user from Hugging Face under their own licences.

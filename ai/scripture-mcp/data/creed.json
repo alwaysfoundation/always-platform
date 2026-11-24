@@ -1,0 +1,89 @@
+{
+  "title": "The Nicene Creed (Niceno-Constantinopolitan, AD 381)",
+  "text": "We believe in one God, the Father Almighty, Maker of heaven and earth, and of all things visible and invisible.\n\nAnd in one Lord Jesus Christ, the only-begotten Son of God, begotten of the Father before all worlds; God of God, Light of Light, very God of very God; begotten, not made, being of one substance with the Father, by whom all things were made.\n\nWho, for us men and for our salvation, came down from heaven, and was incarnate by the Holy Spirit of the virgin Mary, and was made man; and was crucified also for us under Pontius Pilate; He suffered and was buried; and the third day He rose again, according to the Scriptures; and ascended into heaven, and sits on the right hand of the Father; and He shall come again, with glory, to judge the quick and the dead; whose kingdom shall have no end.\n\nAnd we believe in the Holy Ghost, the Lord and Giver of Life; who proceeds from the Father; who with the Father and the Son together is worshipped and glorified; who spoke by the prophets.\n\nAnd we believe in one holy catholic and apostolic Church. We acknowledge one baptism for the remission of sins; and we look for the resurrection of the dead, and the life of the world to come. Amen.",
+  "notes": [
+    "English translation in the public domain. Source text: onthewing.org, via the Creeds.json dataset (NonlinearFruit/Creeds.json), where it is marked public domain.",
+    "Presented in its AD 381 form: the Holy Spirit 'proceeds from the Father'. Many Western churches add 'and the Son' (the filioque), a later addition. Always AI treats this as a difference between orthodox traditions, not a test of faith.",
+    "The original Greek begins 'We believe' (plural)."
+  ],
+  "propositions": [
+    {
+      "id": "one-god",
+      "text": "There is one God, the Father Almighty, Maker of heaven and earth, of all things visible and invisible."
+    },
+    {
+      "id": "trinity",
+      "text": "The one God is Father, Son and Holy Spirit; the Son and the Holy Spirit are worshipped and glorified together with the Father."
+    },
+    {
+      "id": "son-eternal",
+      "text": "Jesus Christ is the only-begotten Son of God, begotten of the Father before all ages, not made or created."
+    },
+    {
+      "id": "son-divine",
+      "text": "The Son is true God from true God, of one substance (homoousios) with the Father."
+    },
+    {
+      "id": "creation-through-son",
+      "text": "All things were made through the Son."
+    },
+    {
+      "id": "incarnation",
+      "text": "For us and for our salvation the Son came down from heaven, was incarnate by the Holy Spirit of the Virgin Mary, and became truly human."
+    },
+    {
+      "id": "crucifixion",
+      "text": "Jesus Christ was crucified for us under Pontius Pilate, suffered and was buried."
+    },
+    {
+      "id": "resurrection",
+      "text": "On the third day He rose again according to the Scriptures."
+    },
+    {
+      "id": "ascension",
+      "text": "He ascended into heaven and is seated at the right hand of the Father."
+    },
+    {
+      "id": "return-judgement",
+      "text": "He will come again in glory to judge the living and the dead, and His kingdom will have no end."
+    },
+    {
+      "id": "holy-spirit",
+      "text": "The Holy Spirit is the Lord and Giver of life, who proceeds from the Father and spoke through the prophets."
+    },
+    {
+      "id": "church",
+      "text": "There is one holy, catholic and apostolic Church."
+    },
+    {
+      "id": "baptism",
+      "text": "There is one baptism for the forgiveness of sins."
+    },
+    {
+      "id": "resurrection-dead",
+      "text": "We look for the resurrection of the dead and the life of the world to come."
+    }
+  ],
+  "historic_errors_excluded": [
+    {
+      "id": "arianism",
+      "text": "The Son is a created being, or there was a time when the Son was not."
+    },
+    {
+      "id": "modalism",
+      "text": "Father, Son and Spirit are only modes or roles of one person, not three persons."
+    },
+    {
+      "id": "adoptionism",
+      "text": "Jesus was a mere man who was adopted as God's Son."
+    },
+    {
+      "id": "pneumatomachianism",
+      "text": "The Holy Spirit is a created power, not Lord and God."
+    },
+    {
+      "id": "docetism",
+      "text": "Christ only seemed to be human, or did not truly suffer and die."
+    }
+  ]
+}

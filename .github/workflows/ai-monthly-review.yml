@@ -1,0 +1,53 @@
+name: Always AI monthly technology review
+on:
+  schedule:
+    - cron: '17 22 1 * *' # 1st of each month, 22:17 UTC (morning of the 2nd in Sydney)
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  open-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gather releases and new models
+        id: gather
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          jan=$(gh api repos/janhq/jan/releases/latest --jq '"\(.tag_name) (\(.published_at[:10])) \(.html_url)"' || echo "unavailable")
+          llama=$(gh api repos/ggml-org/llama.cpp/releases/latest --jq '"\(.tag_name) (\(.published_at[:10])) \(.html_url)"' || echo "unavailable")
+          since=$(date -u -d '35 days ago' +%Y-%m-%d)
+          models=""
+          for author in google Qwen meta-llama mistralai microsoft; do
+            list=$(curl -fsS "https://huggingface.co/api/models?author=${author}&sort=createdAt&direction=-1&limit=15" \
+              | jq -r --arg since "$since" '.[] | select(.createdAt >= $since) | "- [\(.id)](https://huggingface.co/\(.id)) (\(.createdAt[:10]))"' || true)
+            [ -n "$list" ] && models="${models}\n**${author}**\n${list}\n"
+          done
+          {
+            echo "body<<EOF"
+            echo "## Releases"
+            echo "- Jan: ${jan}"
+            echo "- llama.cpp: ${llama}"
+            echo
+            echo "## New open models in tracked families (last 35 days)"
+            if [ -n "$models" ]; then printf "%b" "$models"; else echo "None found."; fi
+            echo
+            echo "## Checklist"
+            echo "- [ ] New Jan release reviewed (privacy, MCP, retrieval, mobile)"
+            echo "- [ ] llama.cpp changes that matter"
+            echo "- [ ] Candidate models licence-checked (no non-commercial terms)"
+            echo "- [ ] Evaluation run and scorecard updated"
+            echo "- [ ] ai/models/recommended.json updated, or no change recorded"
+            echo "- [ ] Bible and Creed sources unchanged"
+            echo "- [ ] Phones: revisit Stage 3?"
+            echo
+            echo "Process: ai/docs/model-review.md"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Open the review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.gather.outputs.body }}
+        run: gh issue create --repo "$GITHUB_REPOSITORY" --title "Technology review: $(date -u +'%B %Y')" --body "$BODY"

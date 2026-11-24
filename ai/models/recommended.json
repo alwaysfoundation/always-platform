@@ -1,0 +1,35 @@
+{
+  "reviewed": "2026-11-24",
+  "review_cadence": "monthly",
+  "note": "Defaults for Always AI's model router. Every entry is open-weight with a licence that allows free use and redistribution. Recommendations change only after the evaluation is re-run; see docs/model-review.md.",
+  "tiers": [
+    {
+      "id": "small",
+      "for": "Laptops with 8 GB of memory, older machines, and future phone and browser builds",
+      "model": "Gemma 4 E2B (instruction-tuned)",
+      "huggingface": "unsloth/gemma-4-E2B-it-GGUF",
+      "licence": "Apache-2.0"
+    },
+    {
+      "id": "standard",
+      "for": "Most laptops with 8 to 16 GB of memory",
+      "model": "Gemma 4 E4B (instruction-tuned)",
+      "huggingface": "unsloth/gemma-4-E4B-it-GGUF",
+      "licence": "Apache-2.0",
+      "alternative": { "model": "Qwen3.5 4B", "huggingface": "unsloth/Qwen3.5-4B-GGUF", "licence": "Apache-2.0", "when": "8 GB machines where E4B is too large, and languages where it scores better" }
+    },
+    {
+      "id": "large",
+      "for": "Machines with 16 GB or more, and Apple silicon",
+      "model": "Gemma 4 12B (instruction-tuned, quantisation-aware)",
+      "huggingface": "google/gemma-4-12B-it-qat-q4_0-gguf",
+      "licence": "Apache-2.0"
+    }
+  ],
+  "embedding": {
+    "model": "Qwen3 Embedding 0.6B",
+    "huggingface": "Qwen/Qwen3-Embedding-0.6B-GGUF",
+    "licence": "Apache-2.0"
+  },
+  "cloud": "Off by default. People may connect their own account with any provider Jan supports, including OpenRouter and Hugging Face."
+}

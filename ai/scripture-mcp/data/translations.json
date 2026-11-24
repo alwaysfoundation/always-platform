@@ -1,0 +1,85 @@
+[
+  {
+    "id": "BSB",
+    "name": "Berean Standard Bible",
+    "language": "en",
+    "licence": "Public domain (CC0)",
+    "note": "Dedicated to the public domain by its publishers on 30 April 2023.",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/BSB.json",
+    "missing_books": [],
+    "additional_books": []
+  },
+  {
+    "id": "RV1909",
+    "name": "Reina-Valera 1909",
+    "language": "es",
+    "licence": "Public domain",
+    "note": "",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/SpaRV.json",
+    "missing_books": [],
+    "additional_books": []
+  },
+  {
+    "id": "BLIVRE",
+    "name": "Bíblia Livre",
+    "language": "pt",
+    "licence": "CC BY 3.0 BR",
+    "note": "Attribution: Bíblia Livre, licensed under Creative Commons Attribution 3.0 Brazil.",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/PorBLivre.json",
+    "missing_books": [],
+    "additional_books": []
+  },
+  {
+    "id": "RUSSYN",
+    "name": "Russian Synodal Translation",
+    "language": "ru",
+    "licence": "Public domain",
+    "note": "The source includes deuterocanonical books, which are kept.",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/RusSynodal.json",
+    "missing_books": [],
+    "additional_books": [
+      "Prayer of Manasses",
+      "I Esdras",
+      "Tobit",
+      "Judith",
+      "Wisdom",
+      "Sirach",
+      "Epistle of Jeremiah",
+      "Baruch",
+      "I Maccabees",
+      "II Maccabees",
+      "III Maccabees",
+      "II Esdras"
+    ]
+  },
+  {
+    "id": "CUV",
+    "name": "Chinese Union Version (Traditional)",
+    "language": "zh-Hant",
+    "licence": "Public domain",
+    "note": "",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/ChiUn.json",
+    "missing_books": [],
+    "additional_books": []
+  },
+  {
+    "id": "ADB1905",
+    "name": "Ang Biblia (1905)",
+    "language": "tl",
+    "licence": "Public domain",
+    "note": "",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/TagAngBiblia.json",
+    "missing_books": [],
+    "additional_books": []
+  },
+  {
+    "id": "VIE1934",
+    "name": "Kinh Thánh Tiếng Việt (1934)",
+    "language": "vi",
+    "licence": "Public domain",
+    "note": "",
+    "source": "scrollmapper/bible_databases@59b18c5af5845728c275d5b7178ad0d024172b1f formats/json/Viet.json",
+    "missing_books": [],
+    "additional_books": []
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "always-scripture": {
+      "command": "node",
+      "args": [
+        "/full/path/to/ai/scripture-mcp/src/server.js"
+      ],
+      "env": {},
+      "active": true
+    }
+  }
+}

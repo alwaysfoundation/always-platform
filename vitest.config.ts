@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
@@ -10,5 +10,5 @@ export default defineConfig({
       '@always/integrations': fileURLToPath(new URL('./packages/integrations/src/index.ts', import.meta.url)),
     },
   },
-  test: { globals: true, fileParallelism: false, testTimeout: 20000 },
+  test: { globals: true, fileParallelism: false, testTimeout: 20000, exclude: [...configDefaults.exclude, 'ai/**'] },
 });
