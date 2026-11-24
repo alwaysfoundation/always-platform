@@ -858,6 +858,48 @@ ${form ? '<form method="post"><button style="font:600 17px system-ui;background:
     return c.json(out);
   });
 
+  /** What we measure, network-wide. Totals only; any count of people under 5 is withheld. Never individuals, journeys or AI use. */
+  app.get('/v1/ops/measures', async (c) => {
+    const p = requirePrincipal(c);
+    if (!p.careTeam) throw new HttpError(403, 'care_team_only');
+    const q = readQuery(c);
+    const from = new Date(q.from), to = new Date(new Date(q.to).getTime() + 86_400_000);
+    const people = (n: number) => (n > 0 && n < 5 ? null : n);
+    const m = await asService(sql, async (tx) => {
+      const [w] = await tx`select count(*)::int as n,
+          percentile_cont(0.5) within group (order by extract(epoch from (first_contact_at - accepted_at)) / 86400.0) as median_days
+        from handoff where first_contact_at >= ${from} and first_contact_at < ${to}`;
+      const [ready] = await tx`select count(*)::int as n from org_readiness where welcoming_now`;
+      const [f] = await tx`select
+          count(*)::int as created,
+          count(*) filter (where cardinality(modules) > 0)::int as tool_on,
+          count(*) filter (where exists (select 1 from handoff_offer o where o.org_id = organisation.id and o.outcome = 'accepted'))::int as first_welcome
+        from organisation where created_at >= ${from} and created_at < ${to} and not is_care_team`;
+      const [act] = await tx`select count(*)::int as cohort,
+          count(*) filter (where exists (select 1 from handoff_offer o where o.org_id = organisation.id and o.decided_at > ${new Date(to.getTime() - 30 * 86_400_000)})
+                              or exists (select 1 from audit_event a where a.org_id = organisation.id and a.at > ${new Date(to.getTime() - 30 * 86_400_000)}))::int as active
+        from organisation where created_at < ${new Date(to.getTime() - 90 * 86_400_000)} and not is_care_team and cardinality(modules) > 0`;
+      const [g] = await tx`select
+          count(*) filter (where outcome = 'passed')::int as passes,
+          count(*) filter (where pass_reason = 'safeguarding')::int as safety_flags
+        from handoff_offer where decided_at >= ${from} and decided_at < ${to}`;
+      const [h] = await tx`select count(*) filter (where state = 'care_team')::int as care_team,
+          count(*) filter (where state = 'withdrawn')::int as withdrawn
+        from handoff where created_at >= ${from} and created_at < ${to}`;
+      return { w, ready, f, act, g, h };
+    });
+    return c.json({
+      from: q.from, to: q.to,
+      welcomed: people(m.w?.n ?? 0),
+      medianDaysToContact: m.w?.median_days == null ? null : Math.round(Number(m.w.median_days) * 10) / 10,
+      churchesWelcomingNow: m.ready?.n ?? 0,
+      funnel: { accountsCreated: m.f?.created ?? 0, firstToolOn: m.f?.tool_on ?? 0, firstWelcome: m.f?.first_welcome ?? 0 },
+      activeAfter90Days: { cohort: m.act?.cohort ?? 0, active: m.act?.active ?? 0 },
+      care: { passes: m.g?.passes ?? 0, careTeamCatches: people(m.h?.care_team ?? 0), consentWithdrawn: people(m.h?.withdrawn ?? 0), safetyFlags: people(m.g?.safety_flags ?? 0) },
+      notYetMeasured: ['signUpsStarted', 'smallChurchShare', 'openComponentsUsedElsewhere'],
+    });
+  });
+
   app.get('/v1/ops/report', async (c) => {
     const p = requirePrincipal(c);
     if (!p.careTeam) throw new HttpError(403, 'care_team_only');
