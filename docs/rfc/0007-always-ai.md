@@ -37,7 +37,7 @@ On matters the Creed leaves open (baptism, the Lord's Supper, gifts, church orde
 | Anything identifying a person under 18 | Never | Never |
 | Church library | Allowed | Not offered |
 
-The children rule is not configurable (CLAUDE.md non-negotiable 4). Hosted processing stays in Australian regions (non-negotiable 5), keeps no prompts or replies, and gives Always staff no access to content. Hosted processing of adults' details needs a privacy notice and Prolegis review before launch.
+The children rule is not configurable (CLAUDE.md non-negotiable 4). Hosted processing stays in Australian regions (non-negotiable 5), keeps no prompts or replies, and gives Always staff no access to content. Hosted processing of adults' details needs a privacy notice and legal review before launch.
 
 ## Stages
 
