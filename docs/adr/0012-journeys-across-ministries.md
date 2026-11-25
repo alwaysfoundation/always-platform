@@ -16,7 +16,7 @@ A record that follows one person over time is reasonably identifiable, so it is 
 4. Per-ministry codes: `code = HMAC(ORG_KEY, journey_id || org_id)`. A ministry sees only its own code. Codes are unrelated between ministries.
 5. A ministry that later helps a person sees earlier milestones (step and month), never notes. Every read is written to the audit chain.
 6. New self-reported milestones: baptised, in a group, serving, connected after 12 months. Counted only when the person reports them.
-7. The Handoff standard carries the ministry code with the consent receipt. Receivers must not pass it on or combine it beyond the consent, and must honour `consent.withdrawn`.
+7. The Pathway standard carries the ministry code with the consent receipt. Receivers must not pass it on or combine it beyond the consent, and must honour `consent.withdrawn`.
 8. Minors: no `link` is computed for anyone under 18. This is not configurable.
 
 ## Consequences

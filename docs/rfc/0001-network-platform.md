@@ -88,7 +88,7 @@ A person's details move only to the church or ministry they chose, for the next 
 - Every read of a person's record by a ministry is written to the audit chain.
 
 **Interoperability**
-- The Always Handoff standard carries a person's next step between systems (Planning Center, Elvanto, ministry apps) with the consent receipt attached. A receiving system must honour the receipt's purposes and withdrawal.
+- The Always Pathway standard carries a person's next step between systems (Planning Center, Elvanto, ministry apps) with the consent receipt attached. A receiving system must honour the receipt's purposes and withdrawal.
 
 **Minors**: the age rules in section 5 run first. As for everyone, each response stands alone.
 
@@ -109,7 +109,7 @@ Modelled on how the YouVersion Platform works for Scripture: register an app, ge
 
 **MCP server** (`mcp.alwaysfoundation.org`)
 So churches and ministries can use Always from Claude and other AI assistants.
-- Version 1 is **read-only and holds no personal data**: search the directory, check readiness, list events, explain the Handoff standard, fetch an organisation's own de-identified report.
+- Version 1 is **read-only and holds no personal data**: search the directory, check readiness, list events, explain the Pathway standard, fetch an organisation's own de-identified report.
 - Version 2 adds team tools for an organisation's own inbox for **adults only** and only where the person granted `ai.assist`: summarise what's waiting, draft a welcome message. Every action still needs a person to press send. Minors' records are never exposed to MCP or any AI.
 - Each MCP session is tied to one organisation and one signed-in person, with the same scopes as the web app, and logged.
 
@@ -184,7 +184,7 @@ Youth access is granted per person by an admin, requires a recorded check, and e
 1/ **Built (PR #18)**: church feed with opt-in, welcoming now, verification, Your listing page, MCP server v1, `llms.txt`, SDK feed methods and the church finder.
 2/ **Now**: child assent for under 15s and 12-month consent expiry for minors in `packages/core` (tests first); readiness view and badge; Working With Children Check records and youth access expiry; age table tests (fail-closed).
 3/ **Next**: developer portal with test keys; MCP v1 (read-only, no personal data); compliance tab with consent register, breach register and retention evidence.
-4/ **Then**: React components; MCP v2 for adults with `ai.assist`; Handoff standard adapters for church management systems.
+4/ **Then**: React components; MCP v2 for adults with `ai.assist`; Pathway standard adapters for church management systems.
 
 Each step gets its own issue, tests first for consent, minors and access, and an ADR when a decision is made.
 
@@ -198,7 +198,7 @@ Made on 18 November 2026, favouring Australian law and child safety where unsure
 4/ **Retention** follows `packages/core/src/policy.ts`: minors' name and contact removed at 6 months and the record deleted at 12; adults removed at 12 and deleted at 24; unreceived responses deleted after 14 days (minors) or 30 (adults); withdrawal deletes within 7 days. Minors' records are destroyed, not just de-identified. De-identified tallies stay for reports.
 5/ **Child safety incidents** are recorded by the receiving organisation in its safeguarding system and kept for at least 45 years. Always holds a pointer (organisation, date, reference), never the details, and never in AI or exports.
 6/ **Safeguarding lead**: the board appoints a Safeguarding Lead and a deputy. Until they're appointed, foundation staff can't open any minor's record at all (fail closed).
-7/ **Church management systems first**: Elvanto, then Planning Center, through the Always Handoff standard.
+7/ **Church management systems first**: Elvanto, then Planning Center, through the Always Pathway standard.
 8/ **No social features for anyone**, so Always stays outside the social media minimum age rules and keeps young people safe.
 9/ **AI and minors**: never, including the MCP server. Adults only with `ai.assist` consent, and a person approves every action.
 

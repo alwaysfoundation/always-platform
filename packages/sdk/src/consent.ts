@@ -7,7 +7,7 @@
  * and the exact wording they saw. Every system that touches the person checks it first
  * and fails closed. Withdrawal is one tap and reaches every holder.
  *
- * Shape follows ISO/IEC TS 27560 (consent records) and the Always Handoff standard.
+ * Shape follows ISO/IEC TS 27560 (consent records) and the Always Pathway standard.
  */
 export type Purpose = 'connect.church' | 'notify.sender' | 'resources' | 'stats.anonymous';
 export type AgeBand = 'under13' | '13-14' | '15-17' | '18+';
