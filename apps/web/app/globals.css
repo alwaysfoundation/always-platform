@@ -393,15 +393,6 @@ main { padding: 48px clamp(20px, 4vw, 56px); max-width: 1100px; }
 .today { max-width: 760px; margin: 0 auto; }
 .today-date { margin: 0; color: var(--muted); font-size: 14.5px; font-weight: 600; }
 .today-head h1 { margin-top: 4px; font-size: clamp(32px, 4vw, 46px); color: var(--ink); letter-spacing: -.025em; }
-.ask { margin-top: 26px; display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1.5px solid var(--line); border-radius: 20px; padding: 8px 8px 8px 18px; box-shadow: 0 18px 40px -30px rgba(20,53,47,.5); transition: border-color .2s, box-shadow .2s; }
-.ask:focus-within { border-color: var(--brand, var(--green)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand, var(--green)) 12%, transparent), 0 18px 40px -30px rgba(20,53,47,.5); }
-.ask > .ic { color: var(--brand-accent, var(--peach)); flex: none; }
-.ask input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: 17px var(--text); color: var(--ink); min-height: 44px; }
-.ask button { flex: none; width: 44px; height: 44px; border-radius: 14px; border: 0; background: var(--brand, var(--green)); color: var(--brand-ink, var(--cream)); display: grid; place-items: center; cursor: pointer; }
-.ask button:disabled { opacity: .3; cursor: default; }
-.ask-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.ask-chips button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font: 500 14px var(--text); color: var(--soft); cursor: pointer; }
-.ask-chips button:hover { background: var(--paper); color: var(--ink); }
 .next { margin-top: 40px; }
 .next h2, .glance h2 { font: 700 15px var(--head); color: var(--muted); margin: 0 0 12px; }
 .next ul { list-style: none; margin: 0; padding: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
@@ -541,12 +532,10 @@ main { padding: 48px clamp(20px, 4vw, 56px); max-width: 1100px; }
   .next-tx { flex: 1; }
   .next-go { margin: 2px 0 0; font-size: 0; }
   .next-go .ic { width: 18px; height: 18px; }
-  .ask input { font-size: 16px; }
 }
 
 /* Calmer controls everywhere */
 .glance dl div, .con2, .row-link, .look, .team, .mod, .next ul, .ask { box-shadow: none; }
-.ask { box-shadow: var(--shadow); }
 .page-wrap .status:not(:empty) { color: var(--brand-fg); }
 .shell .side nav a[aria-current="page"] { color: var(--brand-fg); }
 .next-go, .glance-head a { color: var(--brand-fg); }

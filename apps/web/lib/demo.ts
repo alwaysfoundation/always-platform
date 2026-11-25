@@ -60,7 +60,7 @@ export async function demoApi(path: string, method: string, body: unknown): Prom
   if (path === '/v1/account/orgs' && method === 'GET') return { orgs: [s.org] };
   if (path.endsWith('/modules') && method === 'PUT') {
     const on = new Set(b.modules as string[]);
-    s.org.modules = Object.fromEntries((['respond', 'connect', 'safety', 'reports', 'ai'] as const).map((k) => [k, on.has(k) ? 'on' : 'off'])) as Org['modules'];
+    s.org.modules = Object.fromEntries((['respond', 'connect', 'safety', 'reports'] as const).map((k) => [k, on.has(k) ? 'on' : 'off'])) as Org['modules'];
     save(s); return { modules: s.org.modules };
   }
   if (path.endsWith('/brand') && method === 'PUT') { s.org.brand = { ...s.org.brand, ...(b as Partial<Org['brand']>) }; save(s); return { brand: s.org.brand }; }

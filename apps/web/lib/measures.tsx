@@ -56,7 +56,7 @@ export function Measures() {
           </ul>
         </div>
       </div>
-      <p className="meta">Totals only. Counts of people under five are withheld. We never measure individuals, journeys between ministries, or what anyone asks Always AI.</p>
+      <p className="meta">Totals only. Counts of people under five are withheld. We never measure individuals, or journeys between ministries.</p>
     </section>
   );
 }

@@ -9,7 +9,6 @@ What is working now and what comes next. Each item becomes issues and pull reque
 - [x] Hosted response pages and QR codes (Always Respond)
 - [x] Always account at my.alwaysfoundation.org: email-code sign-in, modules, inbox, team, your look, reports, settings
 - [x] Demo account that runs entirely in the browser with made-up data
-- [x] Always AI in the browser: open models on the device, Scripture looked up and checked, safety screening before any answer
 - [x] Always Safety register (draft): Australia, the US, Canada, the UK, the EU and New Zealand
 - [x] alwaysfoundation.org with a language switcher, served from [always-website](https://github.com/alwaysfoundation/always-website)
 - [x] Email through Resend; signed webhooks
@@ -20,7 +19,6 @@ What is working now and what comes next. Each item becomes issues and pull reque
 - [ ] Independent security assessment, with the summary published
 - [ ] Planning Center and Elvanto connections
 - [ ] Zapier
-- [ ] Always AI safety screening in more languages
 
 ## Later
 

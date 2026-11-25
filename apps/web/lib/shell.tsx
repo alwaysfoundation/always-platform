@@ -36,7 +36,6 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
   const nav = [
     { href: '/home', label: 'Home', icon: 'home' },
     { href: '/inbox', label: 'Inbox', icon: 'inbox' },
-    ...(org.modules.ai !== 'off' ? [{ href: '/ai', label: 'Always AI', icon: 'ai' }] : []),
     { href: '/reports', label: 'Reports', icon: 'reports' },
     { href: '/settings', label: 'Settings', icon: 'settings' },
     ...(org.careTeam ? [{ href: '/foundation', label: 'Foundation', icon: 'foundation' }] : []),
@@ -81,7 +80,7 @@ function Frame({ children, onSignOut }: { children: React.ReactNode; onSignOut: 
 
       <nav className="tabs" aria-label="Main">
         {nav.filter((n) => n.href !== '/foundation').map((n) => (
-          <Link key={n.href} href={n.href} aria-current={here(n.href) ? 'page' : undefined}><Icon name={n.icon} size={22} /><span>{n.label === 'Always AI' ? 'Ask' : n.label}</span></Link>
+          <Link key={n.href} href={n.href} aria-current={here(n.href) ? 'page' : undefined}><Icon name={n.icon} size={22} /><span>{n.label}</span></Link>
         ))}
       </nav>
     </div>

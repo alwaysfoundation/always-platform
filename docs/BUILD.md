@@ -12,7 +12,6 @@ Free, open-source tools that help churches and ministries welcome every person w
    - **Connect:** an inbox where a church accepts or passes each introduction; the next nearby church is offered, and a care team catches anyone missed.
    - **Safety:** a rules register by country and a quarterly check-up.
    - **Reports:** totals for boards and funders, never names.
-   - **Always AI:** open models running in the browser on the person's own device, with Scripture looked up, not generated.
 3. **The Always API.** REST and signed webhooks for integrations, with scoped, revocable tokens.
 4. **The Always SDK** (`@always/sdk`): a typed client, `buildConsent()`, `verifyWebhook()` and the `<always-response>` web component.
 
@@ -37,7 +36,6 @@ Free, open-source tools that help churches and ministries welcome every person w
 | SMS | HTTP SMS provider adapter | |
 | Field encryption | Application-level encryption before data reaches the database (`FIELD_KEY`), keyed hashes (`HASH_KEY`) | |
 | Human check | Cloudflare Turnstile on public forms | |
-| Always AI | WebLLM in a web worker; Gemma and Qwen models | The person's device |
 | Analytics | Cloudflare Web Analytics, no cookies | |
 | Code and CI | GitHub, GitHub Actions | |
 
@@ -46,7 +44,7 @@ Free, open-source tools that help churches and ministries welcome every person w
 - `packages/db`: database helpers that run every request under row-level security.
 - `packages/sdk`: the Always SDK.
 - `apps/api`: the API, scheduled jobs and delivery adapters.
-- `apps/web`: the Always account, response pages, Always AI and the demo.
+- `apps/web`: the Always account, response pages and the demo.
 - `db/migrations`: schema, policies and their tests.
 - `spec/`: the Always Handoff standard.
 
@@ -62,7 +60,6 @@ Roughly US$50 to $100 a month at launch: Supabase Pro ($25), Railway (usage, abo
 - Notifications and webhooks carry ids, never personal details.
 - The audit log is append-only and hash-chained.
 - Minors rules run first and cannot be configured. Under 13: no child data. Under 15: a parent confirms. Minors go only to verified youth partners. No AI on minors' data.
-- What people ask Always AI never leaves their device.
 - Retention is automatic: unreceived adults after 30 days, minors after 14, withdrawals within 7 days.
 
 ## CI

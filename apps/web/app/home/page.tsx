@@ -18,12 +18,6 @@ export default function HomePage() {
 type Item = { handoffId: string; state: string; offer: 'pending' | 'accepted'; firstName?: string; suburb: string };
 type Step = { icon: string; title: string; detail: string; href: string; action: string; tone?: 'urgent' };
 
-const SUGGEST = [
-  'Plan a 6-week series on Philippians',
-  'Small group questions on Romans 12:1-2',
-  'A welcome text for someone new',
-];
-
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
@@ -42,7 +36,6 @@ function Home() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [invites, setInvites] = useState(0);
-  const [ask, setAsk] = useState('');
 
   useEffect(() => { setWelcome(new URLSearchParams(location.search).get('welcome') === '1'); }, []);
   useEffect(() => {
@@ -54,8 +47,6 @@ function Home() {
   }, [org]);
 
   if (!org) return null;
-  const ai = org.modules.ai !== 'off';
-  const go = (q: string) => router.push(`/ai?q=${encodeURIComponent(q)}`);
 
   const waiting = items?.filter((i) => i.offer === 'pending') ?? [];
   const toContact = items?.filter((i) => i.offer === 'accepted' && i.state !== 'contacted') ?? [];
@@ -81,20 +72,6 @@ function Home() {
         <h1>{welcome ? `Welcome to Always, ${org.name}.` : `${greeting()}.`}</h1>
         {quiet && org.modules.connect !== 'off' && <p className="today-calm"><Icon name="check" size={16} />No one is waiting for you right now.</p>}
       </header>
-
-      {ai && (
-        <form className="ask" onSubmit={(e) => { e.preventDefault(); if (ask.trim()) go(ask.trim()); }}>
-          <label className="sr-only" htmlFor="ask">Ask Always AI</label>
-          <Icon name="ai" size={22} />
-          <input id="ask" value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="What are you preparing?" autoComplete="off" />
-          <button type="submit" aria-label="Ask" disabled={!ask.trim()}><Icon name="arrow" /></button>
-        </form>
-      )}
-      {ai && (
-        <div className="ask-chips">
-          {SUGGEST.map((s) => <button key={s} type="button" onClick={() => go(s)}>{s}</button>)}
-        </div>
-      )}
 
       <section className="next" aria-labelledby="h-next">
         <h2 id="h-next">Next steps</h2>
