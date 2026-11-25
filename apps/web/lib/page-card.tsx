@@ -23,6 +23,8 @@ export function PageCard() {
   const [page] = useOwnPage();
   const [qr, setQr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [embed, setEmbed] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   useEffect(() => {
     if (!page) return;
@@ -30,6 +32,7 @@ export function PageCard() {
   }, [page]);
 
   if (!org || !page) return null;
+  const SNIPPET = `<script src="https://alwaysfoundation.org/sdk/v0/respond-button.js" data-page="${page.slug}" data-color="${org.brand.primary}" async></script>`;
 
   function download() {
     const blob = new Blob([qr], { type: 'image/svg+xml' });
@@ -61,7 +64,17 @@ export function PageCard() {
           </button>
           <button type="button" className="btn pgc-quiet" onClick={print}>Print a welcome card</button>
           <button type="button" className="btn pgc-quiet" onClick={download}>Download QR</button>
+          <button type="button" className="btn pgc-quiet" aria-expanded={embed} onClick={() => setEmbed(!embed)}>Add to your website</button>
         </div>
+        {embed && (
+          <div className="pgc-embed">
+            <p>Paste this line into your website, before <code>&lt;/body&gt;</code>. A &ldquo;Want to know more about Jesus?&rdquo; button appears in the corner and opens this page.</p>
+            <pre><code>{SNIPPET}</code></pre>
+            <button type="button" className="btn btn-brand" onClick={() => { void navigator.clipboard?.writeText(SNIPPET); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 1800); }}>
+              <Icon name={copiedCode ? 'check' : 'globe'} size={18} />{copiedCode ? 'Copied' : 'Copy the code'}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -67,10 +67,18 @@ function Home() {
 
   return (
     <div className="today">
-      <header className="today-head">
+      <header className="today-head today-hero">
         <p className="today-date">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         <h1>{welcome ? `Welcome to Always, ${org.name}.` : `${greeting()}.`}</h1>
         {quiet && org.modules.connect !== 'off' && <p className="today-calm"><Icon name="check" size={16} />No one is waiting for you right now.</p>}
+        {report && !empty && (
+          <div className="today-flow-wrap">
+            <ol className="today-flow" aria-label="This quarter, totals only">
+              {(shown.length ? shown : (['accepted', 'contacted', 'connected'] as const)).map((k) => <li key={k}><b>{fig(k)}</b><span>{TOTALS[k]}</span></li>)}
+            </ol>
+            <Link className="today-flow-link" href="/reports">This quarter&rsquo;s report</Link>
+          </div>
+        )}
       </header>
 
       <section className="next" aria-labelledby="h-next">
@@ -96,14 +104,6 @@ function Home() {
         <section className="glance" aria-labelledby="h-glance">
           <div className="glance-head"><h2 id="h-glance">This quarter</h2></div>
           <p className="glance-empty">Your figures appear here after your first welcome. Totals only, never names.</p>
-        </section>
-      )}
-      {report && !empty && (
-        <section className="glance" aria-labelledby="h-glance">
-          <div className="glance-head"><h2 id="h-glance">This quarter</h2><Link href="/reports">Full report</Link></div>
-          <dl>
-            {(shown.length ? shown : (['accepted', 'contacted', 'connected'] as const)).map((k) => <div key={k}><dt>{TOTALS[k]}</dt><dd>{fig(k)}</dd></div>)}
-          </dl>
         </section>
       )}
     </div>

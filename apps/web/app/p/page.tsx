@@ -27,11 +27,13 @@ export default function ResponsePage() {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [embed, setEmbed] = useState(false);
   const human = useRef<HTMLDivElement>(null);
   const widget = useRef<string>('');
   const pending = useRef<((t: string) => void) | null>(null);
 
   useEffect(() => {
+    setEmbed(new URLSearchParams(location.search).get('embed') === '1');
     const slug = location.pathname.split('/').filter(Boolean)[1] ?? '';
     if (!/^[a-z0-9-]{3,62}$/.test(slug)) { setPage('missing'); return; }
     api<Page>(`/v1/pages/${slug}`).then(setPage).catch(() => setPage('missing'));
@@ -49,8 +51,8 @@ export default function ResponsePage() {
     document.head.appendChild(s);
   }, [step]);
 
-  if (page === null) return <main className="rp-shell" />;
-  if (page === 'missing') return <main className="rp-shell"><div className="rp-card"><h1>This page isn’t available</h1><p>Check the link, or ask the church or ministry that shared it.</p></div></main>;
+  if (page === null) return <main className={embed ? 'rp-shell rp-embed' : 'rp-shell'} />;
+  if (page === 'missing') return <main className={embed ? 'rp-shell rp-embed' : 'rp-shell'}><div className="rp-card"><h1>This page isn’t available</h1><p>Check the link, or ask the church or ministry that shared it.</p></div></main>;
 
   const primary = page.look.primary ?? '#1B4740';
   const accent = page.look.accent ?? '#E8A577';
@@ -94,7 +96,7 @@ export default function ResponsePage() {
   }
 
   return (
-    <main className="rp-shell" style={style}>
+    <main className={embed ? 'rp-shell rp-embed' : 'rp-shell'} style={style}>
       <div className="rp-card">
         <header className="rp-head">
           {page.look.logo ? <img src={page.look.logo} alt="" /> : <span className="rp-mark" aria-hidden="true">{page.ministry.slice(0, 1)}</span>}
