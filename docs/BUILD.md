@@ -64,7 +64,7 @@ Roughly US$50 to $100 a month at launch: Supabase Pro ($25), Railway (usage, abo
 
 ## CI
 
-Every pull request runs type checks, unit and integration tests against Postgres, row-level security tests, schema validation, secret scanning, a DCO sign-off check, CodeQL and dependency review. Every change needs two human approvals, and code owners approve changes to `auth/`, `consent/`, `minors/`, `crypto/`, `access/` and `routing/`.
+Every pull request runs type checks, unit and integration tests against Postgres, row-level security tests, schema validation, secret scanning, a DCO sign-off check, CodeQL and dependency review. It also runs the migration check (`scripts/migration-check.sh`). Changes merge only when every required check passes: types, tests, row-level security, migrations (fresh, upgrade with data, backup and restore), the web build, CodeQL, secret scanning, dependency review and DCO sign-off. Branch protection enforces this with no bypass. There is no human approval step at present. AI-assisted changes to protected paths (`auth/`, `consent/`, `minors/`, `crypto/`, `access/`, `routing/`) get a recorded safeguarding review on the pull request before merge.
 
 ## Licences and ownership
 
