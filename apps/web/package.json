@@ -9,8 +9,6 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/copy-scripture.mjs",
-    "predev": "node scripts/copy-scripture.mjs",
     "build:static": "STATIC_EXPORT=1 next build"
   },
   "dependencies": {

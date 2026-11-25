@@ -1,17 +1,17 @@
 # Always Safety: developer guide
 
-Always Safety is the shared source of truth for ministry safety rules: an open register of obligations, a stateless check-up, rule-change alerts and guardrails. Ministry apps and websites plug into it instead of building their own. This guide is for developers and the foundation team. The original design is in [RFC 0003](rfc/0003-always-compliance.md), [RFC 0004](rfc/0004-compliance-infrastructure.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
+Always Safety is the shared source of truth for the rules around safe follow-up (privacy, children and young people, and emails and texts): an open register of obligations, a stateless check-up, rule-change alerts and guardrails. Ministry apps and websites plug into it instead of building their own. This guide is for developers and the foundation team. The original design is in [RFC 0003](rfc/0003-always-compliance.md), [RFC 0004](rfc/0004-compliance-infrastructure.md) and [ADR 0009](adr/0009-compliance-register-and-human-review.md).
 
-It is a guide to common obligations, not legal advice. Each ministry remains responsible for its own legal advice and decisions. The code is free and open source: check it with your own developers and lawyers before you rely on it, and report bugs as GitHub issues (security issues to security@alwaysfoundation.org, see [SECURITY.md](../SECURITY.md)).
+It is a guide to common obligations, not legal advice, and it does not cover charity reporting or governance (ADR 0023). Each ministry remains responsible for its own legal advice and decisions. The code is free and open source: check it with your own developers and lawyers before you rely on it, and report bugs as GitHub issues (security issues to security@alwaysfoundation.org, see [SECURITY.md](../SECURITY.md)).
 
 ## Where it applies
 
 | Where | Code | In the register |
 | --- | --- | --- |
-| Australia | `AU` | Federal privacy, charity and messaging law, plus child safety rules in every state and territory |
+| Australia | `AU` | Federal privacy and messaging law, plus child safety rules in every state and territory |
 | United States | `US` | Federal rules and good practice; state laws are being added |
 | Canada | `CA` | Federal rules and good practice; provincial laws are not yet covered |
-| United Kingdom | `GB` | UK-wide rules, with Charity Commission (England and Wales) reporting |
+| United Kingdom | `GB` | UK-wide rules |
 | European Union | `EU` | EU-wide law; national laws are being added |
 | New Zealand | `NZ` | National rules |
 
@@ -44,7 +44,7 @@ Run a check-up without signing in. It takes organisation facts only, and nothing
 ```sh
 curl -X POST https://api.alwaysfoundation.org/v1/safety/check \
   -H 'content-type: application/json' \
-  -d '{"profile":{"countries":["GB","NZ"],"collectsPersonalInfo":true,"providesHealthService":false,"usesOverseasServices":false,"worksWithChildren":true,"onlineServicesForChildren":false,"sendsEmailOrSms":true,"registeredCharity":true}}'
+  -d '{"profile":{"countries":["GB","NZ"],"collectsPersonalInfo":true,"providesHealthService":false,"usesOverseasServices":false,"worksWithChildren":true,"onlineServicesForChildren":false,"sendsEmailOrSms":true}}'
 ```
 
 Questions that don't apply can be left out and read as "no". A profile without `countries` means Australia. When `AU` is chosen, give at least one state in `states`.
