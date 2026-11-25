@@ -32,4 +32,4 @@ AI-assisted work is welcome and must be disclosed with a trailer, e.g. `Co-Autho
 ## Pull requests
 - Small, focused, conventional commit titles (`feat:`, `fix:`, `docs:`...).
 - Tests first for consent, minors, timers and access control.
-- Two human approvals; code owners for protected paths. Never merge your own work.
+- Changes merge only when every required check passes: types, tests, row-level security, migrations (fresh, upgrade with data, backup and restore), the web build, CodeQL, secret scanning, dependency review and DCO sign-off. Branch protection enforces this with no bypass. There is no human approval step at present. AI-assisted changes to protected paths (`auth/`, `consent/`, `minors/`, `crypto/`, `access/`, `routing/`) get a recorded safeguarding review on the pull request before merge.
