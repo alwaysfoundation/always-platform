@@ -45,5 +45,5 @@ export type ModuleState = 'on' | 'off' | 'awaiting_check';
 export type Brand = { primary: string; accent: string; heading: 'modern' | 'classic'; logo: string | null };
 export type Org = {
   id: string; name: string; kind: 'church' | 'ministry'; partner: boolean; role: string; careTeam?: boolean;
-  modules: Record<'respond' | 'connect' | 'safety' | 'reports', ModuleState>; brand: Brand;
+  modules: Record<'respond' | 'connect' | 'safety', ModuleState>; brand: Brand;
 };

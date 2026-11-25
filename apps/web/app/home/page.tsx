@@ -42,7 +42,7 @@ function Home() {
     if (!org) return;
     if (org.modules.connect !== 'off') api<{ items: Item[] }>('/v1/inbox').then((r) => setItems(r.items)).catch(() => setItems([]));
     else setItems([]);
-    if (org.modules.reports !== 'off') { const q = quarter(); api<Report>(`/v1/org/report?from=${q.from}&to=${q.to}`).then(setReport).catch(() => setReport(null)); }
+    { const q = quarter(); api<Report>(`/v1/org/report?from=${q.from}&to=${q.to}`).then(setReport).catch(() => setReport(null)); }
     if (org.role === 'admin') api<{ invites: unknown[] }>(`/v1/account/orgs/${org.id}/team`).then((t) => setInvites(t.invites.length)).catch(() => setInvites(0));
   }, [org]);
 
@@ -92,7 +92,7 @@ function Home() {
 
       <PageCard />
 
-      {org.modules.reports !== 'off' && empty && items !== null && (
+      {empty && items !== null && (
         <section className="glance" aria-labelledby="h-glance">
           <div className="glance-head"><h2 id="h-glance">This quarter</h2></div>
           <p className="glance-empty">Your figures appear here after your first welcome. Totals only, never names.</p>

@@ -8,7 +8,8 @@ import { audit } from './audit.js';
 
 const MAX_ORGS_PER_PERSON = 5;
 
-export const MODULES = ['respond', 'connect', 'safety', 'reports'] as const;
+// Reports is part of every account, not a module (ADR 0023).
+export const MODULES = ['respond', 'connect', 'safety'] as const;
 type Module = (typeof MODULES)[number];
 
 // Connect hands people to a church, so it waits for the partner check (verified trust level).

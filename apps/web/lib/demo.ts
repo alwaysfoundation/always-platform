@@ -19,7 +19,7 @@ type State = {
 const fresh = (): State => ({
   org: {
     id: 'demo-hope-church', name: 'Hope Church', kind: 'church', partner: true, role: 'admin', careTeam: false,
-    modules: { respond: 'on', connect: 'on', safety: 'on', reports: 'on' },
+    modules: { respond: 'on', connect: 'on', safety: 'on' },
     brand: { primary: '#1F3A5F', accent: '#F2C14E', heading: 'modern', logo: null },
   },
   team: {
@@ -60,7 +60,7 @@ export async function demoApi(path: string, method: string, body: unknown): Prom
   if (path === '/v1/account/orgs' && method === 'GET') return { orgs: [s.org] };
   if (path.endsWith('/modules') && method === 'PUT') {
     const on = new Set(b.modules as string[]);
-    s.org.modules = Object.fromEntries((['respond', 'connect', 'safety', 'reports'] as const).map((k) => [k, on.has(k) ? 'on' : 'off'])) as Org['modules'];
+    s.org.modules = Object.fromEntries((['respond', 'connect', 'safety'] as const).map((k) => [k, on.has(k) ? 'on' : 'off'])) as Org['modules'];
     save(s); return { modules: s.org.modules };
   }
   if (path.endsWith('/brand') && method === 'PUT') { s.org.brand = { ...s.org.brand, ...(b as Partial<Org['brand']>) }; save(s); return { brand: s.org.brand }; }
