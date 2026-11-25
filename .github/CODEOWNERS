@@ -1,4 +1,4 @@
-# Two human approvals on every PR. These areas also need a code owner.
+# Code owners are notified on changes to their areas. Merging is gated by the required checks; see GOVERNANCE.md.
 *                         @alwaysfoundation/maintainers
 /packages/core/           @alwaysfoundation/safeguarding @alwaysfoundation/maintainers
 /apps/api/src/auth.ts     @alwaysfoundation/security
