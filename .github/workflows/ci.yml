@@ -95,6 +95,8 @@ jobs:
           missing=""
           # The PR's own commits, not the merge commit GitHub builds to test it.
           for c in $(git rev-list --no-merges origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}); do
+            # Release PRs are written by the release bot, which cannot sign off.
+            [ "$(git log -1 --format=%ae "$c")" = "41898282+github-actions[bot]@users.noreply.github.com" ] && continue
             git log -1 --format=%B "$c" | grep -q '^Signed-off-by: ' || missing="$missing $c"
           done
           if [ -n "$missing" ]; then echo "Commits without Signed-off-by:"; echo "$missing"; exit 1; fi
