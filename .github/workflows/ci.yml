@@ -37,7 +37,7 @@ jobs:
           psql postgres://postgres:postgres@localhost:5432/postgres -c "create database rls"
           for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f "$f"; done
           psql -v ON_ERROR_STOP=1 postgres://postgres:postgres@localhost:5432/rls -f db/test/rls_test.sql
-      - name: Validate the Handoff standard schema
+      - name: Validate the Pathway standard schema
         run: node scripts/validate-schema.mjs
 
   migrations:

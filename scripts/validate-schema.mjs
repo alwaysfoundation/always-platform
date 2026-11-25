@@ -1,4 +1,4 @@
-// Compiles the Always Handoff standard's JSON Schema (draft 2020-12) so a broken schema fails CI.
+// Compiles the Always Pathway standard's JSON Schema (draft 2020-12) so a broken schema fails CI.
 import { readFileSync } from 'node:fs';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
