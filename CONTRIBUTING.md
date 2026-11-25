@@ -4,7 +4,7 @@ Thank you for helping. Always connects people who respond to Jesus with their ne
 
 ## Ways to help
 - Code, tests and reviews (see good first issues)
-- The Always Handoff standard and RFCs (`spec/`, `docs/rfcs/`)
+- The Always Pathway standard and RFCs (`spec/`, `docs/rfcs/`)
 - Accessibility, design and plain-language copy
 - Translation into community languages
 - Church and ministry feedback from pilots
