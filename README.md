@@ -2,7 +2,7 @@
 
 **Together for the Gospel.**
 
-Always Platform is the open-source technology of the Always Foundation, a gospel technology ministry serving churches and Christian ministries freely. The foundation is a US nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). Churches and ministries use one free account with three tools, and reports included:
+Always Platform is the open-source technology of the Always Foundation, a gospel technology ministry serving churches and Christian ministries freely. The foundation is a Delaware nonprofit corporation, recognised by the IRS as tax-exempt under section 501(c)(3). It owns this code, the Always Pathway standard and the Always name outright, and has no commercial arm. Churches and ministries use one free account with three tools, and reports included:
 
 - **Equip, with Always Respond:** branded response pages, forms and QR codes, and the Always Sent app for everyday evangelists.
 - **Support, with Always Safety:** the rules for safe follow-up (privacy, children and young people, emails and texts), with a quarterly check-up. Totals-only reports come with every account.
@@ -24,7 +24,7 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (email through Resend, an HTTP SMS provider, signed webhooks). |
 | `apps/web` | The Always account at my.alwaysfoundation.org: sign-in, modules, inbox, reports, settings and the demo. |
 | `db/migrations` | Schema, row-level security and the public directory views. |
-| `spec/` | The Always Handoff standard, JSON Schema, CC BY 4.0: v0.2 for any country (`handoff-standard-v0.2.schema.json`, with a synthetic example) and v0.1, the Australian profile. Also the Always Safety register. |
+| `spec/` | The Always Pathway standard, JSON Schema, CC BY 4.0: v0.2 for any country (`handoff-standard-v0.2.schema.json`, with a synthetic example) and v0.1, the Australian profile. Also the Always Safety register. |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
 | `spec/safety/` | The Always Safety register: open obligations for ministries in Australia, the US, Canada, the UK, the EU and New Zealand (draft, CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. Not legal advice. See `docs/safety.md`. |
 | `ai/` | Research: the Always Scripture tool server, an assistant specification and an evaluation design for faithful Christian AI. Not a product (ADR 0022). |

@@ -1,9 +1,9 @@
 # Trademark policy
 
-"Always", "Always Foundation" and the Always mark (the lowercase wordmark whose final stroke is a cross) are trademarks of Always Foundation, a US 501(c)(3). Open source does not include the brand: this keeps people safe from look-alike services that might mishandle someone's faith story.
+"Always", "Always Foundation" and the Always mark (the lowercase wordmark whose final stroke is a cross) are trademarks of Always Foundation, a Delaware nonprofit corporation and US 501(c)(3). Open source does not include the brand: this keeps people safe from look-alike services that might mishandle someone's faith story.
 
 ## You may, without asking
-- Say your app or service is "built on Always", "connects to the Always Network" or "uses the Always Handoff standard", in plain text.
+- Say your app or service is "built on Always", "connects to the Always Network" or "uses the Always Pathway standard", in plain text.
 - Use the name to refer to the project accurately in articles, talks and research.
 - Fork the code. A fork must use a different name and logo.
 

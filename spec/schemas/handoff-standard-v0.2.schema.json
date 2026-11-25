@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://alwaysfoundation.org/spec/v0.2/handoff-standard.schema.json",
-  "title": "Always Handoff standard v0.2",
+  "title": "Always Pathway standard v0.2 (formerly the Always Handoff standard)",
   "description": "Open standard for passing a consenting person from a sending ministry to a receiving church or ministry, in any country. Text CC BY 4.0. Draws on ISO/IEC TS 27560 (consent), HL7 FHIR ServiceRequest/Task (lifecycle) and Open Referral HSDS (directory). v0.2 generalises v0.1 (the Australian profile) with ISO 3166-1 country codes, free-form regions and postal codes, E.164 phone numbers and worldwide coordinates.",
   "$defs": {
     "AgeBand": {

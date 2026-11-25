@@ -6,7 +6,7 @@ Free, open-source tools that help churches and ministries welcome every person w
 
 ## What we build
 
-1. **The Always Handoff standard.** An open specification (JSON Schema, CC BY 4.0) for passing a person from one ministry to another with their consent attached: the consent receipt, the introduction and its outcome.
+1. **The Always Pathway standard.** An open specification (JSON Schema, CC BY 4.0) for passing a person from one ministry to another with their consent attached: the consent receipt, the introduction and its outcome.
 2. **The Always account** at my.alwaysfoundation.org. One sign-in (email code), with modules a church or ministry switches on:
    - **Respond:** a response page for every account (`/p/<slug>`), with its own logo and colours, QR code and printable welcome card.
    - **Connect:** an inbox where a church accepts or passes each introduction; the next nearby church is offered, and a care team catches anyone missed.
@@ -46,7 +46,7 @@ Free, open-source tools that help churches and ministries welcome every person w
 - `apps/api`: the API, scheduled jobs and delivery adapters.
 - `apps/web`: the Always account, response pages and the demo.
 - `db/migrations`: schema, policies and their tests.
-- `spec/`: the Always Handoff standard.
+- `spec/`: the Always Pathway standard.
 
 ## What it costs to run
 
