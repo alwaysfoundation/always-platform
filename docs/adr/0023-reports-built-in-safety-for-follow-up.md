@@ -15,7 +15,7 @@ Always is evangelism technology that connects ministries. The account had four s
 
 1. Reports is part of every Always account. The `reports` module is removed (migration 0030); every organisation sees its reports.
 2. Always Safety covers safe follow-up: privacy, children and young people, and emails and texts. The charity area and its eight obligations are removed from the register, with the profile questions only they used. The ACNC registration question stays because the Spam Act rule depends on it.
-3. The account has three switchable modules: Respond, Connect and Safety. Always Sent needs no account.
+3. The account has three switchable modules: Respond, Connect and Safety. Always Sent needs no account and is presented as part of Always Respond, so churches see three tools everywhere.
 
 ## Consequences
 

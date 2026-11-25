@@ -2,11 +2,11 @@
 
 **Together for the Gospel.**
 
-Always Platform is the open-source technology of the Always Foundation, a gospel technology ministry serving churches and Christian ministries freely. The foundation is a US nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). It powers the tools partners use to:
+Always Platform is the open-source technology of the Always Foundation, a gospel technology ministry serving churches and Christian ministries freely. The foundation is a US nonprofit recognised by the IRS as tax-exempt under section 501(c)(3). Churches and ministries use one free account with three tools, and reports included:
 
-- **Equip:** the Always App for evangelists, branded response pages, forms and QR codes.
-- **Support:** shared tools for governance, safety, safeguarding and reporting.
-- **Connect:** common standards and a consent-based handoff that connects each person who responds to Jesus with a local church, with a real person walking with them.
+- **Equip, with Always Respond:** branded response pages, forms and QR codes, and the Always Sent app for everyday evangelists.
+- **Support, with Always Safety:** the rules for safe follow-up (privacy, children and young people, emails and texts), with a quarterly check-up. Totals-only reports come with every account.
+- **Connect, with Always Connect:** common standards and a consent-based handoff, so ministries can pass each person who responds to Jesus on to the right next step and a local church, with a real person walking with them.
 
 It is built together and shared freely: free for churches, open source, and every person's details stay theirs.
 
