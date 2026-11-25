@@ -1,4 +1,6 @@
-# Always AI
+# Always AI (research)
+
+> **Not a product.** Always Foundation decided on 25 November 2026 not to offer Always AI ([ADR 0022](../docs/adr/0022-always-ai-not-a-product.md)). This folder stays as open research that anyone may use and build on.
 
 Faithful AI infrastructure for the Church: free, private, open source, and grounded in the Nicene Creed (AD 381). Built on [Jan](https://github.com/janhq/jan).
 

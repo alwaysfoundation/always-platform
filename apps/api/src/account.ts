@@ -8,9 +8,7 @@ import { audit } from './audit.js';
 
 const MAX_ORGS_PER_PERSON = 5;
 
-// `ai` is Always AI (ADR 0021): writing help and agents. It runs on the device and never handles people who respond,
-// so it needs no partner check, and the API stores only that it is on.
-export const MODULES = ['respond', 'connect', 'safety', 'reports', 'ai'] as const;
+export const MODULES = ['respond', 'connect', 'safety', 'reports'] as const;
 type Module = (typeof MODULES)[number];
 
 // Connect hands people to a church, so it waits for the partner check (verified trust level).

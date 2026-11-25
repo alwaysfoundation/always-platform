@@ -22,12 +22,12 @@ See [ROADMAP.md](ROADMAP.md) for what we're building next.
 | `packages/db` | Database helpers. Every request runs under Postgres row-level security. |
 | `packages/sdk` | The Always SDK: `<always-response>` web component, typed API client, consent builder, webhook verification. |
 | `apps/api` | The Always API (Hono), scheduler jobs, delivery adapters (email through Resend, an HTTP SMS provider, signed webhooks). |
-| `apps/web` | The Always account at my.alwaysfoundation.org: sign-in, modules, inbox, reports, settings, Always AI and the demo. |
+| `apps/web` | The Always account at my.alwaysfoundation.org: sign-in, modules, inbox, reports, settings and the demo. |
 | `db/migrations` | Schema, row-level security and the public directory views. |
 | `spec/` | The Always Handoff standard, JSON Schema, CC BY 4.0: v0.2 for any country (`handoff-standard-v0.2.schema.json`, with a synthetic example) and v0.1, the Australian profile. Also the Always Safety register. |
 | `api/openapi.yaml` | The Always API contract (OpenAPI 3.1). |
 | `spec/safety/` | The Always Safety register: open obligations for ministries in Australia, the US, Canada, the UK, the EU and New Zealand (draft, CC BY 4.0). Versioned feed, change alerts, an embeddable check-up and guardrails for any app. Not legal advice. See `docs/safety.md`. |
-| `ai/` | **Always AI**: the faithful AI layer of Always Platform (preview), switched on as the `ai` module of the Always account (ADR 0021). The chat runs in the browser; what people write never leaves their device. Always Scripture, an offline MCP server for exact Bible text and reference checking, seven openly licensed Bibles, the Nicene Creed (AD 381) and its propositions, and a study tool for adult pastors and leaders built on Jan. For adult leaders; never a companion or crisis support (ADR 0018). See `ai/README.md`. |
+| `ai/` | Research: the Always Scripture tool server, an assistant specification and an evaluation design for faithful Christian AI. Not a product (ADR 0022). |
 | `docs/BUILD.md` | What we build, what's new, the stack, costs, CI/CD, licences and setup. Start here. |
 
 ## Run it locally

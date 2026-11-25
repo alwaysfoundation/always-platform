@@ -14,7 +14,6 @@
     "build:static": "STATIC_EXPORT=1 next build"
   },
   "dependencies": {
-    "@mlc-ai/web-llm": "0.2.89",
     "@types/qrcode": "1.5.5",
     "next": "15.5.29",
     "qrcode": "1.5.4",
