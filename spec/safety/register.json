@@ -83,58 +83,6 @@
           "AU"
         ]
       }
-    },
-    {
-      "id": "basicReligiousCharity",
-      "type": "boolean",
-      "label": "Are you a Basic Religious Charity?",
-      "help": "A charity whose only purpose is advancing religion, that is not incorporated and does not have DGR status. Your ACNC record says if you are one.",
-      "onlyWhen": {
-        "field": "countries",
-        "includesAny": [
-          "AU"
-        ]
-      }
-    },
-    {
-      "id": "acncMediumOrLarge",
-      "type": "boolean",
-      "label": "Is your annual revenue A$500,000 or more?",
-      "help": "Charities with revenue of $500,000 or more are medium or large under ACNC rules.",
-      "onlyWhen": {
-        "field": "countries",
-        "includesAny": [
-          "AU"
-        ]
-      }
-    },
-    {
-      "id": "registeredCharity",
-      "type": "boolean",
-      "label": "Outside Australia, are you a registered charity or a recognised tax-exempt nonprofit?",
-      "help": "For example a US 501(c)(3), a charity registered with the Charity Commission, the CRA or Charities Services.",
-      "onlyWhen": {
-        "field": "countries",
-        "includesAny": [
-          "US",
-          "CA",
-          "GB",
-          "EU",
-          "NZ"
-        ]
-      }
-    },
-    {
-      "id": "isChurch",
-      "type": "boolean",
-      "label": "In the United States, are you a church or an association of churches?",
-      "help": "US filing rules are different for churches.",
-      "onlyWhen": {
-        "field": "countries",
-        "includesAny": [
-          "US"
-        ]
-      }
     }
   ],
   "obligations": [
@@ -619,153 +567,6 @@
         }
       ],
       "guidance": "Use an email tool with built-in unsubscribe and keep a record of when people signed up.",
-      "confidence": "draft",
-      "country": "AU"
-    },
-    {
-      "id": "acnc-annual-reporting",
-      "area": "charity",
-      "jurisdiction": "CTH",
-      "title": "Submit your Annual Information Statement",
-      "summary": "Registered charities submit an Annual Information Statement each year, within six months after the end of their reporting period (31 December for a 30 June year). Medium and large charities also submit a financial report, unless they are a Basic Religious Charity.",
-      "law": [
-        {
-          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), Part 3-2",
-          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc/reporting-annually-acnc"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "acncRegistered",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "acnc-ais",
-          "kind": "question",
-          "prompt": "Your last Annual Information Statement was submitted on time."
-        },
-        {
-          "id": "acnc-financial",
-          "kind": "question",
-          "prompt": "If you're medium or large and not a Basic Religious Charity, your financial report was submitted with it.",
-          "onlyWhen": {
-            "all": [
-              {
-                "field": "acncMediumOrLarge",
-                "is": true
-              },
-              {
-                "field": "basicReligiousCharity",
-                "is": false
-              }
-            ]
-          }
-        }
-      ],
-      "guidance": "Put the due date in your board calendar and start three months early.",
-      "confidence": "draft",
-      "country": "AU"
-    },
-    {
-      "id": "acnc-duty-to-notify",
-      "area": "charity",
-      "jurisdiction": "CTH",
-      "title": "Tell the ACNC about changes",
-      "summary": "Tell the ACNC when your name, address, responsible people or governing document change.",
-      "law": [
-        {
-          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), Division 65",
-          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "acncRegistered",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "acnc-details-current",
-          "kind": "question",
-          "prompt": "Your ACNC record lists your current board members and address."
-        }
-      ],
-      "guidance": "Check your ACNC record after every board change.",
-      "confidence": "draft",
-      "country": "AU"
-    },
-    {
-      "id": "acnc-governance-standards",
-      "area": "charity",
-      "jurisdiction": "CTH",
-      "title": "Meet the ACNC Governance Standards",
-      "summary": "Charities must run for their charitable purpose, be accountable to members, comply with Australian laws, have suitable responsible people who meet their duties, and manage conflicts. Basic Religious Charities are exempt.",
-      "law": [
-        {
-          "name": "Australian Charities and Not-for-profits Commission Regulations, Governance Standards",
-          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/governance-hub/governance-standards"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "all": [
-          {
-            "field": "acncRegistered",
-            "is": true
-          },
-          {
-            "field": "basicReligiousCharity",
-            "is": false
-          }
-        ]
-      },
-      "evidence": [
-        {
-          "id": "gs-conflicts",
-          "kind": "question",
-          "prompt": "Board members declare conflicts of interest and these are recorded."
-        },
-        {
-          "id": "gs-duties",
-          "kind": "question",
-          "prompt": "Board members understand their duties and have checked they're not disqualified."
-        },
-        {
-          "id": "gs-minutes",
-          "kind": "document",
-          "prompt": "Board minutes are kept."
-        }
-      ],
-      "guidance": "Use the Always board pack: conflicts register, duties checklist and minutes template.",
-      "confidence": "draft",
-      "country": "AU"
-    },
-    {
-      "id": "acnc-records",
-      "area": "charity",
-      "jurisdiction": "CTH",
-      "title": "Keep financial and operational records for 7 years",
-      "summary": "Keep written records that explain your finances and activities, for 7 years.",
-      "law": [
-        {
-          "name": "Australian Charities and Not-for-profits Commission Act 2012 (Cth), section 55-5",
-          "url": "https://www.acnc.gov.au/for-charities/manage-your-charity/obligations-acnc"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "acncRegistered",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "rec-kept",
-          "kind": "question",
-          "prompt": "Financial and operational records are kept for 7 years."
-        }
-      ],
-      "guidance": "Keep records in a shared, backed-up folder your treasurer and secretary can both reach.",
       "confidence": "draft",
       "country": "AU"
     },
@@ -1273,46 +1074,6 @@
       "confidence": "verify"
     },
     {
-      "id": "us-annual-return",
-      "country": "US",
-      "area": "charity",
-      "jurisdiction": "US",
-      "title": "File the IRS annual return",
-      "summary": "Most tax-exempt organisations must file Form 990, 990-EZ or 990-N each year. Churches and some church-affiliated organisations are excepted.",
-      "law": [
-        {
-          "name": "IRS, Filing requirements for churches and religious organizations",
-          "url": "https://www.irs.gov/charities-non-profits/churches-religious-organizations/filing-requirements"
-        },
-        {
-          "name": "IRS, Annual exempt organization return: Who must file",
-          "url": "https://www.irs.gov/charities-non-profits/annual-exempt-organization-return-who-must-file"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "all": [
-          {
-            "field": "registeredCharity",
-            "is": true
-          },
-          {
-            "field": "isChurch",
-            "is": false
-          }
-        ]
-      },
-      "evidence": [
-        {
-          "id": "us-990-filed",
-          "kind": "question",
-          "prompt": "Your last annual return (Form 990, 990-EZ or 990-N) was filed on time."
-        }
-      ],
-      "guidance": "Returns are due by the 15th day of the fifth month after your year ends. Check which form fits your size.",
-      "confidence": "verify"
-    },
-    {
       "id": "us-child-safety-screening",
       "country": "US",
       "area": "child_safety",
@@ -1463,34 +1224,6 @@
       "guidance": "Treat consent, identification and unsubscribe as the default for every list.",
       "confidence": "verify",
       "recommendedOnly": true
-    },
-    {
-      "id": "ca-annual-return",
-      "country": "CA",
-      "area": "charity",
-      "jurisdiction": "CA",
-      "title": "File the T3010 return",
-      "summary": "Registered charities must file a complete Registered Charity Information Return (T3010) within six months of the end of their fiscal period.",
-      "law": [
-        {
-          "name": "Canada Revenue Agency, When to file the T3010",
-          "url": "https://www.canada.ca/en/revenue-agency/services/charities-giving/charities/operating-a-registered-charity/filing-t3010-charity-return/when-file.html"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "registeredCharity",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "ca-t3010-filed",
-          "kind": "question",
-          "prompt": "Your last T3010 was filed within six months of your year end."
-        }
-      ],
-      "guidance": "Diarise the due date six months after your fiscal year end.",
-      "confidence": "verify"
     },
     {
       "id": "ca-child-safety-screening",
@@ -1707,34 +1440,6 @@
         }
       ],
       "guidance": "Check which roles are eligible for which level of check.",
-      "confidence": "verify"
-    },
-    {
-      "id": "gb-annual-return",
-      "country": "GB",
-      "area": "charity",
-      "jurisdiction": "GB",
-      "title": "File your charity annual return",
-      "summary": "Charities registered in England and Wales report income and spending every year, and send a full annual return within 10 months of year end if income is over £10,000. Scotland and Northern Ireland have their own regulators.",
-      "law": [
-        {
-          "name": "GOV.UK, Prepare a charity annual return",
-          "url": "https://www.gov.uk/guidance/prepare-a-charity-annual-return"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "registeredCharity",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "gb-ar-filed",
-          "kind": "question",
-          "prompt": "Your last annual return was filed within 10 months of your year end."
-        }
-      ],
-      "guidance": "Diarise the deadline 10 months after your financial year end.",
       "confidence": "verify"
     },
     {
@@ -2156,34 +1861,6 @@
       "guidance": "Check whether you receive government funding that brings the Act into play.",
       "confidence": "verify",
       "recommendedOnly": true
-    },
-    {
-      "id": "nz-annual-return",
-      "country": "NZ",
-      "area": "charity",
-      "jurisdiction": "NZ",
-      "title": "File the charity annual return",
-      "summary": "Registered charities must file an annual return within six months of their balance date.",
-      "law": [
-        {
-          "name": "Charities Services, Annual returns",
-          "url": "https://www.charities.govt.nz/annual-reporting/annual-return"
-        }
-      ],
-      "status": "in_force",
-      "appliesWhen": {
-        "field": "registeredCharity",
-        "is": true
-      },
-      "evidence": [
-        {
-          "id": "nz-ar-filed",
-          "kind": "question",
-          "prompt": "Your last annual return was filed within six months of your balance date."
-        }
-      ],
-      "guidance": "Diarise the deadline six months after your balance date.",
-      "confidence": "verify"
     }
   ]
 }

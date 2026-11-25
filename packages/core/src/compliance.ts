@@ -17,7 +17,7 @@ export const COUNTRIES: readonly Country[] = ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'
 export type Jurisdiction = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
 export const JURISDICTIONS: readonly Jurisdiction[] = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 
-export type Area = 'privacy' | 'child_safety' | 'charity' | 'messages';
+export type Area = 'privacy' | 'child_safety' | 'messages';
 
 /** What a ministry tells us about itself. Organisation facts only, never people's details. */
 export interface SafetyProfile {
@@ -33,11 +33,10 @@ export interface SafetyProfile {
   onlineServicesForChildren: boolean;
   sendsEmailOrSms: boolean;
   acncRegistered: boolean;
-  basicReligiousCharity: boolean;
-  acncMediumOrLarge: boolean;
-  /** A registered charity or recognised tax-exempt nonprofit outside Australia. */
+  /** No longer asked: charity reporting is outside Always Safety (ADR 0023). Kept so stored profiles still load. */
+  basicReligiousCharity?: boolean;
+  acncMediumOrLarge?: boolean;
   registeredCharity?: boolean;
-  /** A church, convention or association of churches (matters for US filing rules). */
   isChurch?: boolean;
 }
 

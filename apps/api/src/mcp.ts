@@ -53,7 +53,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         country: { type: 'string', enum: ['AU', 'US', 'CA', 'GB', 'EU', 'NZ'] },
-        area: { type: 'string', enum: ['privacy', 'child_safety', 'charity', 'messages'] },
+        area: { type: 'string', enum: ['privacy', 'child_safety', 'messages'] },
       },
       required: ['country'],
     },

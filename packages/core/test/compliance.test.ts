@@ -5,7 +5,7 @@ import { assess, diffRegisters, holds, quarterOf, strengthOf, validateRegister, 
 
 const register = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url)), 'utf8')) as Register;
 
-/** A small NSW church: under the Privacy Act threshold, runs a youth group, a registered Basic Religious Charity. Synthetic. */
+/** A small NSW church: under the Privacy Act threshold, runs a youth group, registered with the ACNC. Synthetic. */
 const church: ComplianceProfile = {
   states: ['NSW'],
   collectsPersonalInfo: true,
@@ -16,8 +16,6 @@ const church: ComplianceProfile = {
   onlineServicesForChildren: false,
   sendsEmailOrSms: true,
   acncRegistered: true,
-  basicReligiousCharity: true,
-  acncMediumOrLarge: false,
 };
 const allPlatform = { consent_records: true, access_controls: true, retention_schedule: true, data_in_australia: true, minors_rules: true };
 const day = new Date('2026-11-19T01:00:00Z');
@@ -56,10 +54,6 @@ describe('who an obligation applies to', () => {
     const o = register.obligations.find((x) => x.id === 'serious-invasion-of-privacy')!;
     expect(strengthOf(o, church)).toBe('required');
   });
-  it('Basic Religious Charities are not assessed against the Governance Standards', () => {
-    expect(ids(assess(register, church, {}, {}, day))).not.toContain('acnc-governance-standards');
-    expect(ids(assess(register, { ...church, basicReligiousCharity: false }, {}, {}, day))).toContain('acnc-governance-standards');
-  });
   it('child safe standards follow the states a ministry works in', () => {
     const nsw = ids(assess(register, church, {}, {}, day));
     expect(nsw).toContain('child-safe-standards-nsw');
@@ -74,12 +68,6 @@ describe('who an obligation applies to', () => {
   it('working with children checks show only the local state schemes', () => {
     const item = assess(register, { ...church, states: ['VIC'] }, {}, {}, day).items.find((i) => i.obligationId === 'working-with-children-checks')!;
     expect(item.law.map((l) => l.jurisdiction)).toEqual(['VIC']);
-  });
-  it('a financial report question appears only for medium or large charities that are not Basic Religious Charities', () => {
-    const small = assess(register, church, {}, {}, day).items.find((i) => i.obligationId === 'acnc-annual-reporting')!;
-    expect(small.unanswered.some((p) => /financial report/.test(p))).toBe(false);
-    const big = assess(register, { ...church, basicReligiousCharity: false, acncMediumOrLarge: true }, {}, {}, day).items.find((i) => i.obligationId === 'acnc-annual-reporting')!;
-    expect(big.unanswered.some((p) => /financial report/.test(p))).toBe(true);
   });
 });
 
@@ -124,7 +112,7 @@ describe('what changed', () => {
   it('reports added, changed and removed obligations in plain words', () => {
     const after: Register = JSON.parse(JSON.stringify(register));
     after.version = '2027.01.0';
-    after.obligations = after.obligations.filter((o) => o.id !== 'acnc-records');
+    after.obligations = after.obligations.filter((o) => o.id !== 'privacy-policy');
     const code = after.obligations.find((o) => o.id === 'childrens-online-privacy-code')!;
     code.status = 'in_force';
     after.obligations.push({ ...code, id: 'new-thing', title: 'Something new' });
@@ -132,7 +120,7 @@ describe('what changed', () => {
     expect(changes).toEqual(expect.arrayContaining([
       expect.objectContaining({ obligationId: 'childrens-online-privacy-code', change: 'changed', what: ['status: upcoming to in_force'] }),
       expect.objectContaining({ obligationId: 'new-thing', change: 'added' }),
-      expect.objectContaining({ obligationId: 'acnc-records', change: 'removed' }),
+      expect.objectContaining({ obligationId: 'privacy-policy', change: 'removed' }),
     ]));
   });
 });
@@ -153,18 +141,14 @@ describe('register diff and stored copies', () => {
 });
 
 describe('countries', () => {
-  const base = { ...church, states: [] as never[], acncRegistered: false, basicReligiousCharity: false };
+  const base = { ...church, states: [] as never[], acncRegistered: false };
   it('treats a profile without countries as Australian', () => {
     expect(ids(assess(register, church, {}, {}, day))).toContain('privacy-policy');
   });
   it('gives a US-only ministry US obligations and no Australian ones', () => {
-    const a = assess(register, { ...base, countries: ['US'], registeredCharity: true, isChurch: false }, {}, {}, day);
-    expect(ids(a)).toContain('us-annual-return');
+    const a = assess(register, { ...base, countries: ['US'] }, {}, {}, day);
+    expect(ids(a)).toContain('us-privacy-notice');
     expect(ids(a).some((id) => register.obligations.find((o) => o.id === id)?.country === 'AU')).toBe(false);
-  });
-  it('excepts US churches from the IRS annual return', () => {
-    const a = assess(register, { ...base, countries: ['US'], registeredCharity: true, isChurch: true }, {}, {}, day);
-    expect(ids(a)).not.toContain('us-annual-return');
   });
   it('covers every country in the register, and only listed countries', () => {
     const seen = new Set(register.obligations.map((o) => o.country ?? 'AU'));
@@ -176,7 +160,6 @@ describe('countries', () => {
   });
   it('reads unanswered questions as "no"', () => {
     const a = assess(register, { countries: ['CA'], states: [], collectsPersonalInfo: true } as never, {}, {}, day);
-    expect(ids(a)).not.toContain('ca-annual-return');
     expect(ids(a)).toContain('ca-privacy');
   });
 });

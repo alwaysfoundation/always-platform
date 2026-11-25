@@ -17,7 +17,6 @@ const MODULES: { key: keyof Org['modules']; name: string; does: string }[] = [
   { key: 'respond', name: 'Respond', does: 'Response pages, QR codes and cards, so anyone can ask for a next step.' },
   { key: 'connect', name: 'Connect', does: 'Receive people near you who said yes to Jesus, and welcome them.' },
   { key: 'safety', name: 'Safety', does: 'Your rules register, quarterly check-up and board summary.' },
-  { key: 'reports', name: 'Reports', does: 'A monthly report for your board, written from what happened.' },
 ];
 
 function Settings() {

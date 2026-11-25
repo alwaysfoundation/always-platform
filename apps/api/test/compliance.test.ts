@@ -118,9 +118,9 @@ describe('Always Safety paths', () => {
     const r = await app.request('/v1/safety/register');
     expect(r.status).toBe(200);
     const c = await call('POST', '/v1/safety/check', { body: { profile: { countries: ['GB'], collectsPersonalInfo: true, providesHealthService: false, usesOverseasServices: false,
-      worksWithChildren: true, onlineServicesForChildren: false, sendsEmailOrSms: true, registeredCharity: true } } });
+      worksWithChildren: true, onlineServicesForChildren: false, sendsEmailOrSms: true } } });
     expect(c.status).toBe(200);
-    expect(c.body.items.map((i: any) => i.obligationId)).toEqual(expect.arrayContaining(['gb-breach', 'gb-annual-return']));
+    expect(c.body.items.map((i: any) => i.obligationId)).toEqual(expect.arrayContaining(['gb-breach', 'gb-safeguarding']));
   });
   it('keeps the earlier /v1/compliance paths working, marked as deprecated', async () => {
     const r = await app.request('/v1/compliance/register');
@@ -431,14 +431,14 @@ describe('first sign-in for a new ministry', () => {
 
   it('starts with every module off', async () => {
     const r = await call('GET', '/v1/account/orgs', { token: await jwtWithEmail(newcomer, 'admin@newchurch.example') });
-    expect(r.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules).toEqual({ respond: 'off', connect: 'off', safety: 'off', reports: 'off' });
+    expect(r.body.orgs.find((o: { id: string }) => o.id === ids.newcomer).modules).toEqual({ respond: 'off', connect: 'off', safety: 'off' });
   });
 
   it('switches modules on and off for the admin, and records it', async () => {
     const t = await jwtWithEmail(newcomer, 'admin@newchurch.example');
     const r = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['respond', 'safety', 'safety'] } });
     expect(r.status).toBe(200);
-    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on', reports: 'off' });
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on' });
     const off = await call('PUT', `/v1/account/orgs/${ids.newcomer}/modules`, { token: t, body: { modules: ['safety'] } });
     expect(off.body.modules.respond).toBe('off');
     const [a] = await sql`select count(*)::int as n from audit_event where org_id = ${ids.newcomer} and action = 'org.modules'`;
@@ -463,9 +463,9 @@ describe('first sign-in for a new ministry', () => {
 
   it('lets a church choose modules when it is created', async () => {
     const t = await jwtWithEmail('6f1d2c3b-0000-4000-8000-000000000009', 'admin@modules.example');
-    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'reports'], affirmsCreed: true } });
+    const r = await call('POST', '/v1/account/orgs', { token: t, body: { kind: 'church', displayName: 'Modules Church', state: 'QLD', modules: ['respond', 'safety'], affirmsCreed: true } });
     expect(r.status).toBe(201);
-    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'off', reports: 'on' });
+    expect(r.body.modules).toEqual({ respond: 'on', connect: 'off', safety: 'on' });
   });
 
   it('saves the brand for admins only, and returns it with the organisation', async () => {
