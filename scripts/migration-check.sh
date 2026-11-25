@@ -32,8 +32,9 @@ after=$(psql -tA "$BASE/mc_upgrade" -c "select count(*) from organisation")
 rls "$BASE/mc_upgrade"
 
 echo "Back up and restore"
-pg_dump -Fc "$BASE/mc_upgrade" -f "$work/backup.dump"
-pg_restore --no-owner -d "$BASE/mc_restore" "$work/backup.dump"
+# Plain SQL so a newer pg_dump restores into an older server (it may emit settings the server lacks).
+pg_dump --no-owner "$BASE/mc_upgrade" | grep -v '^SET transaction_timeout' > "$work/backup.sql"
+psql -q -v ON_ERROR_STOP=1 "$BASE/mc_restore" -f "$work/backup.sql" >/dev/null
 [[ $(count "$BASE/mc_restore") == $(count "$BASE/mc_upgrade") ]] || { echo "Restore does not match the backup"; exit 1; }
 rls "$BASE/mc_restore"
 
