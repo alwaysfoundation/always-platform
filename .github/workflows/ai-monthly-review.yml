@@ -50,4 +50,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BODY: ${{ steps.gather.outputs.body }}
-        run: gh issue create --repo "$GITHUB_REPOSITORY" --title "Technology review: $(date -u +'%B %Y')" --body "$BODY"
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "Technology review: $(date -u +'%B %Y')" --body "$BODY"
