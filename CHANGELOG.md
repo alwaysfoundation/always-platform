@@ -1,5 +1,49 @@
 # Changelog
 
+## [3.0.0](https://github.com/alwaysfoundation/always-platform/compare/v2.0.0...v3.0.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **safety:** the bundled register moved to spec/safety/register.json.
+
+### Features
+
+* **account:** affirm the Nicene Creed when creating an organisation ([#56](https://github.com/alwaysfoundation/always-platform/issues/56)) ([459153f](https://github.com/alwaysfoundation/always-platform/commit/459153f5e47c393bfc36a3a4e146db4296594857))
+* **account:** Always AI is the `ai` module of the Always account (ADR 0021) ([#72](https://github.com/alwaysfoundation/always-platform/issues/72)) ([f91a399](https://github.com/alwaysfoundation/always-platform/commit/f91a399fa435e65220c768d06839135cb37981c7))
+* **account:** one Always account, modules switched on (ADR 0019) ([#54](https://github.com/alwaysfoundation/always-platform/issues/54)) ([f95bfcc](https://github.com/alwaysfoundation/always-platform/commit/f95bfcc1edcf2e44db38ab52c67e4cd648c8bb14))
+* **account:** state optional for organisations outside Australia ([#63](https://github.com/alwaysfoundation/always-platform/issues/63)) ([4b301a7](https://github.com/alwaysfoundation/always-platform/commit/4b301a7b4ad72bde2678e342216715b6496778f1))
+* **account:** team invites and saved brand ([#62](https://github.com/alwaysfoundation/always-platform/issues/62)) ([55cc7b5](https://github.com/alwaysfoundation/always-platform/commit/55cc7b58c92751d5628765bcc561b457c6798516))
+* **ai:** Always AI 0.1 and ADR 0018 ([#53](https://github.com/alwaysfoundation/always-platform/issues/53)) ([07c7093](https://github.com/alwaysfoundation/always-platform/commit/07c70935dd2b2cb832d0c372aede959fc0a9926d))
+* **ai:** Always AI 0.1, faithful AI infrastructure; ADR 0018 infrastructure first and never a companion ([#55](https://github.com/alwaysfoundation/always-platform/issues/55)) ([4f50d2c](https://github.com/alwaysfoundation/always-platform/commit/4f50d2cde2635cc0a37fb063a73ae6a92349e8e7))
+* **api:** /health says whether sign-in is open ([#67](https://github.com/alwaysfoundation/always-platform/issues/67)) ([e7d6f4e](https://github.com/alwaysfoundation/always-platform/commit/e7d6f4e0dc829dd26269c3b2461a03e66b5f74a8))
+* **api:** send email through Resend when RESEND_API_KEY is set (ADR 0020) ([#69](https://github.com/alwaysfoundation/always-platform/issues/69)) ([b58b618](https://github.com/alwaysfoundation/always-platform/commit/b58b618db8a44210176304042a79c0691d306f52))
+* **api:** website calls account routes directly, foundation origins only ([#66](https://github.com/alwaysfoundation/always-platform/issues/66)) ([70db1c9](https://github.com/alwaysfoundation/always-platform/commit/70db1c9947c814cad955b1a03315e8df65d0726a))
+* foundation measures, totals only with small counts withheld ([#85](https://github.com/alwaysfoundation/always-platform/issues/85)) ([8d77a7e](https://github.com/alwaysfoundation/always-platform/commit/8d77a7ec29323145d874ca2d66ad4f4b5310d01d))
+* Reports built into every account; Always Safety covers safe follow-up (ADR 0023) ([#92](https://github.com/alwaysfoundation/always-platform/issues/92)) ([c4d21d9](https://github.com/alwaysfoundation/always-platform/commit/c4d21d9c44a47d387e54179d830e5058e5b70397))
+* response pages for every new account, setup emails, demo hand-off ([#84](https://github.com/alwaysfoundation/always-platform/issues/84)) ([e684620](https://github.com/alwaysfoundation/always-platform/commit/e684620e8b73f8ce9f42637407e3be7c8dad763e))
+* retire the Always AI module (ADR 0022) ([#90](https://github.com/alwaysfoundation/always-platform/issues/90)) ([773cdad](https://github.com/alwaysfoundation/always-platform/commit/773cdad7011571904a97d845be4e8f23addd14cc))
+* **safety:** Always Safety for six regions, safety names everywhere, MCP tools ([#44](https://github.com/alwaysfoundation/always-platform/issues/44)) ([2724890](https://github.com/alwaysfoundation/always-platform/commit/2724890d42ae6f72bfc78c5f10d9a499e31701aa))
+* **spec:** Handoff standard v0.2 for any country ([#46](https://github.com/alwaysfoundation/always-platform/issues/46)) ([bab3f3d](https://github.com/alwaysfoundation/always-platform/commit/bab3f3d1887f2719e03f30f157142cf5504adf2b))
+* **web:** a calmer app: Today home, Settings, light sidebar and phone tabs ([#77](https://github.com/alwaysfoundation/always-platform/issues/77)) ([90a99ad](https://github.com/alwaysfoundation/always-platform/commit/90a99adcf12c7a91d2750759a2941fc6feb84c1c))
+* **web:** Always AI chat in the browser, a demo account, and a static build ([#75](https://github.com/alwaysfoundation/always-platform/issues/75)) ([157efb2](https://github.com/alwaysfoundation/always-platform/commit/157efb22b26c0db86b585f559522922399809c0f))
+* **web:** Always AI in the Always home; the app lives at my.alwaysfoundation.org ([#74](https://github.com/alwaysfoundation/always-platform/issues/74)) ([a3df917](https://github.com/alwaysfoundation/always-platform/commit/a3df917517b688436591b8bafd495d1682275397))
+* **web:** calmer inbox with pass reasons inline, tidy reports toolbar, consistent page heads ([#81](https://github.com/alwaysfoundation/always-platform/issues/81)) ([2a84314](https://github.com/alwaysfoundation/always-platform/commit/2a843147db0746ab7c671f5d5be3919c38dbb29e))
+* **web:** dark mode, quieter surfaces and one list style for the inbox ([#82](https://github.com/alwaysfoundation/always-platform/issues/82)) ([0e9b405](https://github.com/alwaysfoundation/always-platform/commit/0e9b405b7f6893175c546af6e325959d647bc9f1))
+* **web:** Scripture mode for devices without a model; calm empty states on Home ([#83](https://github.com/alwaysfoundation/always-platform/issues/83)) ([6e1dd80](https://github.com/alwaysfoundation/always-platform/commit/6e1dd809dd5c41636fc1fa8659b0b3350297edee))
+* **web:** start an account, sign in by email code, and the Always home ([#71](https://github.com/alwaysfoundation/always-platform/issues/71)) ([a344b50](https://github.com/alwaysfoundation/always-platform/commit/a344b507d7770a8ad28c5c232b2596ea781b50b3))
+* **web:** until accounts open, the last step of starting offers the demo ([#76](https://github.com/alwaysfoundation/always-platform/issues/76)) ([898294c](https://github.com/alwaysfoundation/always-platform/commit/898294c8e05b35b07a8edb0226a4d7373ab3a2ba))
+
+
+### Bug Fixes
+
+* **account:** invite links open Your Always home ([#64](https://github.com/alwaysfoundation/always-platform/issues/64)) ([83686d4](https://github.com/alwaysfoundation/always-platform/commit/83686d4312bcb1f65daf27eb4c2758659b4ef501))
+* **ai:** catch more crisis and under-18 messages before the model runs ([#78](https://github.com/alwaysfoundation/always-platform/issues/78)) ([d5e4cdf](https://github.com/alwaysfoundation/always-platform/commit/d5e4cdff73b72df2a7772f2e98d513f83f468423))
+* **ai:** Creed text and historic errors checked against sources ([#60](https://github.com/alwaysfoundation/always-platform/issues/60)) ([1bc2edc](https://github.com/alwaysfoundation/always-platform/commit/1bc2edcb47f3b2bb1cbf6a27141966d2c6ba368b))
+* sync the lock file with the packages/ai workspace; Railway installs dev tools ([#68](https://github.com/alwaysfoundation/always-platform/issues/68)) ([f9aa36c](https://github.com/alwaysfoundation/always-platform/commit/f9aa36ce4246c8cc001b5d0866c5135f00fcdf96))
+* **web:** demo account no longer lists the retired ai module ([#91](https://github.com/alwaysfoundation/always-platform/issues/91)) ([69396b7](https://github.com/alwaysfoundation/always-platform/commit/69396b73e81f70fa965da6aee38481e25b19ee2a))
+* **web:** show the totals a church actually has on Home; global child safety check wording ([#80](https://github.com/alwaysfoundation/always-platform/issues/80)) ([8a7b29d](https://github.com/alwaysfoundation/always-platform/commit/8a7b29d9de13a379dc5bfe54724d71ee17099217))
+
 ## [2.0.0](https://github.com/alwaysfoundation/always-platform/compare/v1.0.0...v2.0.0) (2026-11-24)
 
 
