@@ -40,6 +40,28 @@ jobs:
       - name: Validate the Handoff standard schema
         run: node scripts/validate-schema.mjs
 
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_ADMIN_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fresh migrate, upgrade with data, backup and restore
+        run: scripts/migration-check.sh
+
   web:
     runs-on: ubuntu-latest
     steps:

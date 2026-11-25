@@ -25,7 +25,7 @@ Always Platform: the open-source technology of the Always Foundation, an indepen
 4. Run `make check` (lint, types, tests, RLS tests, secret scan) before proposing a change.
 5. Use conventional commits. Every commit carries a DCO sign-off. AI-assisted commits carry a co-author trailer.
 6. Record significant design choices as an ADR in `docs/adr/`.
-7. Never merge your own work. Two human approvals are required; a CODEOWNER must approve changes under `auth/`, `consent/`, `minors/`, `crypto/`, `access/` and `routing/`.
+7. Changes merge only when every required check passes: types, tests, row-level security, migrations (fresh, upgrade with data, backup and restore), the web build, CodeQL, secret scanning, dependency review and DCO sign-off. Branch protection enforces this with no bypass. There is no human approval step at present. AI-assisted changes to protected paths (`auth/`, `consent/`, `minors/`, `crypto/`, `access/`, `routing/`) get a recorded safeguarding review on the pull request before merge.
 
 ## Style
 
