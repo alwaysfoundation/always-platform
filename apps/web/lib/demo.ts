@@ -19,7 +19,7 @@ type State = {
 const fresh = (): State => ({
   org: {
     id: 'demo-hope-church', name: 'Hope Church', kind: 'church', partner: true, role: 'admin', careTeam: false,
-    modules: { respond: 'on', connect: 'on', safety: 'on', reports: 'on', ai: 'on' },
+    modules: { respond: 'on', connect: 'on', safety: 'on', reports: 'on' },
     brand: { primary: '#1F3A5F', accent: '#F2C14E', heading: 'modern', logo: null },
   },
   team: {
