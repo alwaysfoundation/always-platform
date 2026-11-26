@@ -48,6 +48,12 @@ make check                            # types and 68 tests against real Postgres
 - Each introduction has one clear owner at a time, so no one is dropped; if no one can help, the care team does.
 - Only the person can say they are connected.
 
+## Get involved
+
+- **Build on Always.** Start with the SDK in `packages/sdk` and the API contract in `api/openapi.yaml`. The Always Pathway standard in `spec/` is open for any app to adopt.
+- **Contribute.** Issues labelled [help wanted](https://github.com/alwaysfoundation/always-platform/labels/help%20wanted) and [good first issue](https://github.com/alwaysfoundation/always-platform/labels/good%20first%20issue) are ready to pick up. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+- **Follow along.** Watch the repository for releases, and star it if you'd like to see more shared technology for churches and ministries.
+
 ## Licences
 
 Code: Apache 2.0 (`LICENSE`). Docs, the standard and policies: CC BY 4.0 (`CONTENT-LICENSE.md`). The Always name and mark are trademarks (`TRADEMARKS.md`). Contributions use the DCO (`CONTRIBUTING.md`). Report security issues privately (`SECURITY.md`).

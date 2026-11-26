@@ -4,13 +4,13 @@ Thank you for helping. Always connects people who respond to Jesus with their ne
 
 ## Ways to help
 - Code, tests and reviews (see good first issues)
-- The Always Pathway standard and RFCs (`spec/`, `docs/rfcs/`)
+- The Always Pathway standard and RFCs (`spec/`, `docs/rfc/`)
 - Accessibility, design and plain-language copy
 - Translation into community languages
 - Church and ministry feedback from pilots
 
 ## Before you start
-1. Read `CLAUDE.md` (the rules apply to people and AI assistants alike), the spec in `docs/spec/`, and the policies in `docs/policies/`.
+1. Read `CLAUDE.md` (the rules apply to people and AI assistants alike), the Always Pathway standard in `spec/`, and the RFCs and ADRs in `docs/rfc/` and `docs/adr/`. The foundation's policies are not published in this repository yet (see issue #98).
 2. Find or open an issue. Behaviour changes to consent, minors, routing timers or access control need an RFC and the Safeguarding, Privacy and Ethics committee's approval.
 3. Use synthetic data only. Never paste real people's details anywhere, including prompts to AI tools.
 
