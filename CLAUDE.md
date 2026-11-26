@@ -4,11 +4,11 @@ Rules for Claude Code (and any AI coding assistant) working in Always Foundation
 
 ## What we are building
 
-Always Platform: the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together ("Together for the Gospel"). It equips them with free tools (the Always App, branded response pages, forms), supports them with shared tools for governance, safety, safeguarding and reporting, and connects them as one network: mapping churches and handing each consenting person who responds to the Lord Jesus Christ to a verified local church or ministry, with a guaranteed fallback. Read `docs/spec/` (Always Platform Software Specification) and the Always Pathway standard before changing behaviour.
+Always Platform: the open-source technology of the Always Foundation, an independent, member-based Christian nonprofit that brings churches and Christian ministries together ("Together for the Gospel"). It equips them with free tools (the Always App, branded response pages, forms), supports them with shared tools for governance, safety, safeguarding and reporting, and connects them as one network: mapping churches and handing each consenting person who responds to the Lord Jesus Christ to a verified local church or ministry, with a guaranteed fallback. Read the RFCs in `docs/rfc/`, the ADRs in `docs/adr/` and the Always Pathway standard in `spec/` before changing behaviour.
 
 ## Non-negotiables
 
-1. **No real personal data, ever.** Use the synthetic fixtures in `fixtures/`. Never paste production data, logs or screenshots containing people's details into a prompt.
+1. **No real personal data, ever.** Use the synthetic fixtures in `packages/core/test/fixtures.ts` and `packages/integrations/test/fixtures.ts`. Never paste production data, logs or screenshots containing people's details into a prompt.
 2. **No secrets.** Never write keys, tokens or passwords into code, tests, docs or commit messages. Read configuration from the environment.
 3. **Consent travels with the data.** Any code that moves, shows, exports or syncs a person's data must call the consent check and fail closed if it doesn't pass.
 4. **Minors rules run first.** Age band before any other field. Under 13: no child data. Under 15: parent or guardian confirmation. Minors go only to verified youth partners. No AI on minors' data. These rules cannot be made configurable.
@@ -35,7 +35,7 @@ Always Platform: the open-source technology of the Always Foundation, an indepen
 
 ## Where to look
 
-- Policies: `docs/policies/` (Cybersecurity, Data Governance, Privacy, Children and Young People's Information, AI, Terms of Use)
-- Spec: `docs/spec/`
+- Policies: Cybersecurity, Data Governance, Privacy, Children and Young People's Information, AI, Terms of Use (not yet published here; see issue #98)
+- Design: `docs/rfc/` (RFCs) and `docs/adr/` (decisions); standard: `spec/`
 - Engineering practice: `ENGINEERING.md`, `docs/ai-assisted-development.md`
 - Security reporting: `SECURITY.md` (admin@alwaysfoundation.org)
