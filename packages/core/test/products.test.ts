@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import {
   assessProduct,
   evaluate,
+  hasEmailAddress,
   pathsOf,
   productReportMarkdown,
   validateProductProfile,
@@ -252,6 +253,28 @@ describe('profiles describe products, never people', () => {
     const p = clone(example);
     p.name = 'Release 2026.11.1 from 2026-11-27';
     expect(validateProductProfile(p)).toEqual([]);
+  });
+
+  it('stays fast on input crafted to slow down pattern matching', () => {
+    const p = clone(example);
+    p.name = `${'%'.repeat(1_900)}@`;
+    const start = performance.now();
+    validateProductProfile(p);
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+
+  it('refuses oversized profiles and values', () => {
+    const p = clone(example);
+    p.name = 'x'.repeat(2_001);
+    expect(validateProductProfile(p)).toContain('a value is too long (over 2000 characters)');
+    p.data = Array.from({ length: 2_000 }, (_, i) => ({ ...example.data[0]!, id: `item-${i}`, purpose: 'y'.repeat(150) }));
+    expect(validateProductProfile(p).some((x) => x.startsWith('profile is too large'))).toBe(true);
+  });
+
+  it('recognises email addresses without being fooled by look-alikes', () => {
+    expect(hasEmailAddress('write to someone@example.org.')).toBe(true);
+    expect(hasEmailAddress('@handle and a@b and x@y.z')).toBe(false);
+    expect(hasEmailAddress('Version 2026.11.1')).toBe(false);
   });
 
   it('needs a name, countries and a data list', () => {

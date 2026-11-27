@@ -453,9 +453,40 @@ export function validateProductProfile(p: unknown): string[] {
     ids.add(d.id);
   }
   const text = JSON.stringify(p);
-  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(text)) problems.push('contains an email address: a profile describes a product, never a person');
-  if (PHONE_AU_INTL.test(text) || PHONE_US.test(text)) problems.push('contains a phone number: a profile describes a product, never a person');
+  if (text.length > MAX_PROFILE_CHARS) return [...problems, `profile is too large (over ${MAX_PROFILE_CHARS} characters)`];
+  const strings = stringsIn(p);
+  if (strings.some((x) => x.length > MAX_STRING_CHARS)) problems.push(`a value is too long (over ${MAX_STRING_CHARS} characters)`);
+  if (strings.some(hasEmailAddress)) problems.push('contains an email address: a profile describes a product, never a person');
+  if (strings.some((x) => PHONE_AU_INTL.test(x) || PHONE_US.test(x))) problems.push('contains a phone number: a profile describes a product, never a person');
   return problems;
+}
+
+/** Profiles are small; these limits keep validation fast on any input. */
+const MAX_PROFILE_CHARS = 200_000;
+const MAX_STRING_CHARS = 2_000;
+
+/** Every string value in a JSON-like value, each cut to the length limit. */
+function stringsIn(v: unknown, out: string[] = []): string[] {
+  if (typeof v === 'string') out.push(v.slice(0, MAX_STRING_CHARS + 1));
+  else if (Array.isArray(v)) for (const x of v) stringsIn(x, out);
+  else if (v && typeof v === 'object') for (const x of Object.values(v)) stringsIn(x, out);
+  return out;
+}
+
+/**
+ * Whether text contains something shaped like an email address (local@domain.tld). A single pass
+ * over whitespace-separated words, with no regular expression backtracking, so crafted input
+ * can't make it slow.
+ */
+export function hasEmailAddress(text: string): boolean {
+  for (const word of text.split(/\s+/)) {
+    const at = word.indexOf('@');
+    if (at <= 0) continue;
+    const domain = word.slice(at + 1).replace(/[.,;:)\]'"]+$/, '');
+    const dot = domain.lastIndexOf('.');
+    if (dot > 0 && domain.length - dot - 1 >= 2 && !domain.includes('@')) return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------------------------
