@@ -8,4 +8,5 @@ export * from './handoff.js';
 export * from './followup.js';
 export * from './retention.js';
 export * from './compliance.js';
+export * from './products.js';
 export * from './milestones.js';

@@ -122,6 +122,20 @@ describe('Always Safety paths', () => {
     expect(c.status).toBe(200);
     expect(c.body.items.map((i: any) => i.obligationId)).toEqual(expect.arrayContaining(['gb-breach', 'gb-safeguarding']));
   });
+  it('serves the product register and checks a product profile without storing it', async () => {
+    const r = await app.request('/v1/safety/product-register');
+    expect(r.status).toBe(200);
+    expect((await r.json()).rules.length).toBeGreaterThan(20);
+    const product = JSON.parse(readFileSync(fileURLToPath(new URL('../../../spec/safety/examples/youth-campaign-app.profile.json', import.meta.url)), 'utf8'));
+    const c = await call('POST', '/v1/safety/product-check', { body: { profile: product } });
+    expect(c.status).toBe(200);
+    expect(c.body.findings.filter((f: any) => f.status === 'gap').map((f: any) => f.ruleId)).toEqual(expect.arrayContaining(['apple-account-deletion', 'claims-deletion']));
+  });
+  it('refuses a product profile that contains contact details', async () => {
+    const c = await call('POST', '/v1/safety/product-check', { body: { profile: { name: 'Run by someone@example.org', countries: ['AU'], data: [] } } });
+    expect(c.status).toBe(422);
+    expect(c.body.problems.join(' ')).toMatch(/email address/);
+  });
   it('keeps the earlier /v1/compliance paths working, marked as deprecated', async () => {
     const r = await app.request('/v1/compliance/register');
     expect(r.status).toBe(200);

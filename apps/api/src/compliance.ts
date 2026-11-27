@@ -5,7 +5,23 @@ import type { Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { asApp, asService, type Sql } from '@always/db';
-import { assess, diffRegisters, quarterOf, validateRegister, COUNTRIES, JURISDICTIONS, type Answers, type SafetyProfile, type PlatformSignals, type Register } from '@always/core';
+import {
+  assess,
+  assessProduct,
+  diffRegisters,
+  quarterOf,
+  validateProductProfile,
+  validateProductRegister,
+  validateRegister,
+  COUNTRIES,
+  JURISDICTIONS,
+  type Answers,
+  type ProductProfile,
+  type ProductRegister,
+  type SafetyProfile,
+  type PlatformSignals,
+  type Register,
+} from '@always/core';
 import { requirePrincipal, HttpError, type Env } from './auth.js';
 import { audit } from './audit.js';
 import { encrypt } from './crypto.js';
@@ -17,6 +33,19 @@ import { encrypt } from './crypto.js';
  */
 
 const BUNDLED = fileURLToPath(new URL('../../../spec/safety/register.json', import.meta.url));
+const PRODUCT_REGISTER = fileURLToPath(new URL('../../../spec/safety/product-register.json', import.meta.url));
+
+let productRegisterCache: ProductRegister | null = null;
+/** The product register ships with the code and is reviewed through pull requests. */
+export function productRegister(): ProductRegister {
+  if (!productRegisterCache) {
+    const reg = JSON.parse(readFileSync(PRODUCT_REGISTER, 'utf8')) as ProductRegister;
+    const problems = validateProductRegister(reg);
+    if (problems.length) throw new Error(`product register invalid: ${problems.join('; ')}`);
+    productRegisterCache = reg;
+  }
+  return productRegisterCache;
+}
 
 export const Profile = z.object({
   countries: z.array(z.enum(COUNTRIES as unknown as [string, ...string[]])).min(1).max(COUNTRIES.length).optional(),
@@ -129,6 +158,8 @@ export function registerSafetyRoutes(app: Hono<Env>, sql: Sql, now: () => Date) 
   app.use('/v1/safety/register/*', open);
   app.use('/v1/safety/changes', open);
   app.use('/v1/safety/check', open);
+  app.use('/v1/safety/product-register', open);
+  app.use('/v1/safety/product-check', open);
 
   app.get('/v1/safety/register', async (c) => {
     const reg = await currentRegister(sql);
@@ -167,6 +198,22 @@ export function registerSafetyRoutes(app: Hono<Env>, sql: Sql, now: () => Date) 
     if (!body.success) throw new HttpError(422, 'invalid_body');
     const register = await currentRegister(sql);
     return c.json(assess(register, body.data.profile as SafetyProfile, body.data.answers as Answers, {}, now()));
+  });
+
+  // Products: the rules for an app or website, and a stateless check of a product profile.
+  // A profile describes a product, never a person; profiles containing contact details are refused.
+  app.get('/v1/safety/product-register', (c) => {
+    const reg = productRegister();
+    c.header('etag', `"${reg.version}"`);
+    c.header('cache-control', 'public, max-age=300');
+    return c.json(reg);
+  });
+
+  app.post('/v1/safety/product-check', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as { profile?: unknown } | null;
+    const problems = validateProductProfile(body?.profile);
+    if (problems.length) return c.json({ error: 'invalid_profile', problems }, 422);
+    return c.json(assessProduct(productRegister(), body!.profile as ProductProfile, now()));
   });
 
   // Members (admins, or tokens with the safety scope).
