@@ -257,7 +257,7 @@ describe('profiles describe products, never people', () => {
 
   it('stays fast on input crafted to slow down pattern matching', () => {
     const p = clone(example);
-    p.name = `${'%'.repeat(1_900)}@`;
+    p.name = `${'%'.repeat(1_900)}@${'"'.repeat(90)}`;
     const start = performance.now();
     validateProductProfile(p);
     expect(performance.now() - start).toBeLessThan(100);

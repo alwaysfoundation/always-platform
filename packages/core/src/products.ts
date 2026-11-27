@@ -478,11 +478,15 @@ function stringsIn(v: unknown, out: string[] = []): string[] {
  * over whitespace-separated words, with no regular expression backtracking, so crafted input
  * can't make it slow.
  */
+const TRAILING = new Set(['.', ',', ';', ':', ')', ']', "'", '"']);
+
 export function hasEmailAddress(text: string): boolean {
   for (const word of text.split(/\s+/)) {
     const at = word.indexOf('@');
     if (at <= 0) continue;
-    const domain = word.slice(at + 1).replace(/[.,;:)\]'"]+$/, '');
+    let end = word.length;
+    while (end > at + 1 && TRAILING.has(word[end - 1]!)) end--;
+    const domain = word.slice(at + 1, end);
     const dot = domain.lastIndexOf('.');
     if (dot > 0 && domain.length - dot - 1 >= 2 && !domain.includes('@')) return true;
   }
