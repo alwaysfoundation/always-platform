@@ -29,6 +29,8 @@ The whole register is a draft (`status: draft`) until a named person on the foun
 | Webhook endpoints and change alerts | `apps/api/src/webhooks.ts`, `queueChangeAlerts` in `apps/api/src/compliance.ts` |
 | Guardrails for any app | `packages/sdk/src/guardrails.ts` |
 | Embeddable check-up | `packages/sdk/src/safety-widget.ts` |
+| Product rules (open data, CC BY 4.0) | `spec/safety/product-register.json` |
+| Product checks (pure, tested) | `packages/core/src/products.ts`, `scripts/safety-check-product.ts` |
 | MCP tools | `safety_obligations` and `safety_check` in `apps/api/src/mcp.ts` |
 
 Internal file and table names still say `compliance`; public paths, events, scopes and names say `safety`.
@@ -103,6 +105,81 @@ requireConsent(person.consent, 'connect.church'); // throws without it
 ```
 
 The SDK and core packages are in this repository; they are not published to npm yet.
+
+## Check a product
+
+The check-up above asks a ministry about itself. If your ministry builds an app or website, you can also check **the product**: what it collects and from whom, who can see it, how long it's kept, how young people are protected, and whether it does what its own privacy policy and terms promise. The design is in [RFC 0008](rfc/0008-safety-for-products.md) and [ADR 0024](adr/0024-safety-checks-products.md).
+
+### 1. Describe the product
+
+Write a profile, a JSON file kept next to your code. Start from the synthetic example in `spec/safety/examples/youth-campaign-app.profile.json`; every field is described in `ProductProfile` in `packages/core/src/products.ts`. A profile describes the product, never a person: profiles containing email addresses or phone numbers are refused.
+
+Leave a fact out if you don't know it. The check reports it as needing information rather than assuming it's fine.
+
+### 2. Run the check
+
+From a terminal:
+
+```sh
+npx tsx scripts/safety-check-product.ts path/to/profile.json
+```
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--format md\|json` | `md` | A Markdown report, or the full assessment as JSON |
+| `--fail-on high\|medium\|low\|none` | `high` | Exit 1 when there are gaps at or above this severity |
+| `--date YYYY-MM-DD` | today | Assess as of a date, for example to see what a rule starting next month will need |
+| `--register path` | the bundled register | Use another copy of the register |
+
+Exit codes: 0 no gaps at the chosen level, 1 gaps, 2 the profile or register is invalid.
+
+Or through the API, with nothing stored:
+
+```sh
+curl -X POST https://api.alwaysfoundation.org/v1/safety/product-check \
+  -H 'content-type: application/json' \
+  -d "{\"profile\": $(cat profile.json)}"
+```
+
+The rules themselves are at `GET /v1/safety/product-register`. In TypeScript: `import { assessProduct } from '@always/core'`.
+
+### 3. Run it on every pull request
+
+```yaml
+# .github/workflows/always-safety.yml
+name: Always Safety
+on: [pull_request]
+jobs:
+  product-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { repository: alwaysfoundation/always-platform, path: always-platform }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: cd always-platform && npm ci
+      - run: npx --prefix always-platform tsx always-platform/scripts/safety-check-product.ts safety/profile.json --fail-on high > safety-report.md
+      - if: always()
+        run: cat safety-report.md >> "$GITHUB_STEP_SUMMARY"
+```
+
+### What it checks
+
+The product register (`spec/safety/product-register.json`) has rules for:
+
+| Where | Examples |
+| --- | --- |
+| Australia | Social media minimum age, the Children's Online Privacy Code (from 10 December 2026), retention, overseas providers, sensitive information, other people's children, breaches, spam, automated decisions |
+| United States | COPPA (verifiable parental consent, neutral age screening, retention and security, third parties), state privacy laws that cover nonprofits, CAN-SPAM |
+| App stores | Apple and Google account deletion, Sign in with Apple token revocation |
+| Everywhere | Doing what your privacy policy says (deletion, parental permission, minimum age, cookies, every surface named), young people's names kept private, no AI on minors' data, moderation, processor agreements, server-side age checks, encryption |
+
+Each finding is a **gap**, **needs information**, **coming** (a rule that starts later) or **met**, with a severity, what to do, and the official source. Rules about law outside Australia are marked `verify` until a qualified reviewer checks them.
+
+### Add or change a product rule
+
+Edit `spec/safety/product-register.json`, cite an official https source, set `confidence`, and run `npm test`: the register must pass `validateProductRegister`. Open a pull request so someone checks the wording against the source.
 
 ## Statuses
 

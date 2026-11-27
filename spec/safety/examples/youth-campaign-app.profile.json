@@ -1,0 +1,72 @@
+{
+  "name": "Example youth campaign app (synthetic)",
+  "surfaces": ["website", "web_app", "mobile_app"],
+  "countries": ["AU", "US"],
+  "appStores": ["apple", "google"],
+  "audience": {
+    "minAge": 13,
+    "under18": true,
+    "under13": "via_adult",
+    "partlyAimedAtChildren": true
+  },
+  "accounts": {
+    "creation": true,
+    "selfServiceDeletion": { "web": false, "app": false },
+    "deletionWebLink": false,
+    "socialSignIn": ["apple", "google"],
+    "revokesAppleTokens": false
+  },
+  "ageAssurance": { "method": "self_declared", "neutral": true, "enforcedServerSide": false },
+  "parentalConsent": { "under18": "none", "under13": "none", "separateForThirdParties": false },
+  "data": [
+    { "id": "account", "category": "identity", "subjects": ["adult", "minor"], "purpose": "Sign-in and showing first names to the group", "visibleTo": ["self", "leaders", "group"], "retention": "Until the account is deleted", "consent": "implied" },
+    { "id": "email", "category": "contact", "subjects": ["adult", "minor"], "purpose": "Sign-in, verification and service emails", "visibleTo": ["self", "staff"], "retention": "Until the account is deleted", "consent": "implied" },
+    { "id": "date-of-birth", "category": "date_of_birth", "subjects": ["adult", "minor"], "purpose": "Minimum age check", "visibleTo": ["self", "staff"], "retention": null, "consent": "implied" },
+    { "id": "campaign-activity", "category": "faith", "subjects": ["adult", "minor"], "purpose": "Counting acts of love in a faith campaign", "visibleTo": ["self", "leaders", "group"], "retention": null, "consent": "implied" },
+    { "id": "testimonies", "category": "user_content", "subjects": ["adult", "minor"], "purpose": "Stories shared with the group after review", "visibleTo": ["self", "leaders", "group"], "retention": "Until deleted by the author", "consent": "express" },
+    { "id": "follow-up-requests", "category": "faith", "subjects": ["third_party", "third_party_minor"], "purpose": "Leaders following up someone who made a faith decision", "visibleTo": ["leaders", "staff"], "retention": null, "consent": "express" }
+  ],
+  "processors": [
+    { "name": "Hosting provider", "purpose": "App and database hosting", "country": "US", "dpa": true },
+    { "name": "Email provider", "purpose": "Service emails", "country": "US", "dpa": null },
+    { "name": "Video provider", "purpose": "Training videos", "country": "multiple", "dpa": true }
+  ],
+  "social": {
+    "feed": true,
+    "userPosts": true,
+    "userInteraction": true,
+    "recommender": false,
+    "endlessFeed": false,
+    "directMessaging": false,
+    "auExclusionClaimed": null
+  },
+  "publicDisplay": { "names": false, "photos": false, "minorsNamesOrPhotos": false },
+  "tracking": { "cookies": "essential", "analytics": "cookieless", "ads": false, "sessionRecording": false, "preciseLocation": false },
+  "messaging": { "marketing": false, "marketingOnByDefault": false, "unsubscribe": true, "push": true, "sms": false },
+  "moderation": { "publicContentPreModerated": true, "reporting": true },
+  "ai": { "onMinorsData": false, "onUserContent": false, "automatedDecisions": false },
+  "security": {
+    "encryptionInTransit": true,
+    "encryptionAtRest": true,
+    "roleBasedAccess": true,
+    "breachResponsePlan": false,
+    "writtenSecurityProgram": false,
+    "writtenRetentionPolicy": false
+  },
+  "policies": {
+    "privacyPolicy": true,
+    "terms": true,
+    "claims": {
+      "selfServiceDeletion": true,
+      "analyticsCookies": true,
+      "minAge": 13,
+      "parentalPermissionUnder18": true,
+      "surfacesNamed": ["website", "mobile_app"],
+      "countriesAddressed": ["AU"],
+      "overseasDisclosure": true,
+      "retentionStated": false,
+      "automatedDecisionsExplained": true,
+      "childFriendlyNotice": false
+    }
+  }
+}

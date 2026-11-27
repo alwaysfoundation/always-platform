@@ -1,0 +1,1409 @@
+{
+  "name": "Always Safety product register",
+  "version": "2026.11.1",
+  "status": "draft",
+  "asOf": "2026-11-27",
+  "notice": "Always Safety checks a product against common obligations. It is not legal advice. Each ministry remains responsible for its own legal advice and decisions. Rules marked verify have not yet been checked by a qualified reviewer.",
+  "rules": [
+    {
+      "id": "au-social-media-minimum-age",
+      "country": "AU",
+      "kind": "law",
+      "area": "children",
+      "title": "Check whether the product is an age-restricted social media platform",
+      "summary": "Since 10 December 2025, platforms whose sole or a significant purpose is online social interaction, that let users interact and post, and that have features such as feeds or likes, must take reasonable steps to stop Australians under 16 holding accounts, unless an exclusion (such as education or health) applies.",
+      "law": [
+        {
+          "name": "How to assess if a service is an age-restricted social media platform (eSafety)",
+          "url": "https://www.esafety.gov.au/about-us/industry-regulation/social-media-age-restrictions/assessment"
+        },
+        {
+          "name": "Social media age restrictions (eSafety Commissioner)",
+          "url": "https://www.esafety.gov.au/about-us/industry-regulation/social-media-age-restrictions"
+        },
+        {
+          "name": "Online Safety Amendment (Social Media Minimum Age) Act 2024",
+          "url": "https://www.legislation.gov.au/C2024A00127/asmade/text"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "social.userPosts",
+            "is": true
+          },
+          {
+            "path": "social.userInteraction",
+            "is": true
+          },
+          {
+            "any": [
+              {
+                "path": "social.feed",
+                "is": true
+              },
+              {
+                "path": "social.recommender",
+                "is": true
+              },
+              {
+                "path": "social.endlessFeed",
+                "is": true
+              }
+            ]
+          }
+        ]
+      },
+      "meets": {
+        "any": [
+          {
+            "path": "audience.minAge",
+            "gte": 16
+          },
+          {
+            "path": "social.auExclusionClaimed",
+            "in": [
+              "messaging",
+              "gaming",
+              "education",
+              "health",
+              "professional",
+              "product_info"
+            ]
+          }
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Get advice on whether the product's main purpose is social interaction, using eSafety's assessment guide. If it is, either take reasonable steps to stop under-16s holding accounts, or change the features (for example, no public feed or likes for under-16s). Record the conclusion and the exclusion relied on, if any.",
+      "confidence": "verify"
+    },
+    {
+      "id": "au-childrens-code-defaults",
+      "country": "AU",
+      "kind": "law",
+      "area": "children",
+      "title": "Get ready for the Children's Online Privacy Code: private by default",
+      "summary": "The Code must be registered by 10 December 2026 and will cover online services likely to be accessed by children. The exposure draft puts children's best interests first: no direct marketing or targeted advertising without consent, and care with location and visibility.",
+      "law": [
+        {
+          "name": "Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/privacy-registers/privacy-codes/childrens-online-privacy-code"
+        },
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "upcoming",
+      "commences": "2026-12-10",
+      "appliesWhen": {
+        "path": "audience.under18",
+        "is": true
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "publicDisplay.minorsNamesOrPhotos",
+            "is": false
+          },
+          {
+            "path": "tracking.ads",
+            "is": false
+          },
+          {
+            "path": "messaging.marketingOnByDefault",
+            "is": false
+          },
+          {
+            "path": "tracking.preciseLocation",
+            "is": false
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "For under-18s: keep names and photos out of public view by default, show no ads, keep marketing off unless they opt in, and don't collect precise location. Check the registered Code once it is published.",
+      "confidence": "verify"
+    },
+    {
+      "id": "au-childrens-code-deletion",
+      "country": "AU",
+      "kind": "law",
+      "area": "children",
+      "title": "Get ready for the Children's Online Privacy Code: let children ask for deletion",
+      "summary": "The exposure draft gives children a right to ask for their personal information to be destroyed.",
+      "law": [
+        {
+          "name": "Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/privacy-registers/privacy-codes/childrens-online-privacy-code"
+        },
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "upcoming",
+      "commences": "2026-12-10",
+      "appliesWhen": {
+        "path": "audience.under18",
+        "is": true
+      },
+      "meets": {
+        "any": [
+          {
+            "path": "accounts.selfServiceDeletion.app",
+            "is": true
+          },
+          {
+            "path": "accounts.selfServiceDeletion.web",
+            "is": true
+          },
+          {
+            "path": "accounts.deletionWebLink",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Give every user, including under-18s, a simple way to delete their account and information: in the app and website settings, or at least a web page to request it.",
+      "confidence": "verify"
+    },
+    {
+      "id": "au-childrens-code-notice",
+      "country": "AU",
+      "kind": "law",
+      "area": "children",
+      "title": "Get ready for the Children's Online Privacy Code: explain privacy in words children understand",
+      "summary": "The exposure draft requires clear, age-appropriate privacy notices.",
+      "law": [
+        {
+          "name": "Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/privacy-registers/privacy-codes/childrens-online-privacy-code"
+        },
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "upcoming",
+      "commences": "2026-12-10",
+      "appliesWhen": {
+        "path": "audience.under18",
+        "is": true
+      },
+      "meets": {
+        "path": "policies.claims.childFriendlyNotice",
+        "is": true
+      },
+      "severity": "low",
+      "recommendation": "Add a short, plain-language privacy summary for young people, shown where they sign up.",
+      "confidence": "verify"
+    },
+    {
+      "id": "au-overseas-disclosure",
+      "country": "AU",
+      "kind": "law",
+      "area": "privacy",
+      "title": "Say when information goes overseas",
+      "summary": "APP 8 makes you accountable for overseas recipients, and APP 1 requires the privacy policy to say whether information is likely to go overseas.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy Act 1988 (Cth)",
+          "url": "https://www.legislation.gov.au/C2004A03712/latest/text"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "processors",
+        "some": {
+          "not": {
+            "path": "country",
+            "is": "AU"
+          }
+        }
+      },
+      "meets": {
+        "path": "policies.claims.overseasDisclosure",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Name the countries your hosting, email and analytics providers use in the privacy policy, and take reasonable steps to make sure they handle the information to Australian standards.",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-retention",
+      "country": "AU",
+      "kind": "law",
+      "area": "privacy",
+      "title": "Set how long each kind of information is kept",
+      "summary": "APP 11.2 requires destroying or de-identifying personal information once it is no longer needed. That needs a rule for each kind of information.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy Act 1988 (Cth)",
+          "url": "https://www.legislation.gov.au/C2004A03712/latest/text"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "data",
+        "some": {
+          "path": "id",
+          "known": true
+        }
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "data",
+            "none": {
+              "path": "retention",
+              "is": null
+            }
+          },
+          {
+            "path": "security.writtenRetentionPolicy",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Write a retention schedule: for each kind of information, how long it is kept and what happens after (delete or de-identify). Build the deletion in, rather than relying on manual clean-ups.",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-sensitive-consent",
+      "country": "AU",
+      "kind": "law",
+      "area": "privacy",
+      "title": "Ask before collecting information about faith or health",
+      "summary": "Religious beliefs and health are sensitive information. APP 3.3 generally requires consent to collect them. Taking part in a faith campaign, or a prayer request, can reveal them.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy Act 1988 (Cth)",
+          "url": "https://www.legislation.gov.au/C2004A03712/latest/text"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "data",
+        "some": {
+          "path": "category",
+          "in": [
+            "faith",
+            "health"
+          ]
+        }
+      },
+      "meets": {
+        "path": "data",
+        "none": {
+          "all": [
+            {
+              "path": "category",
+              "in": [
+                "faith",
+                "health"
+              ]
+            },
+            {
+              "not": {
+                "path": "consent",
+                "is": "express"
+              }
+            }
+          ]
+        }
+      },
+      "severity": "medium",
+      "recommendation": "Ask for clear, opt-in consent where faith or health information is collected (for example, a tick box on the form, with a short explanation of who will see it).",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-third-party-children",
+      "country": "AU",
+      "kind": "law",
+      "area": "children",
+      "title": "Take extra care with details about other people's children",
+      "summary": "When users tell the product about someone else who is under 18 (for example, a follow-up form after a conversation about faith), that is sensitive information about a child who hasn't agreed. APP 11 requires reasonable steps to protect it and delete it when no longer needed.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy Act 1988 (Cth)",
+          "url": "https://www.legislation.gov.au/C2004A03712/latest/text"
+        },
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "data",
+        "some": {
+          "path": "subjects",
+          "includesAny": [
+            "third_party_minor"
+          ]
+        }
+      },
+      "meets": {
+        "path": "data",
+        "none": {
+          "all": [
+            {
+              "path": "subjects",
+              "includesAny": [
+                "third_party_minor"
+              ]
+            },
+            {
+              "any": [
+                {
+                  "path": "retention",
+                  "is": null
+                },
+                {
+                  "path": "visibleTo",
+                  "includesAny": [
+                    "public",
+                    "group",
+                    "members"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "severity": "high",
+      "recommendation": "Collect the minimum (a first name and age band, not contact details for the child), limit who can see it to the leaders who follow up, set a short retention period, and require a parent or guardian's details and consent before any contact.",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-breach-response",
+      "country": "AU",
+      "kind": "law",
+      "area": "security",
+      "title": "Be ready for a data breach",
+      "summary": "Under the Notifiable Data Breaches scheme, eligible breaches must be assessed and notified to the people affected and the OAIC.",
+      "law": [
+        {
+          "name": "Notifiable Data Breaches scheme (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/notifiable-data-breaches"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "data",
+        "some": {
+          "path": "id",
+          "known": true
+        }
+      },
+      "meets": {
+        "path": "security.breachResponsePlan",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Write a one-page breach response plan: who decides, how to contain it, how to assess harm within 30 days, and who notifies the OAIC and the people affected.",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-spam-consent",
+      "country": "AU",
+      "kind": "law",
+      "area": "messages",
+      "title": "Marketing messages need consent and an unsubscribe",
+      "summary": "The Spam Act requires consent, sender identification and a working unsubscribe for commercial emails and texts, including fundraising.",
+      "law": [
+        {
+          "name": "Spam Act 2003 (Cth)",
+          "url": "https://www.legislation.gov.au/C2004A01214/latest/text"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "messaging.marketing",
+        "is": true
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "messaging.marketingOnByDefault",
+            "is": false
+          },
+          {
+            "path": "messaging.unsubscribe",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Keep marketing and fundraising messages off until people opt in, and include a one-click unsubscribe in every one.",
+      "confidence": "draft"
+    },
+    {
+      "id": "au-automated-decisions",
+      "country": "AU",
+      "kind": "law",
+      "area": "transparency",
+      "title": "Explain automated decisions in the privacy policy",
+      "summary": "From 10 December 2026, privacy policies must explain when computer programs use personal information to make decisions that could significantly affect people.",
+      "law": [
+        {
+          "name": "Privacy and Other Legislation Amendment Act 2024 (automated decisions, APP 1.7 to 1.9)",
+          "url": "https://www.legislation.gov.au/C2024A00128/asmade/text"
+        },
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        }
+      ],
+      "status": "upcoming",
+      "commences": "2026-12-10",
+      "appliesWhen": {
+        "path": "ai.automatedDecisions",
+        "is": true
+      },
+      "meets": {
+        "path": "policies.claims.automatedDecisionsExplained",
+        "is": true
+      },
+      "severity": "low",
+      "recommendation": "List the automated decisions, the kinds of information they use, and how to ask for a person to review one.",
+      "confidence": "verify"
+    },
+    {
+      "id": "au-documents-cover-australia",
+      "country": "AU",
+      "kind": "good_practice",
+      "area": "transparency",
+      "title": "Write the privacy policy and terms for Australian law",
+      "summary": "Documents written for another country's law can miss Australian requirements, such as the OAIC complaint route.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.privacyPolicy",
+        "is": true
+      },
+      "meets": {
+        "path": "policies.claims.countriesAddressed",
+        "includesAny": [
+          "AU"
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Have the documents reviewed for Australian law.",
+      "confidence": "draft"
+    },
+    {
+      "id": "us-coppa-own-accounts",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Get verifiable parental consent before under-13s have accounts",
+      "summary": "COPPA requires verifiable parental consent before collecting personal information online from children under 13. The amended Rule's compliance date was 22 April 2026.",
+      "law": [
+        {
+          "name": "Children's Online Privacy Protection Rule, 16 CFR Part 312",
+          "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-312"
+        },
+        {
+          "name": "COPPA Rule amendments (Federal Register, 22 April 2025)",
+          "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule"
+        },
+        {
+          "name": "Complying with COPPA: Frequently Asked Questions (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under13",
+        "is": "own_accounts"
+      },
+      "meets": {
+        "path": "parentalConsent.under13",
+        "is": "verified"
+      },
+      "severity": "high",
+      "recommendation": "Don't let under-13s create accounts in the US until a verifiable parental consent method is in place, with US legal advice.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-coppa-via-adults",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Check COPPA when adults enter children's details",
+      "summary": "When leaders or parents add under-13s (names, photos, activity), whether COPPA applies depends on how and from whom the information is collected. Information collected from a child online needs verifiable parental consent.",
+      "law": [
+        {
+          "name": "Children's Online Privacy Protection Rule, 16 CFR Part 312",
+          "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-312"
+        },
+        {
+          "name": "Complying with COPPA: Frequently Asked Questions (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under13",
+        "is": "via_adult"
+      },
+      "meets": {
+        "path": "parentalConsent.under13",
+        "is": "verified"
+      },
+      "severity": "high",
+      "recommendation": "Get US legal advice on the under-13 flow. Until then, collect no personal information about under-13s in the US (count acts, not children), and never let children enter details themselves.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-coppa-age-screen",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Screen age neutrally if the product is partly aimed at children",
+      "summary": "Under the amended COPPA Rule, a mixed audience service must not collect personal information before asking age, or using another reasonable way to tell whether a visitor is a child, and must ask in a neutral way.",
+      "law": [
+        {
+          "name": "COPPA Rule amendments (Federal Register, 22 April 2025)",
+          "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule"
+        },
+        {
+          "name": "Children's Online Privacy Protection Rule, 16 CFR Part 312",
+          "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-312"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.partlyAimedAtChildren",
+        "is": true
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "ageAssurance.method",
+            "in": [
+              "self_declared",
+              "estimated",
+              "verified"
+            ]
+          },
+          {
+            "path": "ageAssurance.neutral",
+            "is": true
+          },
+          {
+            "path": "ageAssurance.enforcedServerSide",
+            "is": true
+          }
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Ask date of birth before any other detail, without a default or hint, enforce the minimum age on the server, and don't let someone change their answer after being turned away.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-coppa-retention-security",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Write a children's data retention policy and security program",
+      "summary": "The amended COPPA Rule requires a written information security program and a written retention policy, published in the online notice, for children's personal information. Indefinite retention is not allowed.",
+      "law": [
+        {
+          "name": "COPPA Rule amendments (Federal Register, 22 April 2025)",
+          "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule"
+        },
+        {
+          "name": "Children's Online Privacy Protection Rule, 16 CFR Part 312",
+          "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-312"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under13",
+        "in": [
+          "via_adult",
+          "own_accounts"
+        ]
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "security.writtenRetentionPolicy",
+            "is": true
+          },
+          {
+            "path": "security.writtenSecurityProgram",
+            "is": true
+          },
+          {
+            "path": "policies.claims.retentionStated",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Write both documents and add the retention periods for children's information to the privacy policy.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-coppa-third-parties",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Separate parental consent before sharing children's information",
+      "summary": "The amended COPPA Rule requires separate verifiable parental consent to disclose children's personal information to third parties, unless the disclosure is integral to the service.",
+      "law": [
+        {
+          "name": "COPPA Rule amendments (Federal Register, 22 April 2025)",
+          "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under13",
+        "in": [
+          "via_adult",
+          "own_accounts"
+        ]
+      },
+      "meets": {
+        "path": "parentalConsent.separateForThirdParties",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "List who receives children's information. Service providers that only support the product's internal operations are treated differently from third parties, so confirm each one with US legal advice.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-states-known",
+      "country": "US",
+      "kind": "good_practice",
+      "area": "privacy",
+      "title": "Know which US states you serve",
+      "summary": "US privacy law is state by state, and a few states' laws cover nonprofits. Which rules apply depends on where users live.",
+      "law": [
+        {
+          "name": "US State Privacy Legislation Tracker (IAPP)",
+          "url": "https://iapp.org/resources/article/us-state-privacy-laws-overview/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "countries",
+        "includesAny": [
+          "US"
+        ]
+      },
+      "meets": {
+        "path": "usStates",
+        "known": true
+      },
+      "severity": "medium",
+      "recommendation": "List the states your first US groups are in, and add them to the profile so state rules can be checked.",
+      "confidence": "draft"
+    },
+    {
+      "id": "us-state-privacy-nonprofits",
+      "country": "US",
+      "kind": "law",
+      "area": "privacy",
+      "title": "Check state privacy laws that cover nonprofits",
+      "summary": "Most state privacy laws exempt nonprofits, but Colorado, Oregon, Delaware, Minnesota, New Jersey and Maryland largely do not. Each applies above a threshold of residents' data.",
+      "law": [
+        {
+          "name": "US State Privacy Legislation Tracker (IAPP)",
+          "url": "https://iapp.org/resources/article/us-state-privacy-laws-overview/"
+        },
+        {
+          "name": "Colorado Privacy Act (Colorado Attorney General)",
+          "url": "https://coag.gov/resources/colorado-privacy-act/"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "usStates",
+        "includesAny": [
+          "CO",
+          "OR",
+          "DE",
+          "MN",
+          "NJ",
+          "MD"
+        ]
+      },
+      "meets": {
+        "path": "usThresholdsReviewed",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Check each listed state's threshold against expected users. If one is met, the law's rights (access, deletion, opt-outs) and teen protections apply.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-teen-social-media-laws",
+      "country": "US",
+      "kind": "law",
+      "area": "children",
+      "title": "Watch: state laws on teens and social media",
+      "summary": "Several states have passed laws on minors' social media accounts, parental consent and design. Many are being challenged in court and coverage of nonprofits varies.",
+      "law": [
+        {
+          "name": "US State Privacy Legislation Tracker (IAPP)",
+          "url": "https://iapp.org/resources/article/us-state-privacy-laws-overview/"
+        }
+      ],
+      "status": "watch",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "audience.under18",
+            "is": true
+          },
+          {
+            "path": "social.userPosts",
+            "is": true
+          }
+        ]
+      },
+      "meets": {
+        "path": "usThresholdsReviewed",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Include teen social media laws in the US legal review for the states you serve.",
+      "confidence": "verify"
+    },
+    {
+      "id": "us-documents-cover-us",
+      "country": "US",
+      "kind": "good_practice",
+      "area": "transparency",
+      "title": "Review the privacy policy and terms for US users",
+      "summary": "Documents written for Australian law can miss US requirements, such as COPPA notices and state privacy rights.",
+      "law": [
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        },
+        {
+          "name": "Children's Online Privacy Protection Rule, 16 CFR Part 312",
+          "url": "https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-312"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.privacyPolicy",
+        "is": true
+      },
+      "meets": {
+        "path": "policies.claims.countriesAddressed",
+        "includesAny": [
+          "US"
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Have the documents reviewed by a US lawyer before US launch.",
+      "confidence": "draft"
+    },
+    {
+      "id": "us-can-spam",
+      "country": "US",
+      "kind": "law",
+      "area": "messages",
+      "title": "Commercial emails need an opt-out",
+      "summary": "CAN-SPAM requires a clear way to opt out of commercial email, honoured within 10 business days.",
+      "law": [
+        {
+          "name": "CAN-SPAM Act: A Compliance Guide for Business (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/resources/can-spam-act-compliance-guide-business"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "messaging.marketing",
+        "is": true
+      },
+      "meets": {
+        "path": "messaging.unsubscribe",
+        "is": true
+      },
+      "severity": "low",
+      "recommendation": "Include a working unsubscribe in every marketing email.",
+      "confidence": "draft"
+    },
+    {
+      "id": "apple-account-deletion",
+      "country": "ALL",
+      "kind": "platform_rule",
+      "area": "accounts",
+      "title": "Apple: let people delete their account in the app",
+      "summary": "Apps that support account creation must let people start deleting their whole account, with its data, from inside the app. Deactivation alone isn't enough.",
+      "law": [
+        {
+          "name": "Offering account deletion in your app (Apple)",
+          "url": "https://developer.apple.com/support/offering-account-deletion-in-your-app"
+        },
+        {
+          "name": "App Store Review Guidelines 5.1.1 (Apple)",
+          "url": "https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "appStores",
+            "includesAny": [
+              "apple"
+            ]
+          },
+          {
+            "path": "accounts.creation",
+            "is": true
+          }
+        ]
+      },
+      "meets": {
+        "path": "accounts.selfServiceDeletion.app",
+        "is": true
+      },
+      "severity": "high",
+      "recommendation": "Add Delete account to the app's settings. It must delete the account and its data (posts, photos), say what is kept by law and for how long, and confirm when done.",
+      "confidence": "draft"
+    },
+    {
+      "id": "apple-sign-in-revoke",
+      "country": "ALL",
+      "kind": "platform_rule",
+      "area": "accounts",
+      "title": "Apple: revoke Sign in with Apple tokens on deletion",
+      "summary": "Apps that support Sign in with Apple should revoke the user's tokens with Apple's REST API when an account is deleted.",
+      "law": [
+        {
+          "name": "Offering account deletion in your app (Apple)",
+          "url": "https://developer.apple.com/support/offering-account-deletion-in-your-app"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "accounts.socialSignIn",
+        "includesAny": [
+          "apple"
+        ]
+      },
+      "meets": {
+        "path": "accounts.revokesAppleTokens",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Call Apple's token revocation endpoint as part of account deletion.",
+      "confidence": "draft"
+    },
+    {
+      "id": "google-account-deletion",
+      "country": "ALL",
+      "kind": "platform_rule",
+      "area": "accounts",
+      "title": "Google Play: in-app deletion and a deletion web page",
+      "summary": "Apps that allow account creation must offer an in-app path to delete the account and its data, and a web page where anyone can request deletion, declared in the Data safety form.",
+      "law": [
+        {
+          "name": "Understanding Google Play's app account deletion requirements",
+          "url": "https://support.google.com/googleplay/android-developer/answer/13327111"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "appStores",
+            "includesAny": [
+              "google"
+            ]
+          },
+          {
+            "path": "accounts.creation",
+            "is": true
+          }
+        ]
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "accounts.selfServiceDeletion.app",
+            "is": true
+          },
+          {
+            "path": "accounts.deletionWebLink",
+            "is": true
+          }
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Add Delete account in the app, and a public web page to request deletion that names the app. Add the page's address to the Data safety form.",
+      "confidence": "draft"
+    },
+    {
+      "id": "claims-deletion",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "transparency",
+      "title": "Do what the privacy policy says: account deletion",
+      "summary": "The documents promise people can delete their account themselves. A promise the product doesn't keep can breach APP 1 in Australia and be a deceptive practice under the FTC Act in the US.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.claims.selfServiceDeletion",
+        "is": true
+      },
+      "meets": {
+        "all": [
+          {
+            "any": [
+              {
+                "not": {
+                  "path": "surfaces",
+                  "includesAny": [
+                    "web_app"
+                  ]
+                }
+              },
+              {
+                "path": "accounts.selfServiceDeletion.web",
+                "is": true
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "not": {
+                  "path": "surfaces",
+                  "includesAny": [
+                    "mobile_app"
+                  ]
+                }
+              },
+              {
+                "path": "accounts.selfServiceDeletion.app",
+                "is": true
+              }
+            ]
+          }
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Build self-service deletion on every surface the documents name, or change the wording until it exists.",
+      "confidence": "draft"
+    },
+    {
+      "id": "claims-parental-permission",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "Do what the terms say: parental permission for under-18s",
+      "summary": "The documents require a parent or guardian's permission for under-18s, but the product doesn't capture it.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "policies.claims.parentalPermissionUnder18",
+            "is": true
+          },
+          {
+            "path": "audience.under18",
+            "is": true
+          }
+        ]
+      },
+      "meets": {
+        "path": "parentalConsent.under18",
+        "in": [
+          "attestation",
+          "leader_attests",
+          "verified"
+        ]
+      },
+      "severity": "high",
+      "recommendation": "Decide how permission is captured (for example, the young person confirms a parent agrees, or their group leader confirms it when inviting them), record it, and make the documents match.",
+      "confidence": "draft"
+    },
+    {
+      "id": "claims-minimum-age",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "Do what the terms say: minimum age",
+      "summary": "The minimum age in the documents must match the age the product enforces.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.claims.minAge",
+        "known": true
+      },
+      "meets": {
+        "path": "policies.claims.minAge",
+        "equalsPath": "audience.minAge"
+      },
+      "severity": "medium",
+      "recommendation": "Make the documents and the product use the same minimum age, kept in one setting.",
+      "confidence": "draft"
+    },
+    {
+      "id": "claims-cookies",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "transparency",
+      "title": "Describe cookies and analytics accurately",
+      "summary": "The documents should say whether analytics use cookies. Saying they do when they don't is harmless but confusing. Not saying when they do is a gap.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.claims.analyticsCookies",
+        "known": true
+      },
+      "meets": {
+        "any": [
+          {
+            "all": [
+              {
+                "path": "policies.claims.analyticsCookies",
+                "is": true
+              },
+              {
+                "path": "tracking.analytics",
+                "is": "cookies"
+              }
+            ]
+          },
+          {
+            "all": [
+              {
+                "path": "policies.claims.analyticsCookies",
+                "is": false
+              },
+              {
+                "path": "tracking.analytics",
+                "in": [
+                  "none",
+                  "cookieless"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "severity": "low",
+      "recommendation": "Update the cookies section to match what the product actually uses.",
+      "confidence": "draft"
+    },
+    {
+      "id": "claims-surfaces",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "transparency",
+      "title": "Name every part of the product in the documents",
+      "summary": "The privacy policy and terms should cover every surface people use: website, web app and mobile app.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "policies.privacyPolicy",
+        "is": true
+      },
+      "meets": {
+        "path": "policies.claims.surfacesNamed",
+        "includesAllAt": "surfaces"
+      },
+      "severity": "low",
+      "recommendation": "Add any missing surface (for example, the web app's address) to the documents' scope.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-minors-not-public",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "Keep young people's names and photos out of public view",
+      "summary": "Public pages and feeds should show totals and approved content, not who an under-18 is.",
+      "law": [
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        },
+        {
+          "name": "Complying with COPPA: Frequently Asked Questions (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under18",
+        "is": true
+      },
+      "meets": {
+        "path": "publicDisplay.minorsNamesOrPhotos",
+        "is": false
+      },
+      "severity": "medium",
+      "recommendation": "Show first names to their own group only, never publicly, and keep photos of young people to approved, non-identifying images.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-no-ai-on-minors",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "No AI processing of young people's information",
+      "summary": "Always Platform never runs AI on minors' information. Products plugging into Always Safety are encouraged to do the same.",
+      "law": [
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "audience.under18",
+        "is": true
+      },
+      "meets": {
+        "path": "ai.onMinorsData",
+        "is": false
+      },
+      "severity": "medium",
+      "recommendation": "Exclude under-18s' records from any AI feature, including moderation and summaries, unless a person has reviewed the risk.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-moderate-public-content",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "Review content before it is public, where young people use the product",
+      "summary": "Testimonies, stories and photos shared by or about young people should be reviewed before anyone else sees them.",
+      "law": [
+        {
+          "name": "Exposure draft of the Children's Online Privacy Code (OAIC)",
+          "url": "https://www.oaic.gov.au/news/media-centre/oaic-releases-exposure-draft-of-the-childrens-online-privacy-code"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "audience.under18",
+            "is": true
+          },
+          {
+            "path": "social.userPosts",
+            "is": true
+          }
+        ]
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "moderation.publicContentPreModerated",
+            "is": true
+          },
+          {
+            "path": "moderation.reporting",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Hold posts for review before they appear beyond the author, and let anyone report content.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-processor-agreements",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "security",
+      "title": "Have data processing terms with every provider",
+      "summary": "Every service that stores or processes people's information on your behalf should have signed terms limiting what it can do.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "processors",
+        "some": {
+          "path": "name",
+          "known": true
+        }
+      },
+      "meets": {
+        "path": "processors",
+        "none": {
+          "not": {
+            "path": "dpa",
+            "is": true
+          }
+        }
+      },
+      "severity": "medium",
+      "recommendation": "Accept or sign each provider's data processing terms and keep a list with the date.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-server-side-age",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "children",
+      "title": "Enforce the minimum age on the server",
+      "summary": "An age check only in the page can be bypassed. The minimum age should be enforced where accounts are created.",
+      "law": [
+        {
+          "name": "COPPA Rule amendments (Federal Register, 22 April 2025)",
+          "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule"
+        },
+        {
+          "name": "Social media age restrictions (eSafety Commissioner)",
+          "url": "https://www.esafety.gov.au/about-us/industry-regulation/social-media-age-restrictions"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "all": [
+          {
+            "path": "accounts.creation",
+            "is": true
+          },
+          {
+            "path": "audience.minAge",
+            "known": true
+          }
+        ]
+      },
+      "meets": {
+        "path": "ageAssurance.enforcedServerSide",
+        "is": true
+      },
+      "severity": "medium",
+      "recommendation": "Check the date of birth against the minimum age in the API that creates accounts, and refuse sign-ups below it.",
+      "confidence": "draft"
+    },
+    {
+      "id": "gp-security-basics",
+      "country": "ALL",
+      "kind": "good_practice",
+      "area": "security",
+      "title": "Encrypt information and limit access by role",
+      "summary": "Encryption in transit and at rest, and access limited to what each role needs, are the baseline for reasonable security under APP 11 and FTC guidance.",
+      "law": [
+        {
+          "name": "Australian Privacy Principles guidelines (OAIC)",
+          "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles/australian-privacy-principles-guidelines"
+        },
+        {
+          "name": "Privacy and security guidance (FTC)",
+          "url": "https://www.ftc.gov/business-guidance/privacy-security"
+        }
+      ],
+      "status": "in_force",
+      "appliesWhen": {
+        "path": "data",
+        "some": {
+          "path": "id",
+          "known": true
+        }
+      },
+      "meets": {
+        "all": [
+          {
+            "path": "security.encryptionInTransit",
+            "is": true
+          },
+          {
+            "path": "security.encryptionAtRest",
+            "is": true
+          },
+          {
+            "path": "security.roleBasedAccess",
+            "is": true
+          }
+        ]
+      },
+      "severity": "medium",
+      "recommendation": "Confirm HTTPS everywhere, encryption at rest with the database and storage providers, and role-based access in the API.",
+      "confidence": "draft"
+    }
+  ]
+}
