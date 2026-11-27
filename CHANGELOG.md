@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.0](https://github.com/alwaysfoundation/always-platform/compare/v3.0.0...v3.1.0) (2026-11-27)
+
+
+### Features
+
+* **safety:** check products as well as organisations (RFC 0008, ADR 0024) ([#112](https://github.com/alwaysfoundation/always-platform/issues/112)) ([e3579b9](https://github.com/alwaysfoundation/always-platform/commit/e3579b99ca07e22c3a3688433f54d200d0503bf3))
+* **web:** Respond button code, embed view and a branded home ([#106](https://github.com/alwaysfoundation/always-platform/issues/106)) ([11b8f49](https://github.com/alwaysfoundation/always-platform/commit/11b8f49b1defe18e08f3899f4c70cf9e5d1cbc42))
+
 ## [3.0.0](https://github.com/alwaysfoundation/always-platform/compare/v2.0.0...v3.0.0) (2026-11-25)
 
 
